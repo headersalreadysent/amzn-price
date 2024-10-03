@@ -1,0 +1,28 @@
+package co.ec.amazonfiyattakip.ui.screen.main
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.theme.AmazonFiyatTakipTheme
+
+@Composable
+fun MainScreen(model: MainScreenModel = viewModel()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(text = "main")
+    }
+}
+
+
+@Composable
+@Preview(showBackground = true)
+fun MainScreenPreview(model: MainScreenModel = viewModel()) {
+    PreviewProviders {
+        MainScreen(model)
+    }
+
+}
