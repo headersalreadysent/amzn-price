@@ -13,7 +13,8 @@ import co.ec.amazonfiyattakip.db.product.ProductDao
 @Database(entities = [Product::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun transactionDao(): ProductDao
+
+    abstract fun product(): ProductDao
 
 
     companion object {
