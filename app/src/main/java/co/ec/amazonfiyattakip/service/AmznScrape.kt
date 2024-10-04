@@ -5,6 +5,7 @@ import co.ec.helper.AppLogger
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
 import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -13,8 +14,8 @@ class AmznScrape {
     private val DETAIL_PAGE_URL = "https://www.amazon.com.tr/_title_/dp/_asin_"
 
     /**
-     * screpe product from asin code
-     * @param asin asin code of amazon
+     * screpe product from asin
+     * @param asin asin of amazon
      * @param then result callback
      * @param err error callback
      */
@@ -23,15 +24,31 @@ class AmznScrape {
         then: (res: Product) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
+        val url = DETAIL_PAGE_URL.replace("_asin_", asin).replace("_title_", asin)
+        scrapeFromUrl(url, then, err)
+
+    }
+
+
+    /**
+     * screpe product from url
+     * @param url url of amazon
+     * @param then result callback
+     * @param err error callback
+     */
+    fun scrapeFromUrl(
+        url: String,
+        then: (res: Product) -> Unit = { _ -> },
+        err: (res: Throwable) -> Unit = { _ -> }
+    ) {
         Async.run({
             //generate url
-            val url = DETAIL_PAGE_URL.replace("_asin_", asin).replace("_title_", asin)
             AmznRequest.request(url, { html ->
                 //get html
                 html?.let {
                     try {
                         //parse product from html
-                        val product = extractProductDetails(it, asin)
+                        val product = extractProductDetails(it)
                         AppLogger.d(product.toString())
                         then(product)
                     } catch (t: Throwable) {
@@ -49,26 +66,20 @@ class AmznScrape {
     /**
      * extract product details from amazon page content
      * @param html:String page content
-     * @param asin:String product asin code
      * @return Product
      */
-    private fun extractProductDetails(html: String, asin: String): Product {
+    private fun extractProductDetails(html: String): Product {
 
         val doc = Ksoup.parse(html ?: "")
-
+        val asin = doc.getElementsByAttributeValue("name", "asin").first()?.value() ?: ""
         //get title
         val title = doc.getElementById("productTitle")?.text() ?: ""
         //get description
         val description = doc.getElementById("featurebullets_feature_div")?.text()
             ?.replace("Bu ürün hakkında", "")?.trim() ?: ""
         //price
-        val priceElement =
-            listOf("priceValue", "items[0.base][customerVisiblePrice][amount]")
-                .map {
-                    return@map doc.getElementsByAttributeValue("name", it)
-                }
-                .first { it.isNotEmpty() }
-                .getOrNull(0)
+        val price = extractPrice(doc)
+
         //star count
         val star = doc.select("#averageCustomerReviews .a-icon.a-icon-star").map {
             return@map (it.attr("class").split(" ").find { it.startsWith("a-star-") }
@@ -102,11 +113,25 @@ class AmznScrape {
             date = unix(),
             title = title,
             description = description,
-            price = ((priceElement?.value() ?: "0").toFloat() * 100).toInt(),
+            price = price,
             star = starCount,
             comment = comment,
             image = img,
             extras = Json.encodeToString(dataMap)
         )
+    }
+
+    private fun extractPrice(doc: Document): Int {
+        doc.getElementById("twister-plus-price-data-price")?.let {
+            return (it.value().toFloat() * 100).toInt()
+        }
+        doc.getElementsByAttributeValue("name", "priceValue").first()?.let {
+            return (it.value().toFloat() * 100).toInt()
+        }
+        doc.getElementsByAttributeValue("name", "items[0.base][customerVisiblePrice][amount]")
+            .first()?.let {
+                return (it.value().toFloat() * 100).toInt()
+            }
+        return 0;
     }
 }

@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,8 +29,10 @@ import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,6 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination
 import co.ec.amazonfiyattakip.ui.theme.AmazonFiyatTakipTheme
 import kotlinx.coroutines.launch
 
@@ -62,21 +67,30 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val destination = intent?.getStringExtra("destination") ?: "main"
         setContent {
             AppProviders {
-                AppContent()
+                AppContent(
+                    startDestination = destination
+                )
             }
         }
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppContent() {
+fun AppContent(
+    startDestination: String = "main",
+    appModel: AppModel = viewModel()
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var screenOptions by remember {
-        mutableStateOf(ScreenOptions())
+    var screenOptions by remember { mutableStateOf(ScreenOptions()) }
+    LaunchedEffect(screenOptions) {
+        AppModel.setFabClick(screenOptions.fab?.second ?: {})
     }
 
     ModalNavigationDrawer(
@@ -89,8 +103,9 @@ fun AppContent() {
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
                 screenOptions.fab?.let { fit ->
+                    val fabClick by appModel.fabClick.observeAsState({})
                     FloatingActionButton(
-                        onClick = fit.second
+                        onClick = fabClick
                     ) {
                         Icon(fit.first, contentDescription = "")
                     }
@@ -132,6 +147,7 @@ fun AppContent() {
                     optionsChanged = {
                         screenOptions = it
                     },
+                    startDestination = startDestination
                 )
             }
 
@@ -140,7 +156,6 @@ fun AppContent() {
 
 
 }
-
 
 
 @Preview(showBackground = true)

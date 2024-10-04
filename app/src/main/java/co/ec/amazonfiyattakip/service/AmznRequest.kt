@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -155,6 +156,33 @@ object AmznRequest {
 
 
         return request
+
+    }
+
+    fun getRealUrl(
+        url: String,
+        then: (res: String) -> Unit = { _ -> },
+        err: (res: Throwable) -> Unit = { _ -> }
+    ) {
+        Async.run({
+            val client = OkHttpClient.Builder()
+                .followRedirects(false)
+                .build()
+
+            val request = Request.Builder()
+                .url(url)
+                .build()
+            client
+                .newCall(request)
+                .execute().use { response: Response ->
+                    if (response.isRedirect) {
+                        val redirectUrl = response.header("Location") ?: ""
+                        return@run redirectUrl
+                    } else {
+                        throw IOException("No redirect $response")
+                    }
+                }
+        }, then, err)
 
     }
 

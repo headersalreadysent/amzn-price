@@ -16,16 +16,7 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 fun MainScreen(model: MainScreenModel = viewModel()) {
 
 
-    LaunchedEffect(Unit) {
-        try {
-            model.recordProductFromAsin("B0CCPPN7B1")
 
-
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(text = "main")
