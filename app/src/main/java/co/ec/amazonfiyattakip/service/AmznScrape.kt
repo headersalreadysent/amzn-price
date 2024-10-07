@@ -11,7 +11,15 @@ import kotlinx.serialization.json.Json
 
 class AmznScrape {
 
-    private val DETAIL_PAGE_URL = "https://www.amazon.com.tr/_title_/dp/_asin_"
+
+    companion object {
+        private const val DETAIL_PAGE_URL = "https://www.amazon.com.tr/_title_/dp/_asin_"
+
+
+        fun urlFromAsin(asin: String, title: String? = null): String {
+            return DETAIL_PAGE_URL.replace("_asin_", asin).replace("_title_", title ?: asin)
+        }
+    }
 
     /**
      * screpe product from asin
@@ -24,8 +32,7 @@ class AmznScrape {
         then: (res: Product) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
-        val url = DETAIL_PAGE_URL.replace("_asin_", asin).replace("_title_", asin)
-        scrapeFromUrl(url, then, err)
+        scrapeFromUrl(urlFromAsin(asin), then, err)
 
     }
 

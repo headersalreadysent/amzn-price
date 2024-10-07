@@ -18,7 +18,7 @@ data class Product(
     var image: String = "",
     var extras: String = ""
 ) {
-    fun getExtras(): Map<String, String> {
+    fun extraMap(): Map<String, String> {
         return Json.decodeFromString<Map<String, String>>(extras)
     }
 }
