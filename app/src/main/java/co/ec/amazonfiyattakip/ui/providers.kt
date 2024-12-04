@@ -44,8 +44,12 @@ fun PreviewProviders(
 ) {
     val context = LocalContext.current
     val settings = MockSettings(context)
+    val navController = rememberNavController()
+    val snackbarHostState = SnackbarHostState()
     CompositionLocalProvider(
-        LocalSettings provides settings
+        LocalSettings provides settings,
+        LocalNavigation provides navController,
+        LocalSnackbar provides snackbarHostState,
     ) {
         AmazonFiyatTakipTheme {
             content()

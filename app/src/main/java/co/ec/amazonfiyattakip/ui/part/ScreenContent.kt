@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.ui.part
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.compose.NavHost
@@ -35,7 +36,7 @@ fun ScreenContent(
         composable("add") {
             AddScreen()
             optionsChanged(
-                ScreenOptions("Takip Ekle", Pair(Icons.Filled.Add, {}), false)
+                ScreenOptions("Takip Ekle", Pair(Icons.Filled.Star, {}), false)
             )
         }
     }

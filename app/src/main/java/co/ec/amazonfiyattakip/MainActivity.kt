@@ -6,13 +6,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -22,15 +24,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -38,30 +38,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination
-import co.ec.amazonfiyattakip.ui.theme.AmazonFiyatTakipTheme
-import kotlinx.coroutines.launch
-
-
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.ui.AppProviders
-import co.ec.amazonfiyattakip.ui.LocalDB
-import co.ec.amazonfiyattakip.ui.LocalNavigation
-import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ModalPart
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
 import co.ec.amazonfiyattakip.ui.part.ScreenOptions
-import co.ec.helper.AppSharedSettings
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +65,6 @@ class MainActivity : ComponentActivity() {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppContent(
     startDestination: String = "main",
@@ -101,47 +85,39 @@ fun AppContent(
     ) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            floatingActionButton = {
-                screenOptions.fab?.let { fit ->
-                    val fabClick by appModel.fabClick.observeAsState({})
-                    FloatingActionButton(
-                        onClick = fabClick
-                    ) {
-                        Icon(fit.first, contentDescription = "")
-                    }
-                }
-            },
+
             snackbarHost = {
                 val snackbarHostState = LocalSnackbar.current
                 SnackbarHost(hostState = snackbarHostState)
             },
-            topBar = {
-                TopAppBar(
-                    colors = topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    title = {
-                        Text(screenOptions.title)
+            bottomBar = {
+                BottomAppBar(
+                    actions = {
+                        IconButton(onClick = { /* Handle click */ }) {
+                            Icon(Icons.Default.Home, contentDescription = "Menu")
+                        }
+                        IconButton(onClick = { /* Handle click */ }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                        Spacer(Modifier.weight(1f, true))
                     },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch {
-                                drawerState.apply {
-                                    if (isClosed) open() else close()
-                                }
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    floatingActionButton = {
+                        screenOptions.fab?.let { fit ->
+                            val fabClick by appModel.fabClick.observeAsState({})
+                            FloatingActionButton(
+                                onClick = fabClick
+                            ) {
+                                Icon(fit.first, contentDescription = "")
                             }
-                        }) {
-                            Icon(
-                                imageVector = if (screenOptions.main) Icons.Filled.Menu else Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
-                            )
                         }
                     },
                 )
             },
+
         ) { screen ->
-            Box(modifier = Modifier.padding(screen)) {
+            Box() {
 
                 ScreenContent(
                     optionsChanged = {
