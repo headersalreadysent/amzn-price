@@ -6,15 +6,20 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.db.price_info.PriceInfo
+import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductDao
 
 
-@Database(entities = [Product::class], version = 1)
+@Database(entities = [Product::class,PriceInfo::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun product(): ProductDao
+
+    abstract fun priceInfo(): PriceInfoDao
+
 
 
     companion object {
