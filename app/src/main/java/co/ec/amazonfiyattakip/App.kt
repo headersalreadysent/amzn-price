@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip
 
 import android.content.Context
 import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.App
 import co.ec.helper.AppSharedSettings
 import co.ec.helper.utils.unix
@@ -31,6 +32,8 @@ class App : Application() {
         settings.putInt("appLastStart", unix().toInt())
 
         AppDatabase.getDatabase()
+
+        PriceUpdate.setupJob()
     }
 
 }
