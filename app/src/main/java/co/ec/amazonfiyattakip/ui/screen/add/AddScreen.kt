@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
@@ -31,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -60,17 +62,20 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
 
     DisposableEffect(Unit) {
         model.recordFromShareUrl()
-        AppModel.setFabClick {
-            //lets save product
-            model.saveProductToDatabase()
-        }
+        AppModel.noFab()
         onDispose {
 
         }
     }
     val product by model.product.observeAsState(null)
-
-
+    LaunchedEffect(product ) {
+        if(product!=null){
+            AppModel.setFab(Icons.Filled.Save) {
+                //lets save product
+                model.saveProductToDatabase()
+            }
+        }
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         if (product != null) {
             product?.let {
@@ -249,7 +254,7 @@ fun ProductScreen(product: Product) {
                 maxItemsInEachRow = 2,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                var extras by remember {
+                val extras by remember {
                     mutableStateOf(product.extraMap().toList())
                 }
                 extras.forEachIndexed { index, it ->

@@ -1,12 +1,13 @@
 package co.ec.amazonfiyattakip.db.product
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 @Dao
 interface ProductDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(product: Product) : Long
 
     @Query("SELECT * FROM product")

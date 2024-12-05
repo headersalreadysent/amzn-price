@@ -91,7 +91,9 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.runtime)
 
-    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.material.icons.extended)
+
 
 
 

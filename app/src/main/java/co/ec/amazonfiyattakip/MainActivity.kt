@@ -7,11 +7,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,10 +32,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.ui.AppProviders
+import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
-import co.ec.amazonfiyattakip.ui.part.ScreenOptions
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,15 +59,10 @@ fun AppContent(
     startDestination: String = "main", appModel: AppModel = viewModel()
 ) {
 
-    var screenOptions by remember { mutableStateOf(ScreenOptions()) }
-    LaunchedEffect(screenOptions) {
-        AppModel.setFabClick(screenOptions.fab?.second ?: {})
-    }
-
-
+    val fabAction by appModel.fabAction.observeAsState()
+    val navigator = LocalNavigation.current
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-
         snackbarHost = {
             val snackbarHostState = LocalSnackbar.current
             SnackbarHost(hostState = snackbarHostState)
@@ -73,7 +70,9 @@ fun AppContent(
         bottomBar = {
             BottomAppBar(
                 actions = {
-                    IconButton(onClick = { /* Handle click */ }) {
+                    IconButton(onClick = {
+                        navigator.navigate("main")
+                    }) {
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
                     IconButton(onClick = { /* Handle click */ }) {
@@ -84,32 +83,30 @@ fun AppContent(
                 containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                 contentColor = MaterialTheme.colorScheme.primary,
                 floatingActionButton = {
-                    screenOptions.fab?.let { fit ->
-                        val fabClick by appModel.fabClick.observeAsState({})
+                    fabAction?.let {
                         FloatingActionButton(
-                            onClick = fabClick
+                            onClick = it.second,
+                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
                         ) {
-                            Icon(fit.first, contentDescription = "")
+                            Icon(it.first, contentDescription = "")
                         }
                     }
                 },
             )
         }
 
-        ) { screen ->
-        Box() {
-
-            ScreenContent(
-                optionsChanged = {
-                    screenOptions = it
-                }, startDestination = startDestination
-            )
+    ) { screen ->
+        //make screen finish just below bottombar
+        Box(modifier = Modifier.padding(
+            bottom = (screen.calculateBottomPadding().value-5).dp)) {
+            ScreenContent(startDestination = startDestination)
         }
 
     }
 
 
 }
+
 
 
 @Preview(showBackground = true)

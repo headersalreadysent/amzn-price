@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.ui.screen.main
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,11 +15,7 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 
 @Composable
 fun MainScreen(model: MainScreenModel = viewModel()) {
-
-
-
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         Text(text = "main")
     }
 }
