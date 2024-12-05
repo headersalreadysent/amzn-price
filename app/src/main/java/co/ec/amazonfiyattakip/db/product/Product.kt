@@ -7,6 +7,8 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.helper.utils.unix
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
+import java.text.NumberFormat
+import java.util.Locale
 
 enum class ProductStatus {
     PASSIVE,
@@ -50,5 +52,27 @@ data class Product(
             comment = comment
         )
 
+    }
+
+    fun price(): String {
+        val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
+        return format.format(price.toFloat() / 100F)
+    }
+
+    companion object {
+        fun fake(): Product {
+            return Product(
+                id = 0,
+                asin = "B09JR8K6HJ",
+                date = 1728308992,
+                title = "Apple AirPods (3. nesil) ve MagSafe Şarj Kutusu,",
+                description = "Sesin etrafınızı sarmasını sağlayan, dinamik kafa izleme özellikli uzamsal ses teknolojisi Müziği kulağınızın şekline göre otomatik olarak ayarlayan Adaptif EQ Konturlu hatlara sahip yepyeni tasarım Eğlenceyi kolayca kontrol etmenize, gelen aramaları yanıtlamanıza veya sonlandırmanıza ve çok daha fazlasını yapmanıza imkan tanıyan kuvvet sensörü Tere ve suya dayanıklı tasarım Tek şarjla 6 saate kadar dinleme süresi MagSafe Şarj Kutusu ile toplamda 30 saate kadar dinleme süresi “Hey Siri” diye seslenerek Siri’ye hızlı erişim Sihirli bir deneyim için zahmetsiz kurulum, kulağa takılı olduğunu algılama ve otomatik geçiş özellikleri Aksesuarlar ayrı satılır. Apple Music için abonelik gerekir. Daha fazla göster › Daha fazla ürün bilgisi",
+                price = 661868,
+                star = 4.5,
+                comment = 1793,
+                image = "https://m.media-amazon.com/images/I/61Z5J-fq7KL.__AC_SY445_SX342_QL70_ML2_.jpg",
+                extras = "{\"Uyumlu Cihazlar\":\"Müzik Çalar\",\"Konnektör Türü\":\"Kablosuz\",\"Renk\":\"beyaz\",\"Marka\":\"Apple\",\"Ürün Ağırlığı\":\"0.18 Kilogram\"}"
+            )
+        }
     }
 }
