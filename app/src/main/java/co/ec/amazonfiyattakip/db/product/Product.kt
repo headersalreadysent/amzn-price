@@ -54,9 +54,22 @@ data class Product(
 
     }
 
+    /**
+     * write price as number format
+     */
     fun price(): String {
         val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
         return format.format(price.toFloat() / 100F)
+    }
+
+    /**
+     * return short desc
+     */
+    fun shortDesc(limit: Int = 50): String {
+        if (description.length > limit) {
+            return description.substring(0..limit) + "..."
+        }
+        return description
     }
 
     companion object {

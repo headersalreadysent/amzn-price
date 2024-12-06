@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import co.ec.amazonfiyattakip.db.AsinId
+import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.helper.utils.unix
 
 @Dao
@@ -28,8 +29,8 @@ interface ProductDao {
     /**
      * update next run time
      */
-    @Query("UPDATE product SET nextRunTime = nextRunTime+timeSpan WHERE id=:productId")
-    fun updateProductNextRun(productId: Int)
+    @Query("UPDATE product SET nextRunTime = nextRunTime+timeSpan, price = :price WHERE id=:productId")
+    fun updateProductNextRun(productId: Int, price: Int)
 
     /**
      * add error on product if it gaves error
@@ -51,5 +52,5 @@ interface ProductDao {
         page: Int = 1,
         limit: Int = 20,
         filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
-    ) : List<Product>
+    ): List<ProductWithPrices>
 }

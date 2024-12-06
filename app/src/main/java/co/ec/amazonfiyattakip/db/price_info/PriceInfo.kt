@@ -5,6 +5,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import co.ec.amazonfiyattakip.db.product.Product
+import java.text.NumberFormat
+import java.util.Locale
 
 @Entity(
     foreignKeys = [
@@ -27,4 +29,9 @@ data class PriceInfo(
     var price: Int = 0,
     var star: Double = 0.0,
     var comment: Int = 0,
-)
+) {
+    fun price(): String {
+        val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
+        return format.format(price.toFloat() / 100F)
+    }
+}

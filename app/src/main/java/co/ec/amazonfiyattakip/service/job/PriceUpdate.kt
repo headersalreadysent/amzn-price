@@ -85,7 +85,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 val priceInfo = product.toPriceInfo(asin.id)
                 priceInfoDao.insert(priceInfo)
                 //add next run time
-                productDao.updateProductNextRun(asin.id)
+                productDao.updateProductNextRun(asin.id,priceInfo.price)
             }
             //complete defer with correct price
             deferred.complete(Pair(asin.asin, product.price))
