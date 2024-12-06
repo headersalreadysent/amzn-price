@@ -1,8 +1,10 @@
 package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.Data
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -30,10 +32,17 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     companion object {
 
         fun setupJob() {
+
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+
             val updatePriceRequest =
                 PeriodicWorkRequestBuilder<PriceUpdate>(15, TimeUnit.MINUTES)
                     .setInitialDelay(15,TimeUnit.MINUTES)
                     .addTag("PriceUpdateJob")
+                    .setConstraints(constraints)
                     .build()
             val manager = WorkManager.getInstance(App.context())
 
@@ -46,6 +55,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             //run one time
             val updateNow = OneTimeWorkRequestBuilder<PriceUpdate>()
                 .addTag("PriceUpdateJob")
+                .setConstraints(constraints)
                 .build()
             manager.enqueue(updateNow)
         }

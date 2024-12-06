@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.helper.utils.dateString
 import coil.compose.rememberAsyncImagePainter
@@ -60,9 +61,13 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
 @Composable
 fun ProductLine(product: ProductWithPrices) {
+    val navigator = LocalNavigation.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable {
+                navigator.navigate("detail/${product.product.id}")
+            }
             .padding(4.dp)
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(8.dp)
