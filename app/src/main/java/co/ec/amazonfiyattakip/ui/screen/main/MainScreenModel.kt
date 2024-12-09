@@ -30,7 +30,7 @@ open class MainScreenModel : ViewModel() {
 
     fun emulate() {
         //generate fake products
-        products.value = (1..15).map {
+        products.value = (1..5).map {
             val fake = Product.fake()
             return@map ProductWithPrices(product = fake, priceInfoList = (0..10).map {
                 var price=Random.nextFloat()*200+2500

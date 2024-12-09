@@ -61,6 +61,12 @@ interface ProductDao {
         filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
     ): List<ProductWithPrices>
 
+    @Query("SELECT * FROM product WHERE status NOT IN (:filteredStatus) ORDER BY date ASC LIMIT :limit  ")
+    fun getLatestProducts(
+        limit: Int = 20,
+        filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
+    ): List<ProductWithPrices>
+
     @Query("SELECT * FROM product WHERE id=:productId")
     fun getProduct(productId: Int) : Product
 }
