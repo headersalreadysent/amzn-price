@@ -41,6 +41,7 @@ import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.graph.PriceBar
 import co.ec.helper.utils.dateString
 import coil.compose.rememberAsyncImagePainter
 
@@ -118,7 +119,7 @@ fun ProductLine(product: ProductWithPrices) {
                         )
                     )
                     if (min != null && max != null) {
-                        PriceCanvas(
+                        PriceBar(
                             min.price.toFloat(),
                             max.price.toFloat(),
                             product.product.price.toFloat()
@@ -190,63 +191,5 @@ fun ProductLinePreview(model: MainScreenModel = viewModel()) {
         model.products.value?.let {
             ProductLine(it[0])
         }
-    }
-}
-
-@Composable
-fun PriceCanvas(minPrice: Float, maxPrice: Float, currentPrice: Float) {
-    val triangleSize = 8.dp
-    val primary = MaterialTheme.colorScheme.primary
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(10.dp)
-    ) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-        val startX = 8F
-        val endX = canvasWidth - 8f
-
-        // Calculate positions for prices
-        val currentX = startX + (currentPrice - minPrice) / (maxPrice - minPrice) * (size.width-16F)
-
-        // Draw line
-        drawLine(
-            color = Color.Gray,
-            start = Offset(startX, canvasHeight / 2),
-            end = Offset(endX, canvasHeight / 2),
-            strokeWidth = 4f
-        )
-
-        // Draw min point
-        drawCircle(
-            color = Color.Gray,
-            radius = 8f,
-            center = Offset(startX, canvasHeight / 2)
-        )
-
-        // Draw max point
-        drawCircle(
-            color = Color.Gray,
-            radius = 8f,
-            center = Offset(endX, canvasHeight / 2)
-        )
-
-        // Draw current price triangle
-        drawPath(
-            path = Path().apply {
-                moveTo(currentX, canvasHeight / 2 - triangleSize.toPx() / 2)
-                lineTo(
-                    currentX - triangleSize.toPx() / 2,
-                    canvasHeight / 2 + triangleSize.toPx() / 2
-                )
-                lineTo(
-                    currentX + triangleSize.toPx() / 2,
-                    canvasHeight / 2 + triangleSize.toPx() / 2
-                )
-                close()
-            },
-            color = primary
-        )
     }
 }

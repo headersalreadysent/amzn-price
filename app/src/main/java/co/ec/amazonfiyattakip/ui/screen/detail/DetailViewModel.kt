@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
 import kotlin.random.Random
@@ -27,6 +28,24 @@ open class DetailViewModel : ViewModel() {
         }, {
             product.value = it.first
             prices.value = it.second
+        })
+    }
+
+    fun stopFallowProduct() {
+        Async.run({
+            product.value?.let {
+                val copy = it.copy(
+                    status = ProductStatus.PASSIVE
+                )
+                return@run AppDatabase.getDatabase().product().update(copy)
+            }
+            return@run null
+        }, {
+            product.value = product.value?.let {
+                return@let it.copy(
+                    status = ProductStatus.PASSIVE
+                )
+            }
         })
     }
 

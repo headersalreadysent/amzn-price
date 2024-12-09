@@ -28,8 +28,12 @@ fun PriceGraph(
     onDrag: (pair: PriceGraphPair?) -> Unit = {}
 ) {
     var selectedIndex by remember { mutableIntStateOf(-1) }
-    val maxPrice = prices.maxOfOrNull { it.price } ?: 1f
-    val minPrice = prices.minOfOrNull { it.price } ?: 0f
+    var maxPrice = prices.maxOfOrNull { it.price } ?: 1f
+    var minPrice = prices.minOfOrNull { it.price } ?: 0f
+    if (minPrice == maxPrice) {
+        minPrice *= .8F
+        maxPrice *= 1.2F
+    }
     val partSize = 1F / prices.size
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(
@@ -46,7 +50,7 @@ fun PriceGraph(
                         selectedIndex = partCount.toInt()
                         try {
                             onDrag(prices[selectedIndex])
-                        } catch (e:ArrayIndexOutOfBoundsException){
+                        } catch (e: Throwable) {
                             onDrag(null)
                         }
                     }

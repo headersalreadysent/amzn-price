@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import co.ec.amazonfiyattakip.db.AsinId
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.helper.utils.unix
@@ -16,6 +17,12 @@ interface ProductDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(product: Product): Long
+
+    /**
+     * add product to database
+     */
+    @Update()
+    fun update(product: Product): Int
 
     /**
      * get waiting items
