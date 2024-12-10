@@ -40,7 +40,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
             val updatePriceRequest =
                 PeriodicWorkRequestBuilder<PriceUpdate>(15, TimeUnit.MINUTES)
-                    .setInitialDelay(15,TimeUnit.MINUTES)
+                    .setInitialDelay(15, TimeUnit.MINUTES)
                     .addTag("PriceUpdateJob")
                     .setConstraints(constraints)
                     .build()
@@ -95,7 +95,12 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 val priceInfo = product.toPriceInfo(asin.id)
                 priceInfoDao.insert(priceInfo)
                 //add next run time
-                productDao.updateProductNextRun(asin.id,priceInfo.price)
+                productDao.updateProductInfoAndNextRun(
+                    asin.id,
+                    priceInfo.price,
+                    product.star,
+                    product.comment
+                )
             }
             //complete defer with correct price
             deferred.complete(Pair(asin.asin, product.price))

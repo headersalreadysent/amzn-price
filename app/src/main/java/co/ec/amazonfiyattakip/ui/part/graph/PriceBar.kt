@@ -29,7 +29,8 @@ fun PriceBar(minPrice: Float, maxPrice: Float, currentPrice: Float) {
         val endX = canvasWidth - 8f
 
         // Calculate positions for prices
-        val currentX = startX + (currentPrice - minPrice) / (maxPrice - minPrice) * (size.width-16F)
+        val currentX =
+            startX + (currentPrice - minPrice) / (maxPrice - minPrice) * (size.width - 16F)
 
         // Draw line
         drawLine(
@@ -74,7 +75,7 @@ fun PriceBar(minPrice: Float, maxPrice: Float, currentPrice: Float) {
 
 @Preview(showBackground = true)
 @Composable
-fun PriceBarPreview(){
+fun PriceBarPreview() {
     PreviewProviders {
         PriceBar(minPrice = 100F, maxPrice = 30F, currentPrice = 70F)
     }

@@ -36,8 +36,8 @@ interface ProductDao {
     /**
      * update next run time
      */
-    @Query("UPDATE product SET nextRunTime = nextRunTime+timeSpan, price = :price WHERE id=:productId")
-    fun updateProductNextRun(productId: Int, price: Int)
+    @Query("UPDATE product SET nextRunTime = nextRunTime+timeSpan, price = :price, star = :star, comment = :comment WHERE id=:productId")
+    fun updateProductInfoAndNextRun(productId: Int, price: Int, star: Double, comment: Int)
 
     /**
      * add error on product if it gaves error
@@ -68,5 +68,5 @@ interface ProductDao {
     ): List<ProductWithPrices>
 
     @Query("SELECT * FROM product WHERE id=:productId")
-    fun getProduct(productId: Int) : Product
+    fun getProduct(productId: Int): Product
 }
