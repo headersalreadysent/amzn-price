@@ -3,14 +3,19 @@ package co.ec.amazonfiyattakip.ui.screen.main
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,113 +64,118 @@ fun ProductLine(product: ProductWithPrices) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .background(MaterialTheme.colorScheme.surfaceContainer,
+                RoundedCornerShape(4.dp)
+            )
             .clickable {
                 navigator.navigate("detail/${product.product.id}")
             }
-            .padding(bottom = 4.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(8.dp)
     ) {
-        ProductImage(
-            product.product,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .weight(1F)
-                .aspectRatio(1F)
-        )
-        Column(
-            modifier = Modifier
-                .weight(4F)
-                .padding(start = 8.dp)
-                .padding(2.dp)
-        ) {
-            Text(
-                text = product.product.title,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+        Box(modifier = Modifier.fillMaxWidth()
+            .height(IntrinsicSize.Min)) {
+            ProductImage(
+                product.product,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth(.3F)
+                    .fillMaxHeight()
+                    .align(Alignment.CenterEnd)
             )
-            Text(
-                text = product.product.shortDesc(),
-                style = MaterialTheme.typography.bodySmall
-                    .copy(
-                        color = MaterialTheme.typography.bodySmall.color.copy(alpha = .8F)
-                    )
-            )
-            Row(modifier = Modifier.padding(top = 8.dp)) {
-                val min = product.priceInfoList.minByOrNull { it.price }
-                val max = product.priceInfoList.maxByOrNull { it.price }
-                Column(
-                    modifier = Modifier
-                        .weight(1F)
-                        .padding(end = 16.dp)
-                ) {
-                    Text(
-                        text = "Şu an",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        text = product.product.price(),
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(.75F)
+                    .padding(start = 8.dp)
+                    .padding(6.dp)
+            ) {
+                Text(
+                    text = product.product.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = product.product.shortDesc(),
+                    style = MaterialTheme.typography.bodySmall
+                        .copy(
+                            color = MaterialTheme.typography.bodySmall.color.copy(alpha = .8F)
                         )
-                    )
-                    if (min != null && max != null) {
-                        PriceBar(
-                            min.price.toFloat(),
-                            max.price.toFloat(),
-                            product.product.price.toFloat()
-                        )
-                    }
-                }
-                min?.let {
+                )
+                Row(modifier = Modifier.padding(top = 8.dp)) {
+                    val min = product.priceInfoList.minByOrNull { it.price }
+                    val max = product.priceInfoList.maxByOrNull { it.price }
                     Column(
-                        modifier = Modifier.padding(start = 8.dp),
-                        horizontalAlignment = Alignment.End
+                        modifier = Modifier
+                            .weight(1F)
+                            .padding(end = 16.dp)
                     ) {
                         Text(
-                            text = "En Düşük",
+                            text = "Şu an",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            text = min.date.dateString("dd.MM.YYYY"),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            text = min.price(),
-                            style = MaterialTheme.typography.bodyMedium.copy(
+                            text = product.product.price(),
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         )
-                    }
-                }
-                max?.let {
-                    Column(
-                        modifier = Modifier.padding(start = 8.dp),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            text = "En Yüksek",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            text = max.date.dateString("dd.MM.yyy"),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            text = max.price(),
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.SemiBold
+                        if (min != null && max != null) {
+                            PriceBar(
+                                min.price.toFloat(),
+                                max.price.toFloat(),
+                                product.product.price.toFloat()
                             )
-                        )
+                        }
+                    }
+                    min?.let {
+                        Column(
+                            modifier = Modifier.padding(start = 8.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Text(
+                                text = "En Düşük",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = min.date.dateString("dd.MM.YYYY"),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = min.price(),
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            )
+                        }
+                    }
+                    max?.let {
+                        Column(
+                            modifier = Modifier.padding(start = 8.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Text(
+                                text = "En Yüksek",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = max.date.dateString("dd.MM.yyy"),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = max.price(),
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            )
+                        }
                     }
                 }
             }
         }
+
     }
 }
-
 
 
 @Composable

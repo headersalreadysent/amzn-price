@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -146,36 +147,17 @@ fun DetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
-                    .aspectRatio(2F)
+                    .height(IntrinsicSize.Min)
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    Box(
+                    ProductImage(
+                        product,
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {
-                        ProductImage(
-                            product,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth(.4F)
-                                .fillMaxHeight(),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(.4F)
-                                .fillMaxHeight()
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(
-                                            CardDefaults.cardColors().containerColor,
-                                            Color.Transparent
-                                        )
-                                    )
-                                )
-                        )
-
-                    }
+                            .fillMaxWidth(.4F)
+                            .fillMaxHeight()
+                            .align(Alignment.CenterEnd),
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(.7F)
