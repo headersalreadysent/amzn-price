@@ -42,7 +42,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 PeriodicWorkRequestBuilder<PriceUpdate>(15, TimeUnit.MINUTES)
                     .setInitialDelay(15, TimeUnit.MINUTES)
                     .addTag("PriceUpdateJob")
-                    .setConstraints(constraints)
+                   // .setConstraints(constraints)
                     .build()
             val manager = WorkManager.getInstance(App.context())
 
@@ -55,7 +55,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             //run one time
             val updateNow = OneTimeWorkRequestBuilder<PriceUpdate>()
                 .addTag("PriceUpdateJob")
-                .setConstraints(constraints)
+                //.setConstraints(constraints)
                 .build()
             manager.enqueue(updateNow)
         }

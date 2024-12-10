@@ -22,6 +22,7 @@ data class PriceGraphPair(var date: Long, var price: Float)
 
 @Composable
 fun PriceGraph(
+    modifier: Modifier = Modifier,
     prices: List<PriceGraphPair>,
     color: Color = MaterialTheme.colorScheme.primary,
     circleColor: Color = MaterialTheme.colorScheme.onPrimary,
@@ -34,17 +35,17 @@ fun PriceGraph(
         minPrice *= .8F
         maxPrice *= 1.2F
     }
-    val partSize = 1F / prices.size
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().then(modifier)) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
+                .pointerInput(prices) {
                     detectDragGestures(onDragEnd = {
                         selectedIndex = -1
                         onDrag(null)
                     }) { change, _ ->
                         // Get the x position of the drag
+                        val partSize = 1F / prices.size
                         val x = change.position.x / size.width
                         val partCount = floor((x / partSize).toDouble())
                         selectedIndex = partCount.toInt()
@@ -114,6 +115,6 @@ fun PriceGraphPreview() {
             .aspectRatio(2F)
     ) {
 
-        PriceGraph(sampleData)
+        PriceGraph(prices = sampleData)
     }
 }

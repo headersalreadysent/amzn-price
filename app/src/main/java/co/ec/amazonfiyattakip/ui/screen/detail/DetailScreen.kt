@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -79,6 +81,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
+import co.ec.amazonfiyattakip.composables.CutCorner
+import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.CoilTrimTransform
@@ -143,11 +147,15 @@ fun DetailScreen(
                 .verticalScroll(scrollState)
                 .statusBarsPadding()
         ) {
-            Card(
+
+            CutCornerCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
-                    .height(IntrinsicSize.Min)
+                    .height(IntrinsicSize.Min),
+                corner = CutCorner.BOTTOMRIGHT,
+                cutSize = 30.dp
+
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     ProductImage(
@@ -232,7 +240,9 @@ fun DetailScreen(
                         }
                     } else {
                         TreePriceRow(it)
-                        PricesGraphWithDrag(showOnlyChanges, it)
+                        PricesGraphWithDrag(showOnlyChanges, it) {
+                            showOnlyChanges=!showOnlyChanges
+                        }
                     }
                 }
 
@@ -382,7 +392,8 @@ fun TreePriceRow(prices: List<PriceInfo>) {
 @Composable
 fun PricesGraphWithDrag(
     showOnlyChanges: Boolean,
-    prices: List<PriceInfo>
+    prices: List<PriceInfo>,
+    then: (() -> Unit) = {}
 ) {
     val graphData by remember {
         mutableStateOf(
@@ -461,6 +472,12 @@ fun PricesGraphWithDrag(
             }
         }
         PriceGraph(
+            modifier = Modifier.clickable(
+                interactionSource = null,
+                indication = null
+            ) {
+                then()
+            },
             if (showOnlyChanges) onlyChanges else graphData, onDrag = {
                 dragValue = it
             })
