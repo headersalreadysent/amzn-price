@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip
 
-import android.content.Context
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.App

@@ -1,14 +1,17 @@
 package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
+import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.await
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.AsinId
@@ -31,8 +34,36 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
     companion object {
 
+        val JOBTAG = "PriceUpdateJob"
+
         fun setupJob() {
 
+            val manager = WorkManager.getInstance(App.context())
+            //test if work cancelled restart it
+            val list = manager.getWorkInfosByTag(JOBTAG)
+            list.addListener(
+                {
+                    val workInfos = list.get()
+                    workInfos?.forEach { workInfo ->
+                        when (workInfo.state) {
+                            WorkInfo.State.CANCELLED -> {
+                                AppLogger.d("$JOBTAG is cancelled","Job")
+                                startJob()
+                            }
+                            else -> {
+                                AppLogger.d("$JOBTAG state is ${workInfo.state}","job")
+                            }
+                        }
+                    }
+                },
+                ContextCompat.getMainExecutor(App.context())
+            )
+
+
+        }
+
+        fun startJob() {
+            val manager = WorkManager.getInstance(App.context())
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
@@ -41,23 +72,17 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             val updatePriceRequest =
                 PeriodicWorkRequestBuilder<PriceUpdate>(15, TimeUnit.MINUTES)
                     .setInitialDelay(15, TimeUnit.MINUTES)
-                    .addTag("PriceUpdateJob")
-                   // .setConstraints(constraints)
+                    .addTag(JOBTAG)
+                    // .setConstraints(constraints)
                     .build()
-            val manager = WorkManager.getInstance(App.context())
 
             //clear all jobs
-            manager.cancelAllWorkByTag("PriceUpdateJob")
+            manager.cancelAllWorkByTag(JOBTAG)
             manager.pruneWork()
             //add jobs
             manager.enqueue(updatePriceRequest)
 
-            //run one time
-            val updateNow = OneTimeWorkRequestBuilder<PriceUpdate>()
-                .addTag("PriceUpdateJob")
-                //.setConstraints(constraints)
-                .build()
-            manager.enqueue(updateNow)
+            AppLogger.d("$JOBTAG is started","Job")
         }
     }
 
