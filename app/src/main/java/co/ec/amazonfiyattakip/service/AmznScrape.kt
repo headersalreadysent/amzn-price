@@ -64,6 +64,7 @@ class AmznScrape {
                 }
             }, {
                 AppLogger.e("amzn", it)
+                err(it)
             })
         })
 

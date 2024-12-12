@@ -33,6 +33,22 @@ fun ProductImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
 ) {
+    ProductImage(
+        image = product.image,
+        title = product.title,
+        modifier = modifier,
+        contentScale = contentScale
+    )
+}
+
+@Composable
+fun ProductImage(
+    image: String,
+    title: String,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
+    showGradient: Boolean = true
+) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.CenterEnd
@@ -43,7 +59,7 @@ fun ProductImage(
         } else {
             rememberAsyncImagePainter(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(product.image)
+                    .data(image)
                     .crossfade(true)
                     .transformations(CoilTrimTransform())
                     .build()
@@ -51,22 +67,25 @@ fun ProductImage(
         }
         Image(
             painter = painter,
-            contentDescription = product.title,
+            contentDescription = title,
             contentScale = contentScale,
             modifier = Modifier.matchParentSize()
         )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            CardDefaults.cardColors().containerColor.copy(alpha = 1F),
-                            Color.Transparent
+        if (showGradient) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                CardDefaults.cardColors().containerColor.copy(alpha = 1F),
+                                Color.Transparent
+                            )
                         )
                     )
-                )
-        )
+            )
+        }
+
 
     }
 }

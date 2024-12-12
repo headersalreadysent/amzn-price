@@ -1,102 +1,280 @@
 package co.ec.amazonfiyattakip.ui.screen.main
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.outlined.QuestionMark
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.cutShape
+import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.ProductWithPrices
+import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceBar
+import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
+import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.utils.dateString
+import co.ec.helper.utils.timeString
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MainScreen(model: MainScreenModel = viewModel()) {
-    val products by model.products.observeAsState()
 
+    val navigator = LocalNavigation.current
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Row(
+        CutCornerCard(
             modifier = Modifier
                 .fillMaxWidth()
+                .aspectRatio(1.5F),
+            colors = CardDefaults.cardColors().copy(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            cutSize = 20.dp
         ) {
-            FlowRow(
+            Column(
                 modifier = Modifier
+                    .padding(8.dp)
                     .statusBarsPadding()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                maxItemsInEachRow = 2
             ) {
-                TopInfoBox(
-                    icon = Icons.Filled.Search,
-                    title = "Takip Sayısı",
-                    value = "2",
-                    weight = 2F
-                )
-                TopInfoBox(
-                    icon = Icons.Filled.Update,
-                    title = "Güncelleme sayısı",
-                    value = "35",
-                    weight = 3F
-                )
-                TopInfoBox(
-                    icon = Icons.Filled.ShoppingCart,
-                    title = "Sepet Toplamı",
-                    value = "426"
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(bottom = 4.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ASIN kodu ile takip et",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                            )
+                        )
+                        Icon(
+                            Icons.Outlined.QuestionMark, contentDescription = "asin?",
+                            modifier = Modifier
+                                .height(20.dp)
+                                .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
+                                .scale(.7F)
+                                .clickable {
 
+                                },
+                            tint = MaterialTheme.colorScheme.primary
+                        )
 
+                    }
+                    var asinCode by remember { mutableStateOf("") }
+                    Row(modifier = Modifier.height(56.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .height(56.dp)
+                                .background(MaterialTheme.colorScheme.onPrimary)
+                                .weight(1F)
+                        ) {
+                            TextField(
+                                modifier = Modifier
+                                    .fillMaxWidth(1F)
+                                    .defaultMinSize(minHeight = ButtonDefaults.MinHeight),
+                                colors = TextFieldDefaults.colors(
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                                    focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                placeholder = { Text(text = "ASIN") },
+                                value = asinCode,
+                                onValueChange = {
+                                    asinCode = it.uppercase()
+                                },
+                                shape = RoundedCornerShape(topStart = 2.dp, bottomStart = 2.dp),
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Characters
+                                )
+                            )
+                        }
+                        Button(
+                            onClick = { /*TODO*/ },
+                            modifier = Modifier.height(56.dp),
+                            colors = ButtonDefaults.buttonColors().copy(
+                                containerColor = MaterialTheme.colorScheme.onPrimary.copy(
+                                    alpha = .95F
+                                ),
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = cutShape(),
+                        ) {
+                            Text(text = "Ekle")
+                        }
+                    }
+
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1F)
+                    .fillMaxWidth()
+            ) {
+                val dailyTotals by model.dailyTotals.observeAsState()
+                dailyTotals?.let {
+                    var selectValue by remember {
+                        mutableStateOf<PriceGraphPair?>(null)
+                    }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            text = (selectValue?.date?.dateString() ?: "Bugün"),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = (selectValue?.price?.times(100) ?: it.last().total).toInt()
+                                .price(),
+                            style = MaterialTheme.typography.titleLarge
+                                .copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                        )
+                    }
+                    PriceGraph(
+                        prices = it.map {
+                            PriceGraphPair(it.date, it.total / 100F)
+                        },
+                        color = MaterialTheme.colorScheme.onPrimary.copy(
+                            alpha = .5F
+                        ),
+                        onDrag = {
+                            selectValue = it
+                        }
+                    )
+                }
             }
 
         }
-        Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+        FlowRow(
+            modifier = Modifier
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = 2
+        ) {
+            TopInfoBox(
+                icon = Icons.Filled.Search,
+                title = "Takip",
+                value = "2"
+            )
+            TopInfoBox(
+                icon = Icons.Filled.Update,
+                title = "Güncelleme",
+                value = "35"
+            )
+        }
+
+
+        model.latestUpdates?.let { state ->
+            Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+                val latestUpdates by state.collectAsState()
+                TitleBar(title = "Son Güncellemeler")
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+
+                    ) {
+                    latestUpdates.let { updates ->
+                        items(updates.size) {
+                            LatestUpdate(updates[it]) {
+                                navigator.navigate("detail/${it.productId}")
+                            }
+
+                        }
+                    }
+                }
+            }
+
+
+            val products by model.products.observeAsState()
             TitleBar(title = "Son Takipler")
             products?.forEach {
                 ProductLine(it)
             }
-            TitleBar(title = "Yeni Takip Ekle")
+
         }
 
 
@@ -227,18 +405,18 @@ fun ProductLine(product: ProductWithPrices) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RowScope.TopInfoBox(
+fun FlowRowScope.TopInfoBox(
     modifier: Modifier = Modifier,
     title: String = " ",
     value: String = " ",
     icon: ImageVector? = null,
-    weight: Float = 1F
 ) {
     CutCornerCard(
         modifier = Modifier
-            .weight(weight)
-            .padding(bottom = 8.dp)
+            .weight(1F)
+            .padding(vertical = 8.dp)
             .then(modifier),
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -279,6 +457,98 @@ fun RowScope.TopInfoBox(
 
     }
 }
+
+@Composable
+fun LazyItemScope.LatestUpdate(
+    update: LatestUpdate,
+    onClick: (update: LatestUpdate) -> Unit = {}
+) {
+    val cutShape = cutShape(corner = CutCorner.BOTTOMRIGHT)
+
+    Box(
+        modifier = Modifier
+            .fillParentMaxWidth(.4F)
+            .clickable {
+                onClick(update)
+            }
+            .aspectRatio(1F)
+            .padding(vertical = 8.dp)
+            .border(
+                1.dp, MaterialTheme.colorScheme.surfaceVariant,
+                cutShape(corner = CutCorner.BOTTOMRIGHT)
+            )
+            .background(MaterialTheme.colorScheme.primaryContainer, cutShape)
+            .clip(cutShape)
+
+    ) {
+        ProductImage(
+            image = update.image, title = update.title,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent, cutShape)
+                .blur(2.dp),
+            showGradient = false
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    MaterialTheme.colorScheme.surface.copy(
+                        alpha = .5F
+                    )
+                )
+        )
+        Text(
+            text = update.title,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(
+                    MaterialTheme.colorScheme.surface,
+                    cutShape(corner = CutCorner.TOPLEFT)
+                )
+                .padding(top = 8.dp)
+                .padding(horizontal = 4.dp)
+                .padding(bottom = 4.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                textAlign = TextAlign.Justify,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            ),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(8.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(top = 8.dp)
+                .padding(horizontal = 4.dp)
+                .padding(bottom = 4.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+
+            Text(
+                text = update.date.timeString(),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 10.sp
+                )
+            )
+            Text(
+                text = update.price.price(),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
+
+
+    }
+}
+
 
 @Composable
 @Preview(showBackground = true)

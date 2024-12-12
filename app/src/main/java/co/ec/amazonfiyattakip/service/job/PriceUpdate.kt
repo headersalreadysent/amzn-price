@@ -44,14 +44,23 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             list.addListener(
                 {
                     val workInfos = list.get()
+                    AppLogger.d("$JOBTAG is $workInfos", "Job")
+                    if (workInfos != null && workInfos.isEmpty()) {
+                        startJob()
+                        return@addListener
+                    }
                     workInfos?.forEach { workInfo ->
                         when (workInfo.state) {
                             WorkInfo.State.CANCELLED -> {
-                                AppLogger.d("$JOBTAG is cancelled","Job")
+                                AppLogger.d("$JOBTAG is cancelled", "Job")
+                                startJob()
+                            }
+                            WorkInfo.State.FAILED -> {
+                                AppLogger.d("$JOBTAG is failed", "Job")
                                 startJob()
                             }
                             else -> {
-                                AppLogger.d("$JOBTAG state is ${workInfo.state}","job")
+                                AppLogger.d("$JOBTAG state is ${workInfo.state}", "job")
                             }
                         }
                     }
@@ -71,7 +80,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
             val updatePriceRequest =
                 PeriodicWorkRequestBuilder<PriceUpdate>(15, TimeUnit.MINUTES)
-                    .setInitialDelay(15, TimeUnit.MINUTES)
+                   // .setInitialDelay(1, TimeUnit.MINUTES)
                     .addTag(JOBTAG)
                     // .setConstraints(constraints)
                     .build()
@@ -82,7 +91,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             //add jobs
             manager.enqueue(updatePriceRequest)
 
-            AppLogger.d("$JOBTAG is started","Job")
+            AppLogger.d("$JOBTAG is started", "Job")
         }
     }
 
@@ -90,6 +99,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         return try {
             coroutineScope {
                 val asinList = productDao.getScrapeWaitingAsinCodes()
+                AppLogger.d("$JOBTAG products: $asinList", "Job")
                 val responseList = asinList.map {
                     return@map async { collectDayInfo(it) }
                 }.awaitAll()
@@ -101,6 +111,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 Result.success(outputData)
             }
         } catch (e: Exception) {
+            AppLogger.e("$JOBTAG ${e.localizedMessage}", e,"Job")
             Result.failure()
         }
     }
@@ -111,10 +122,12 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
      */
     private suspend fun collectDayInfo(asin: AsinId): Pair<String, Int> {
 
+        AppLogger.d("$JOBTAG product $asin", "Job")
         val deferred = CompletableDeferred<Pair<String, Int>>()
 
         //collect one asin
         scraper.scrapeFromAsin(asin.asin, { product ->
+
             //insert into database
             thread {
                 val priceInfo = product.toPriceInfo(asin.id)
@@ -126,6 +139,8 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     product.star,
                     product.comment
                 )
+
+                AppLogger.d("$JOBTAG ${product.price} : ${product.title}", "Job")
             }
             //complete defer with correct price
             deferred.complete(Pair(asin.asin, product.price))
