@@ -85,6 +85,7 @@ import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.LocalNavigation
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.amazonfiyattakip.ui.part.TitleBar
@@ -215,35 +216,45 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                     var selectValue by remember {
                         mutableStateOf<PriceGraphPair?>(null)
                     }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = (selectValue?.date?.dateString() ?: "Bugün"),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = (selectValue?.price?.times(100) ?: it.last().total).toInt()
-                                .price(),
-                            style = MaterialTheme.typography.titleLarge
-                                .copy(
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                        )
-                    }
-                    PriceGraph(
-                        prices = it.map {
-                            PriceGraphPair(it.date, it.total / 100F)
-                        },
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                            alpha = .6F
-                        ),
-                        onDrag = {
-                            selectValue = it
+                    if (it.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = (selectValue?.date?.dateString() ?: "Bugün"),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = (selectValue?.price?.times(100) ?: it.last().total).toInt()
+                                    .price(),
+                                style = MaterialTheme.typography.titleLarge
+                                    .copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                            )
                         }
-                    )
+                        PriceGraph(
+                            prices = it.map {
+                                PriceGraphPair(it.date, it.total / 100F)
+                            },
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                alpha = .6F
+                            ),
+                            onDrag = {
+                                selectValue = it
+                            }
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
+                            Button(onClick = { /*TODO*/ }) {
+                                Text(text = "Nasıl ürün eklerim?")
+                            }
+                        }
+                    }
+
+
                 }
             }
 
@@ -254,73 +265,112 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 .verticalScroll(rememberScrollState())
                 .zIndex(0F)
                 .offset(y = (-5).dp)
-                .padding(top = (height.value-5).dp)
+                .padding(top = (height.value - 5).dp)
         ) {
-
-            FlowRow(
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .padding(top = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                maxItemsInEachRow = 2
-            ) {
-                TopInfoBox(
-                    icon = Icons.Filled.Search,
-                    title = "Takip",
-                    value = "2"
-                )
-                TopInfoBox(
-                    icon = Icons.Filled.Update,
-                    title = "Güncelleme",
-                    value = "35"
-                )
-            }
+                    .height(20.dp)
+                    .fillMaxWidth()
+            )
+            val stats by model.stats.observeAsState()
+            stats?.let {
+                if (it["product"]!! > 0) {
+                    FlowRow(
+                        modifier = Modifier
+                            .padding(top = 5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        maxItemsInEachRow = 2
+                    ) {
+                        TopInfoBox(
+                            icon = Icons.Filled.Search,
+                            title = "Takip",
+                            value = it["product"].toString()
+                        )
+                        TopInfoBox(
+                            icon = Icons.Filled.Update,
+                            title = "Güncelleme",
+                            value = it["update"].toString()
+                        )
+                    }
+                }
 
+
+            }
 
             model.latestUpdates?.let { state ->
                 Column(modifier = Modifier.padding()) {
                     val latestUpdates by state.collectAsState()
-                    TitleBar(
-                        title = "Son Güncellemeler",
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    latestUpdates.let { updates ->
+                        if (updates.isNotEmpty()) {
+                            TitleBar(
+                                title = "Son Güncellemeler",
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            LazyRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(updates.size) {
+                                    LatestUpdate(
+                                        updates[it],
+                                        isFirst = it == 0
+                                    ) {
+                                        navigator.navigate("detail/${it.productId}")
+                                    }
 
-                        ) {
-                        latestUpdates.let { updates ->
-                            items(updates.size) {
-                                LatestUpdate(
-                                    updates[it],
-                                    isFirst = it == 0
-                                ) {
-                                    navigator.navigate("detail/${it.productId}")
                                 }
-
                             }
+                            HorizontalDivider(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        horizontal = 8.dp,
+                                        vertical = 5.dp
+                                    )
+                            )
                         }
+
                     }
                 }
 
             }
-            HorizontalDivider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = 8.dp,
-                        vertical = 5.dp
-                    )
-            )
 
 
             val products by model.products.observeAsState()
-            TitleBar(
-                title = "Son Takipler",
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-            products?.forEach {
-                ProductLine(it)
+            products?.let {
+                if (it.isNotEmpty()) {
+                    TitleBar(
+                        title = "Son Takipler",
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    it.forEach {
+                        ProductLine(it)
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .weight(1F)
+                            .fillMaxWidth(), Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Hiç Ürün Bulunmuyor",
+                                modifier = Modifier.padding(bottom = 8.dp))
+                            val settings = LocalSettings.current
+                            val navigation = LocalNavigation.current
+                            Button(onClick = {
+                                model.addOneDeal {
+                                    settings.putString("sharedUrl", it)
+                                    navigation.navigate("add")
+                                }
+                            }) {
+                                Text(text = "Fırsat Ürünlerinden ekle")
+                            }
+                        }
+
+                    }
+                }
             }
 
         }
@@ -524,7 +574,7 @@ fun LazyItemScope.LatestUpdate(
             .clickable {
                 onClick(update)
             }
-            .border(2.dp, MaterialTheme.colorScheme.surfaceVariant,cutShape)
+            .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, cutShape)
             .background(MaterialTheme.colorScheme.secondaryContainer, cutShape)
             .clip(cutShape)
 
@@ -542,26 +592,26 @@ fun LazyItemScope.LatestUpdate(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = .5F))
         )
-       /* Text(
-            text = update.title,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .background(
-                    MaterialTheme.colorScheme.surface.copy(alpha = .9F),
-                    cutShape(corner = CutCorner.TOPLEFT)
-                )
-                .padding(top = 8.dp)
-                .padding(horizontal = 4.dp)
-                .padding(bottom = 4.dp),
-            style = MaterialTheme.typography.bodyMedium.copy(
-                textAlign = TextAlign.Justify,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            ),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )*/
+        /* Text(
+             text = update.title,
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .padding(8.dp)
+                 .background(
+                     MaterialTheme.colorScheme.surface.copy(alpha = .9F),
+                     cutShape(corner = CutCorner.TOPLEFT)
+                 )
+                 .padding(top = 8.dp)
+                 .padding(horizontal = 4.dp)
+                 .padding(bottom = 4.dp),
+             style = MaterialTheme.typography.bodyMedium.copy(
+                 textAlign = TextAlign.Justify,
+                 fontWeight = FontWeight.SemiBold,
+                 color = MaterialTheme.colorScheme.primary
+             ),
+             maxLines = 2,
+             overflow = TextOverflow.Ellipsis
+         )*/
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)

@@ -11,6 +11,7 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,13 +28,26 @@ open class MainScreenModel : ViewModel() {
     var dailyTotals = MutableLiveData<List<DailyTotal>>()
     var latestUpdates: StateFlow<List<LatestUpdate>>? = null
 
+    var stats = MutableLiveData<Map<String, Int>>()
+
     private var priceDao: PriceInfoDao? = null
 
     init {
         loadProducts()
         loadDailyTotals()
         loadLatestUpdates()
+        calculateStats()
+    }
 
+    private fun calculateStats() {
+        Async.run({
+            return@run mapOf(
+                "product" to AppDatabase.getDatabase().product().getCount(),
+                "update" to AppDatabase.getDatabase().priceInfo().getCount()
+            )
+        }, {
+            stats.value = it
+        })
     }
 
 
@@ -45,9 +59,7 @@ open class MainScreenModel : ViewModel() {
 
             latestUpdates = AppDatabase.getDatabase().priceInfo().getLatestUpdates()
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-        } catch (_:Throwable) {
-
-
+        } catch (_: Throwable) {
 
         }
 
@@ -100,7 +112,7 @@ open class MainScreenModel : ViewModel() {
             DailyTotal(date = unix() - (30 - it) * 86400, firstPrice)
         }
 
-        val list= (1..30).map {
+        val list = (1..30).map {
             return@map LatestUpdate(
                 productId = 0,
                 date = unix() - it * 60 * 60,
@@ -110,10 +122,17 @@ open class MainScreenModel : ViewModel() {
             )
         }
 
-        latestUpdates= MutableStateFlow<List<LatestUpdate>>(emptyList())
+        latestUpdates = MutableStateFlow<List<LatestUpdate>>(emptyList())
         viewModelScope.launch {
             (latestUpdates as MutableStateFlow<List<LatestUpdate>>).emit(list)
         }
+    }
+
+    fun addOneDeal(then: (url:String) -> Unit = {}) {
+        AmznScrape().getPopular({
+            val dealAsin = it.first()
+            then(AmznScrape.urlFromAsin(dealAsin))
+        })
     }
 
 }
