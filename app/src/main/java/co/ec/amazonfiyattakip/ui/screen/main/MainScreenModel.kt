@@ -30,23 +30,26 @@ open class MainScreenModel : ViewModel() {
     private var priceDao: PriceInfoDao? = null
 
     init {
-        priceDao = AppDatabase.getDatabase().priceInfo()
         loadProducts()
         loadDailyTotals()
         loadLatestUpdates()
 
     }
 
-    override fun onCleared() {
-        super.onCleared()
-    }
 
     /**
      * load daily updates
      */
     private fun loadLatestUpdates() {
-        latestUpdates = priceDao!!.getLatestUpdates()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        try {
+
+            latestUpdates = AppDatabase.getDatabase().priceInfo().getLatestUpdates()
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        } catch (_:Throwable) {
+
+
+
+        }
 
     }
 
@@ -55,7 +58,7 @@ open class MainScreenModel : ViewModel() {
      */
     private fun loadDailyTotals() {
         Async.run({
-            return@run priceDao!!.getDailyTotalPrices()
+            return@run AppDatabase.getDatabase().priceInfo().getDailyTotalPrices()
         }, {
             dailyTotals.value = it
         })

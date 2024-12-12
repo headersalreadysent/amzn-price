@@ -11,6 +11,7 @@ import androidx.compose.material3.CardElevation
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -54,9 +55,10 @@ fun CutCornerCard(
     border: BorderStroke? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val shape=cutShape(corner,cutSize)
     Card(
-        modifier = modifier,
-        shape = cutShape(corner,cutSize),
+        modifier = modifier.clip(shape),
+        shape = shape,
         colors = colors,
         elevation = elevation,
         border = border

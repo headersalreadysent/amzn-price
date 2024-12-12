@@ -19,15 +19,18 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -36,6 +39,7 @@ import androidx.compose.material.icons.outlined.QuestionMark
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,9 +63,12 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +76,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
@@ -92,19 +100,30 @@ import coil.compose.AsyncImage
 fun MainScreen(model: MainScreenModel = viewModel()) {
 
     val navigator = LocalNavigation.current
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
+        var height by remember {
+            mutableStateOf(5.dp)
+        }
+        val density = LocalDensity.current
         CutCornerCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1.5F),
+                .aspectRatio(1.5F)
+                .zIndex(1F)
+                .onGloballyPositioned {
+                    height = with(density) { it.size.height.toDp() }
+                },
             colors = CardDefaults.cardColors().copy(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ),
-            cutSize = 20.dp
+            cutSize = 10.dp,
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 30.dp
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -218,8 +237,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                         prices = it.map {
                             PriceGraphPair(it.date, it.total / 100F)
                         },
-                        color = MaterialTheme.colorScheme.onPrimary.copy(
-                            alpha = .5F
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                            alpha = .6F
                         ),
                         onDrag = {
                             selectValue = it
@@ -229,48 +248,77 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             }
 
         }
-        FlowRow(
+        Column(
             modifier = Modifier
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            maxItemsInEachRow = 2
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .zIndex(0F)
+                .offset(y = (-5).dp)
+                .padding(top = (height.value-5).dp)
         ) {
-            TopInfoBox(
-                icon = Icons.Filled.Search,
-                title = "Takip",
-                value = "2"
-            )
-            TopInfoBox(
-                icon = Icons.Filled.Update,
-                title = "Güncelleme",
-                value = "35"
-            )
-        }
 
-
-        model.latestUpdates?.let { state ->
-            Column(modifier = Modifier.padding(horizontal = 8.dp)) {
-                val latestUpdates by state.collectAsState()
-                TitleBar(title = "Son Güncellemeler")
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-
-                    ) {
-                    latestUpdates.let { updates ->
-                        items(updates.size) {
-                            LatestUpdate(updates[it]) {
-                                navigator.navigate("detail/${it.productId}")
-                            }
-
-                        }
-                    }
-                }
+            FlowRow(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .padding(top = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                maxItemsInEachRow = 2
+            ) {
+                TopInfoBox(
+                    icon = Icons.Filled.Search,
+                    title = "Takip",
+                    value = "2"
+                )
+                TopInfoBox(
+                    icon = Icons.Filled.Update,
+                    title = "Güncelleme",
+                    value = "35"
+                )
             }
 
 
+            model.latestUpdates?.let { state ->
+                Column(modifier = Modifier.padding()) {
+                    val latestUpdates by state.collectAsState()
+                    TitleBar(
+                        title = "Son Güncellemeler",
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+
+                        ) {
+                        latestUpdates.let { updates ->
+                            items(updates.size) {
+                                LatestUpdate(
+                                    updates[it],
+                                    isFirst = it == 0
+                                ) {
+                                    navigator.navigate("detail/${it.productId}")
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+            }
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = 8.dp,
+                        vertical = 5.dp
+                    )
+            )
+
+
             val products by model.products.observeAsState()
-            TitleBar(title = "Son Takipler")
+            TitleBar(
+                title = "Son Takipler",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
             products?.forEach {
                 ProductLine(it)
             }
@@ -287,6 +335,7 @@ fun ProductLine(product: ProductWithPrices) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 8.dp)
             .padding(bottom = 8.dp)
             .background(
                 MaterialTheme.colorScheme.surfaceContainer,
@@ -461,23 +510,22 @@ fun FlowRowScope.TopInfoBox(
 @Composable
 fun LazyItemScope.LatestUpdate(
     update: LatestUpdate,
+    isFirst: Boolean = false,
     onClick: (update: LatestUpdate) -> Unit = {}
 ) {
     val cutShape = cutShape(corner = CutCorner.BOTTOMRIGHT)
 
     Box(
         modifier = Modifier
-            .fillParentMaxWidth(.4F)
+            .then(if (isFirst) Modifier.padding(start = 8.dp) else Modifier)
+            .fillParentMaxWidth(.30F)
+            .aspectRatio(1F)
+            .padding(vertical = 8.dp)
             .clickable {
                 onClick(update)
             }
-            .aspectRatio(1F)
-            .padding(vertical = 8.dp)
-            .border(
-                1.dp, MaterialTheme.colorScheme.surfaceVariant,
-                cutShape(corner = CutCorner.BOTTOMRIGHT)
-            )
-            .background(MaterialTheme.colorScheme.primaryContainer, cutShape)
+            .border(2.dp, MaterialTheme.colorScheme.surfaceVariant,cutShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer, cutShape)
             .clip(cutShape)
 
     ) {
@@ -486,25 +534,21 @@ fun LazyItemScope.LatestUpdate(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Transparent, cutShape)
-                .blur(2.dp),
+                .blur(1.dp),
             showGradient = false
         )
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    MaterialTheme.colorScheme.surface.copy(
-                        alpha = .5F
-                    )
-                )
+                .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = .5F))
         )
-        Text(
+       /* Text(
             text = update.title,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
                 .background(
-                    MaterialTheme.colorScheme.surface,
+                    MaterialTheme.colorScheme.surface.copy(alpha = .9F),
                     cutShape(corner = CutCorner.TOPLEFT)
                 )
                 .padding(top = 8.dp)
@@ -517,13 +561,15 @@ fun LazyItemScope.LatestUpdate(
             ),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
-        )
+        )*/
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(8.dp)
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(top = 8.dp)
+                .padding(10.dp)
+                .background(
+                    MaterialTheme.colorScheme.surface.copy(alpha = .9F)
+                )
+                .padding(top = 4.dp)
                 .padding(horizontal = 4.dp)
                 .padding(bottom = 4.dp),
             horizontalAlignment = Alignment.End

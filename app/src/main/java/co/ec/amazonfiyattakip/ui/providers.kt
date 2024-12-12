@@ -51,7 +51,7 @@ fun PreviewProviders(
         LocalNavigation provides navController,
         LocalSnackbar provides snackbarHostState,
     ) {
-        AmazonFiyatTakipTheme {
+        AmazonFiyatTakipTheme(darkTheme = false, dynamicColor = false) {
             content()
         }
     }

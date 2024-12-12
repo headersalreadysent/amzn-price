@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +56,7 @@ fun ProductImage(
     ) {
         val painter = if (LocalInspectionMode.current) {
             // Show placeholder in Preview
-            ColorPainter(Color.Blue)
+            ColorPainter(MaterialTheme.colorScheme.primary)
         } else {
             rememberAsyncImagePainter(
                 model = ImageRequest.Builder(LocalContext.current)
