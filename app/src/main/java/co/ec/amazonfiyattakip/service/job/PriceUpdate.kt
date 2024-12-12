@@ -15,6 +15,7 @@ import androidx.work.await
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.AsinId
+import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.AppLogger
 import kotlinx.coroutines.CompletableDeferred
@@ -55,10 +56,12 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                                 AppLogger.d("$JOBTAG is cancelled", "Job")
                                 startJob()
                             }
+
                             WorkInfo.State.FAILED -> {
                                 AppLogger.d("$JOBTAG is failed", "Job")
                                 startJob()
                             }
+
                             else -> {
                                 AppLogger.d("$JOBTAG state is ${workInfo.state}", "job")
                             }
@@ -80,7 +83,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
             val updatePriceRequest =
                 PeriodicWorkRequestBuilder<PriceUpdate>(15, TimeUnit.MINUTES)
-                   // .setInitialDelay(1, TimeUnit.MINUTES)
+                    // .setInitialDelay(1, TimeUnit.MINUTES)
                     .addTag(JOBTAG)
                     // .setConstraints(constraints)
                     .build()
@@ -111,7 +114,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 Result.success(outputData)
             }
         } catch (e: Exception) {
-            AppLogger.e("$JOBTAG ${e.localizedMessage}", e,"Job")
+            AppLogger.e("$JOBTAG ${e.localizedMessage}", e, "Job")
             Result.failure()
         }
     }
@@ -126,16 +129,18 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         val deferred = CompletableDeferred<Pair<String, Int>>()
 
         //collect one asin
-        scraper.scrapeFromAsin(asin.asin, { product ->
+        scraper.scrapeFromAsin(asin.asin, { update ->
 
             //insert into database
             thread {
-                val priceInfo = product.toPriceInfo(asin.id)
-                priceInfoDao.insert(priceInfo)
+                val product = update.copy(
+                    id = asin.id
+                )
+                PriceInfoDao.insertNewUpdate(product)
                 //add next run time
                 productDao.updateProductInfoAndNextRun(
-                    asin.id,
-                    priceInfo.price,
+                    product.id,
+                    product.price,
                     product.star,
                     product.comment
                 )
@@ -143,7 +148,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 AppLogger.d("$JOBTAG ${product.price} : ${product.title}", "Job")
             }
             //complete defer with correct price
-            deferred.complete(Pair(asin.asin, product.price))
+            deferred.complete(Pair(asin.asin, update.price))
         }, {
             AppLogger.e(it.localizedMessage ?: it.message ?: "", it)
             //complete defer with correct -1 because of error

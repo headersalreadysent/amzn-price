@@ -67,7 +67,31 @@ class AmznScrape {
                 err(it)
             })
         })
+    }
 
+    fun getPopular(
+        then: (res: List<String>) -> Unit = { _ -> },
+        err: (res: Throwable) -> Unit = { _ -> }
+    ) {
+        Async.run({
+            //generate url
+            AmznRequest.request("https://www.amazon.com.tr/gp/bestsellers", { html ->
+                //get html
+                html?.let {
+                    try {
+                        //parse product from html
+                        val deals = extractPopularProducts(it)
+                        AppLogger.d(deals.toString())
+                        then(deals)
+                    } catch (t: Throwable) {
+                        err(t)
+                    }
+                }
+            }, {
+                AppLogger.e("amzn", it)
+                err(it)
+            })
+        })
     }
 
 
@@ -141,5 +165,19 @@ class AmznScrape {
                 return (it.value().toFloat() * 100).toInt()
             }
         return 0;
+    }
+
+    /**
+     * extract product details from amazon page content
+     * @param html:String page content
+     * @return Product
+     */
+    private fun extractPopularProducts(html: String): List<String> {
+
+        val doc = Ksoup.parse(html ?: "")
+        return doc.select("li.a-carousel-card").map {
+            val asin = it.getElementsByAttribute("data-asin").attr("data-asin")
+            return@map asin
+        }
     }
 }

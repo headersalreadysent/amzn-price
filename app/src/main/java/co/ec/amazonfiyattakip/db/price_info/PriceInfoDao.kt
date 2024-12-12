@@ -4,8 +4,11 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.LatestUpdate
+import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.db.product.ProductStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -28,5 +31,24 @@ interface PriceInfoDao {
     @Query("SELECT priceinfo.productId, priceinfo.price,product.title,product.image,priceinfo.date from priceinfo " +
             "LEFT JOIN product ON productId=product.id ORDER BY priceinfo.id DESC")
     fun getLatestUpdates() : Flow<List<LatestUpdate>>
+
+
+    @Query("SELECT * FROM priceinfo WHERE productId=:productId ORDER BY date DESC LIMIT 1")
+    fun getLatestPrice(productId: Int): PriceInfo?
+
+    @Query("SELECT count(id) as items FROM priceinfo")
+    fun getCount(): Int
+
+    companion object {
+
+        fun insertNewUpdate(product: Product) : Long{
+            val dao=AppDatabase.getDatabase().priceInfo()
+            val latestPrice = dao.getLatestPrice(product.id)
+            //set latest price
+            val priceInfo = product.toPriceInfo(product.id, latestPrice?.price ?: 0)
+            return dao.insert(priceInfo)
+
+        }
+    }
 }
 

@@ -69,4 +69,10 @@ interface ProductDao {
 
     @Query("SELECT * FROM product WHERE id=:productId")
     fun getProduct(productId: Int): Product
+
+
+    @Query("SELECT count(id) as items FROM product WHERE status NOT IN (:filteredStatus) ")
+    fun getCount(
+        filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
+    ): Int
 }

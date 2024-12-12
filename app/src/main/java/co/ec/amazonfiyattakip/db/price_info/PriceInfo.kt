@@ -29,6 +29,7 @@ data class PriceInfo(
     var price: Int = 0,
     var star: Double = 0.0,
     var comment: Int = 0,
+    val priceChanged: Int = 0
 ) {
     fun price(): String {
         val format = NumberFormat.getCurrencyInstance(Locale.getDefault())

@@ -41,7 +41,7 @@ data class Product(
     /**
      * convert product to price info object
      */
-    fun toPriceInfo(productId: Int): PriceInfo {
+    fun toPriceInfo(productId: Int, latest: Int = 0): PriceInfo {
         return PriceInfo(
             id = 0,
             productId = productId,
@@ -49,7 +49,8 @@ data class Product(
             date = unix(),
             price = price,
             star = star,
-            comment = comment
+            comment = comment,
+            priceChanged = price - latest
         )
 
     }
