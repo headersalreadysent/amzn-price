@@ -27,7 +27,8 @@ open class DetailViewModel : ViewModel() {
             )
         }, {
             product.value = it.first
-            prices.value = it.second
+            //if more than two point
+            prices.value = if (it.second.size > 1) it.second else null
         })
     }
 

@@ -1,16 +1,14 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,30 +17,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoGraph
-import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.DensityLarge
-import androidx.compose.material.icons.filled.DensitySmall
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Start
-import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material.icons.outlined.ChatBubble
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.FilterAltOff
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.twotone.ChatBubble
-import androidx.compose.material.icons.twotone.Star
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -50,12 +38,9 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -64,14 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -83,22 +61,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
+import co.ec.amazonfiyattakip.composables.ExtrasArea
+import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.helper.CoilTrimTransform
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
+import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
-import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.imageLoader
-import coil.request.ImageRequest
 
 @Composable
 fun DetailScreen(
@@ -106,13 +82,9 @@ fun DetailScreen(
     model: DetailViewModel = viewModel()
 ) {
     val urlHandler = LocalUriHandler.current
-
-
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
     var showOnlyChanges by remember { mutableStateOf(true) }
-
-
 
     DisposableEffect(Unit) {
         productId?.let {
@@ -125,9 +97,6 @@ fun DetailScreen(
 
         }
     }
-
-
-
 
     if (product == null) {
         Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
@@ -155,7 +124,6 @@ fun DetailScreen(
                     .height(IntrinsicSize.Min),
                 corner = CutCorner.BOTTOMRIGHT,
                 cutSize = 30.dp
-
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     ProductImage(
@@ -180,13 +148,6 @@ fun DetailScreen(
                                 maxLines = 3,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Text(
-                                text = product.shortDesc(150),
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
                             Text(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -224,30 +185,48 @@ fun DetailScreen(
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
             ) {
-                prices?.let {
-                    if (it.size == 1) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 15.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "Henüz fiyat değişimi oluşmadı.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            LinearProgressIndicator(modifier = Modifier.padding(top = 4.dp))
-                        }
-                    } else {
+                if (prices == null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 30.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Henüz fiyat değişimi oluşmadı.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        LinearProgressIndicator(modifier = Modifier.padding(top = 4.dp))
+                    }
+                } else {
+                    prices?.let {
                         TreePriceRow(it)
                         PricesGraphWithDrag(showOnlyChanges, it) {
-                            showOnlyChanges=!showOnlyChanges
+                            showOnlyChanges = !showOnlyChanges
                         }
                     }
                 }
 
 
+
                 prices?.reversed()?.let {
+
+                    TitleBar(title = "Fiyat Değişimi",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = null
+                            ) {
+                                showOnlyChanges = !showOnlyChanges
+                            }, extra = {
+                            Icon(
+                                if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
+                                contentDescription = "filter",
+                                modifier = Modifier.scale(.7F)
+                            )
+                        })
                     Column(modifier = Modifier.padding(top = 8.dp)) {
 
                         var lastPrice = 0
@@ -259,7 +238,8 @@ fun DetailScreen(
                             ListItem(
                                 modifier = Modifier.padding(bottom = 2.dp),
                                 colors = ListItemDefaults.colors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+
                                 ),
                                 overlineContent = {
                                     Text(text = it.date.timeString())
@@ -270,7 +250,6 @@ fun DetailScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Column {
-
                                             Text(it.date.dateString())
                                             MetaIconRow(it)
                                         }
@@ -278,10 +257,11 @@ fun DetailScreen(
                                             it.price(),
                                             style = MaterialTheme.typography.titleLarge.copy(
                                                 fontWeight = FontWeight.SemiBold
-                                            )
+                                            ),
+                                            modifier = Modifier.padding(top = 2.dp),
                                         )
                                     }
-                                },
+                                }
                             )
                         }
                     }
@@ -290,14 +270,20 @@ fun DetailScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
 
-                OutlinedButton(
+
+                CutCornerCard(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    onClick = {
-                        showOnlyChanges = !showOnlyChanges
-                    }) {
-                    Text(text = if (showOnlyChanges) "Tüm Sorgular" else "Özet Görünüm")
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = product.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .padding(8.dp)
+                    )
                 }
+
+                ExtrasArea(product = product)
                 OutlinedButton(
                     onClick = {
                         model.stopFallowProduct()
@@ -413,119 +399,131 @@ fun PricesGraphWithDrag(
                 }
         )
     }
-
-    if (showOnlyChanges && onlyChanges.size == 1) {
-        Column(
+    if (onlyChanges.size > 2) {
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 15.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .aspectRatio(2F),
+            shape = RoundedCornerShape(4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor =
+                MaterialTheme.colorScheme.surfaceContainer,
+            )
         ) {
+            var dragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
             Text(
-                text = "Henüz fiyat değişimi oluşmadı.",
-                style = MaterialTheme.typography.bodySmall
+                text = "Fiyat Geçmişi", modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             )
-            LinearProgressIndicator(modifier = Modifier.padding(top = 4.dp))
-        }
-        return
-    }
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(2F),
-        shape = RoundedCornerShape(4.dp)
-    ) {
-        var dragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
-        Text(
-            text = "Fiyat Geçmişi", modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        )
 
-        AnimatedVisibility(visible = dragValue != null) {
-            //animate by dragValue
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .padding(top = 2.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                dragValue?.let {
-                    Text(
-                        text = it.date.dateString() + " " + it.date.timeString(),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
+            AnimatedVisibility(visible = dragValue != null) {
+                //animate by dragValue
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .padding(top = 2.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    dragValue?.let {
+                        Text(
+                            text = it.date.dateString() + " " + it.date.timeString(),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
                         )
-                    )
-                    Text(
-                        text = (it.price * 100).toInt().price(),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
+                        Text(
+                            text = (it.price * 100).toInt().price(),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
                         )
-                    )
+                    }
                 }
             }
+            PriceGraph(
+                modifier = Modifier.clickable(
+                    interactionSource = null,
+                    indication = null
+                ) {
+                    then()
+                },
+                if (showOnlyChanges) onlyChanges else graphData, onDrag = {
+                    dragValue = it
+                })
         }
-        PriceGraph(
-            modifier = Modifier.clickable(
-                interactionSource = null,
-                indication = null
-            ) {
-                then()
-            },
-            if (showOnlyChanges) onlyChanges else graphData, onDrag = {
-                dragValue = it
-            })
     }
+
 }
 
 @Composable
 fun MetaIconRow(priceInfo: Any) {
-    val color =
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-            alpha = .5F
-        )
     val comment = if (priceInfo is PriceInfo) priceInfo.comment else (priceInfo as Product).comment
     val star = if (priceInfo is PriceInfo) priceInfo.star else (priceInfo as Product).star
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-
-        Icon(
-            Icons.Outlined.ChatBubble,
-            contentDescription = "comment",
-            modifier = Modifier.size(14.dp),
-            tint = color
-        )
-        Text(
-            text = comment.toString(),
-            fontSize = 14.sp,
-            color = color,
-            modifier = Modifier.padding(
-                start = 4.dp,
-                end = 8.dp
-            )
-        )
-        Icon(
-            Icons.Outlined.Star,
-            contentDescription = "comment",
+        Row(
             modifier = Modifier
-                .size(14.dp),
-            tint = color
-        )
-        Text(
-            text = star.toString(),
-            fontSize = 14.sp,
-            color = color,
-            modifier = Modifier.padding(
-                start = 4.dp,
-                end = 8.dp
+                .padding(end = 4.dp)
+                .background(
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                    cutShape(CutCorner.BOTTOMRIGHT, 5.dp)
+                )
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary,
+                    cutShape(CutCorner.BOTTOMRIGHT, 5.dp)
+                )
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                Icons.Outlined.ChatBubble,
+                contentDescription = "comment",
+                modifier = Modifier.size(12.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
             )
-        )
+            Text(
+                text = comment.toString(),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.padding(
+                    start = 2.dp,
+                )
+            )
+        }
+        Row(
+            modifier = Modifier
+                .padding(end = 4.dp)
+                .background(
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    cutShape(CutCorner.BOTTOMRIGHT, 5.dp)
+                )
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.Star,
+                contentDescription = "comment",
+                modifier = Modifier
+                    .size(12.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Text(
+                text = star.toString(),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.padding(
+                    start = 2.dp,
+                )
+            )
+        }
     }
 }
 

@@ -81,7 +81,6 @@ class AmznScrape {
                     try {
                         //parse product from html
                         val deals = extractPopularProducts(it)
-                        AppLogger.d(deals.toString())
                         then(deals)
                     } catch (t: Throwable) {
                         err(t)

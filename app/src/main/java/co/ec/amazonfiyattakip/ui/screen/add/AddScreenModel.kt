@@ -26,7 +26,6 @@ class AddScreenModel : ViewModel() {
             AmznScrape().scrapeFromUrl(url, { scraped ->
                 AppLogger.d(scraped.toString())
                 product.value = scraped
-                AppLogger.d(scraped.toString())
             }, {
                 it.printStackTrace()
             })

@@ -51,11 +51,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
+import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.IconStat
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.helper.AppLogger
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun AddScreen(model: AddScreenModel = viewModel()) {
@@ -68,8 +74,8 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
         }
     }
     val product by model.product.observeAsState(null)
-    LaunchedEffect(product ) {
-        if(product!=null){
+    LaunchedEffect(product) {
+        if (product != null) {
             AppModel.setFab(Icons.Filled.Save) {
                 //lets save product
                 model.saveProductToDatabase()
@@ -248,49 +254,7 @@ fun ProductScreen(product: Product) {
 
 
             }
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                maxItemsInEachRow = 2,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                val extras by remember {
-                    mutableStateOf(product.extraMap().toList())
-                }
-                extras.forEachIndexed { index, it ->
-                    Box(modifier = Modifier.fillMaxWidth(.5f)) {
-                        Card(
-                            modifier = Modifier
-                                .padding(top = 4.dp)
-                                .padding(end = if (index % 2 == 0) 2.dp else 0.dp)
-                                .padding(start = if (index % 2 == 1) 2.dp else 0.dp),
-                            shape = RoundedCornerShape(.5.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(4.dp)
-                            ) {
-                                Text(
-                                    text = it.first,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 10.sp
-                                    )
-                                )
-                                Text(
-                                    text = it.second,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-
-                }
-
-            }
+            ExtrasArea(product = product)
         }
 
 

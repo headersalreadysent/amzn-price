@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
@@ -109,10 +111,18 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             mutableStateOf(5.dp)
         }
         val density = LocalDensity.current
+
+        val dailyTotals by model.dailyTotals.observeAsState()
         CutCornerCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1.5F)
+                .then(
+                    if (dailyTotals != null) {
+                        Modifier.aspectRatio(1.5F)
+                    } else {
+                        Modifier.height(160.dp)
+                    }
+                )
                 .zIndex(1F)
                 .onGloballyPositioned {
                     height = with(density) { it.size.height.toDp() }
@@ -206,53 +216,44 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
                 }
             }
-            Box(
-                modifier = Modifier
-                    .weight(1F)
-                    .fillMaxWidth()
-            ) {
-                val dailyTotals by model.dailyTotals.observeAsState()
-                dailyTotals?.let {
+            dailyTotals?.let {
+                Box(
+                    modifier = Modifier
+                        .weight(1F)
+                        .fillMaxWidth()
+                ) {
                     var selectValue by remember {
                         mutableStateOf<PriceGraphPair?>(null)
                     }
-                    if (it.isNotEmpty()) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                        ) {
-                            Text(
-                                text = (selectValue?.date?.dateString() ?: "Bugün"),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = (selectValue?.price?.times(100) ?: it.last().total).toInt()
-                                    .price(),
-                                style = MaterialTheme.typography.titleLarge
-                                    .copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                            )
-                        }
-                        PriceGraph(
-                            prices = it.map {
-                                PriceGraphPair(it.date, it.total / 100F)
-                            },
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                                alpha = .6F
-                            ),
-                            onDrag = {
-                                selectValue = it
-                            }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            text = (selectValue?.date?.dateString() ?: "Bugün"),
+                            style = MaterialTheme.typography.bodyMedium
                         )
-                    } else {
-                        Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-                            Button(onClick = { /*TODO*/ }) {
-                                Text(text = "Nasıl ürün eklerim?")
-                            }
-                        }
+                        Text(
+                            text = (selectValue?.price?.times(100) ?: it.last().total).toInt()
+                                .price(),
+                            style = MaterialTheme.typography.titleLarge
+                                .copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                        )
                     }
+                    PriceGraph(
+                        prices = it.map {
+                            PriceGraphPair(it.date, it.total / 100F)
+                        },
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                            alpha = .6F
+                        ),
+                        onDrag = {
+                            selectValue = it
+                        }
+                    )
 
 
                 }
@@ -277,6 +278,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 if (it["product"]!! > 0) {
                     FlowRow(
                         modifier = Modifier
+                            .padding(horizontal = 8.dp)
                             .padding(top = 5.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         maxItemsInEachRow = 2
@@ -355,8 +357,10 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = "Hiç Ürün Bulunmuyor",
-                                modifier = Modifier.padding(bottom = 8.dp))
+                            Text(
+                                text = "Hiç Ürün Bulunmuyor",
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
                             val settings = LocalSettings.current
                             val navigation = LocalNavigation.current
                             Button(onClick = {
@@ -390,7 +394,6 @@ fun ProductLine(product: ProductWithPrices) {
             .background(
                 MaterialTheme.colorScheme.surfaceContainer,
                 cutShape(CutCorner.BOTTOMRIGHT, 30.dp)
-
             )
             .clickable {
                 navigator.navigate("detail/${product.product.id}")

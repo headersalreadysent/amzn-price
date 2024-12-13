@@ -72,7 +72,9 @@ open class MainScreenModel : ViewModel() {
         Async.run({
             return@run AppDatabase.getDatabase().priceInfo().getDailyTotalPrices()
         }, {
-            dailyTotals.value = it
+            if (it.size > 1) {
+                dailyTotals.value = it
+            }
         })
     }
 
@@ -128,9 +130,9 @@ open class MainScreenModel : ViewModel() {
         }
     }
 
-    fun addOneDeal(then: (url:String) -> Unit = {}) {
+    fun addOneDeal(then: (url: String) -> Unit = {}) {
         AmznScrape().getPopular({
-            val dealAsin = it.first()
+            val dealAsin = it.random()
             then(AmznScrape.urlFromAsin(dealAsin))
         })
     }
