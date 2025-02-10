@@ -27,7 +27,7 @@ interface ProductDao {
     /**
      * get waiting items
      */
-    @Query("SELECT id,asin FROM product WHERE status=:status AND nextRunTime < :time+86400")
+    @Query("SELECT id,asin FROM product WHERE status=:status AND nextRunTime < :time")
     fun getScrapeWaitingAsinCodes(
         time: Long = unix(),
         status: ProductStatus = ProductStatus.ACTIVE

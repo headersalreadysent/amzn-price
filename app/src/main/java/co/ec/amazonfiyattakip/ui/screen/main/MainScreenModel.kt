@@ -72,9 +72,8 @@ open class MainScreenModel : ViewModel() {
         Async.run({
             return@run AppDatabase.getDatabase().priceInfo().getDailyTotalPrices()
         }, {
-            if (it.size > 1) {
                 dailyTotals.value = it
-            }
+
         })
     }
 

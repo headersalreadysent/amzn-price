@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
@@ -55,6 +56,7 @@ import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.IconStat
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.helper.AppLogger
 import coil.compose.AsyncImage
@@ -74,6 +76,7 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
         }
     }
     val product by model.product.observeAsState(null)
+    val navigator = LocalNavigation.current
     LaunchedEffect(product) {
         if (product != null) {
             AppModel.setFab(Icons.Filled.Save) {
@@ -85,7 +88,11 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
     Column(modifier = Modifier.fillMaxSize()) {
         if (product != null) {
             product?.let {
-                ProductScreen(it)
+                ProductScreen(it) {
+                    model.saveProductToDatabase()
+                    navigator.navigate("detail/${it.id}")
+
+                }
             }
         } else {
             Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
@@ -97,9 +104,8 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProductScreen(product: Product) {
+fun ProductScreen(product: Product, add: () -> Unit? = {}) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -255,6 +261,12 @@ fun ProductScreen(product: Product) {
 
             }
             ExtrasArea(product = product)
+
+            Button(onClick = {
+                add()
+            }) {
+                Text(text = "Ekle")
+            }
         }
 
 

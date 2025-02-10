@@ -46,7 +46,10 @@ class AddScreenModel : ViewModel() {
     fun saveProductToDatabase() {
         product.value?.let {
             Async.run({
-                return@run AppDatabase.getDatabase().product().insert(it)
+                val id=AppDatabase.getDatabase().product().insert(it)
+                val price=it.toPriceInfo(id.toInt(),it.price)
+                AppDatabase.getDatabase().priceInfo().insert(price)
+                return@run id
             }, { id ->
                 product.value = it.copy(
                     id = id.toInt()

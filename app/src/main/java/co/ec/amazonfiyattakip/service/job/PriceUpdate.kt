@@ -19,9 +19,12 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.AppLogger
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
@@ -29,14 +32,13 @@ import kotlin.concurrent.thread
 class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
 
-    private val scraper = AmznScrape()
-    private val priceInfoDao = AppDatabase.getDatabase().priceInfo()
     private val productDao = AppDatabase.getDatabase().product()
 
     companion object {
 
         val JOBTAG = "PriceUpdateJob"
 
+        @OptIn(DelicateCoroutinesApi::class)
         fun setupJob() {
 
             val manager = WorkManager.getInstance(App.context())
@@ -70,8 +72,9 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 },
                 ContextCompat.getMainExecutor(App.context())
             )
-
-
+            GlobalScope.launch {
+              //  collectPrices()
+            }
         }
 
         fun startJob() {
@@ -94,70 +97,89 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             //add jobs
             manager.enqueue(updatePriceRequest)
 
+
+            val oneTimeWorkRequest =
+                OneTimeWorkRequestBuilder<PriceUpdate>()
+                    // .setInitialDelay(1, TimeUnit.MINUTES)
+                    .addTag(JOBTAG)
+                    // .setConstraints(constraints)
+                    .build()
+            manager.enqueue(oneTimeWorkRequest)
+
             AppLogger.d("$JOBTAG is started", "Job")
+
+        }
+
+        private suspend fun collectPrices() : Result{
+            val productDao = AppDatabase.getDatabase().product()
+            return try {
+                coroutineScope {
+                    val asinList = productDao.getScrapeWaitingAsinCodes()
+                    AppLogger.d("$JOBTAG products: $asinList", "Job")
+                    val responseList = asinList.map {
+                        return@map async { collectDayInfo(it) }
+                    }.awaitAll()
+                    val outputData = Data.Builder()
+                        .putString("output", "$responseList")
+                        .build()
+                    //mark error stop if access to limit
+                    productDao.markErrorStop()
+                    Result.success(outputData)
+                }
+            } catch (e: Exception) {
+                AppLogger.e("$JOBTAG ${e.localizedMessage}", e, "Job")
+                Result.failure()
+            }
+        }
+
+
+
+        /**
+         * collect price and save to database
+         */
+        private suspend fun collectDayInfo(asin: AsinId): Pair<String, Int> {
+
+            val productDao = AppDatabase.getDatabase().product()
+            AppLogger.d("$JOBTAG product $asin", "Job")
+            val deferred = CompletableDeferred<Pair<String, Int>>()
+
+            val scraper = AmznScrape()
+            //collect one asin
+            scraper.scrapeFromAsin(asin.asin, { update ->
+
+                //insert into database
+                thread {
+                    val product = update.copy(
+                        id = asin.id
+                    )
+                    PriceInfoDao.insertNewUpdate(product)
+                    //add next run time
+                    productDao.updateProductInfoAndNextRun(
+                        product.id,
+                        product.price,
+                        product.star,
+                        product.comment
+                    )
+
+                    AppLogger.d("$JOBTAG ${product.price} : ${product.title}", "Job")
+                }
+                //complete defer with correct price
+                deferred.complete(Pair(asin.asin, update.price))
+            }, {
+                AppLogger.e(it.localizedMessage ?: it.message ?: "", it)
+                //complete defer with correct -1 because of error
+                thread { productDao.addErrorCount(asin.id) }
+                deferred.complete(Pair(asin.asin, -1))
+            })
+            //return response
+            return deferred.await()
+
+
         }
     }
 
     override suspend fun doWork(): Result {
-        return try {
-            coroutineScope {
-                val asinList = productDao.getScrapeWaitingAsinCodes()
-                AppLogger.d("$JOBTAG products: $asinList", "Job")
-                val responseList = asinList.map {
-                    return@map async { collectDayInfo(it) }
-                }.awaitAll()
-                val outputData = Data.Builder()
-                    .putString("output", "$responseList")
-                    .build()
-                //mark error stop if access to limit
-                productDao.markErrorStop()
-                Result.success(outputData)
-            }
-        } catch (e: Exception) {
-            AppLogger.e("$JOBTAG ${e.localizedMessage}", e, "Job")
-            Result.failure()
-        }
+        return collectPrices()
     }
 
-
-    /**
-     * collect price and save to database
-     */
-    private suspend fun collectDayInfo(asin: AsinId): Pair<String, Int> {
-
-        AppLogger.d("$JOBTAG product $asin", "Job")
-        val deferred = CompletableDeferred<Pair<String, Int>>()
-
-        //collect one asin
-        scraper.scrapeFromAsin(asin.asin, { update ->
-
-            //insert into database
-            thread {
-                val product = update.copy(
-                    id = asin.id
-                )
-                PriceInfoDao.insertNewUpdate(product)
-                //add next run time
-                productDao.updateProductInfoAndNextRun(
-                    product.id,
-                    product.price,
-                    product.star,
-                    product.comment
-                )
-
-                AppLogger.d("$JOBTAG ${product.price} : ${product.title}", "Job")
-            }
-            //complete defer with correct price
-            deferred.complete(Pair(asin.asin, update.price))
-        }, {
-            AppLogger.e(it.localizedMessage ?: it.message ?: "", it)
-            //complete defer with correct -1 because of error
-            thread { productDao.addErrorCount(asin.id) }
-            deferred.complete(Pair(asin.asin, -1))
-        })
-        //return response
-        return deferred.await()
-
-
-    }
 }

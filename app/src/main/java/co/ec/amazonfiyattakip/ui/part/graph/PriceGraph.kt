@@ -29,13 +29,16 @@ fun PriceGraph(
     onDrag: (pair: PriceGraphPair?) -> Unit = {}
 ) {
     var selectedIndex by remember { mutableIntStateOf(-1) }
+
     var maxPrice = prices.maxOfOrNull { it.price } ?: 1f
     var minPrice = prices.minOfOrNull { it.price } ?: 0f
     if (minPrice == maxPrice) {
         minPrice *= .8F
         maxPrice *= 1.2F
     }
-    Box(modifier = Modifier.fillMaxSize().then(modifier)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .then(modifier)) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
