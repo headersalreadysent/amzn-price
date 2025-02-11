@@ -26,6 +26,7 @@ import co.ec.amazonfiyattakip.helper.CoilTrimTransform
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 
 @Composable
@@ -33,12 +34,17 @@ fun ProductImage(
     product: Product,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    showGradient: Boolean = true,
+    color: Color = CardDefaults.cardColors().containerColor
 ) {
     ProductImage(
         image = product.image,
         title = product.title,
         modifier = modifier,
-        contentScale = contentScale
+        contentScale = contentScale,
+        showGradient = showGradient,
+        color = color
+
     )
 }
 
@@ -48,7 +54,8 @@ fun ProductImage(
     title: String,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
-    showGradient: Boolean = true
+    showGradient: Boolean = true,
+    color: Color = CardDefaults.cardColors().containerColor
 ) {
     Box(
         modifier = modifier,
@@ -79,8 +86,20 @@ fun ProductImage(
                     .background(
                         Brush.horizontalGradient(
                             colors = listOf(
-                                CardDefaults.cardColors().containerColor.copy(alpha = 1F),
+                                color.copy(alpha = 1F),
                                 Color.Transparent
+                            )
+                        )
+                    )
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                color.copy(alpha = 1F)
                             )
                         )
                     )

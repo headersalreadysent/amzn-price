@@ -1,14 +1,17 @@
 package co.ec.amazonfiyattakip.service
 
+import co.ec.amazonfiyattakip.App
 import co.ec.helper.AppSharedSettings
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -17,7 +20,12 @@ import java.util.TimeZone
 
 object AmznRequest {
 
-    var client: OkHttpClient = OkHttpClient()
+    var client: OkHttpClient = OkHttpClient.Builder().cache(
+        Cache(
+            directory = File(App.context().cacheDir, "http_cache"),
+            maxSize = 50L * 1024L * 1024L
+        )
+    ).build()
 
     val sharedSettings = AppSharedSettings.get()
 

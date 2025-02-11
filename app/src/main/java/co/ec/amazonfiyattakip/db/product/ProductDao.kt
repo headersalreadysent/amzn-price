@@ -18,6 +18,9 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(product: Product): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAll(products: List<Product>): List<Long>
+
     /**
      * add product to database
      */

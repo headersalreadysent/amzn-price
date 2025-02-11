@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.concurrent.thread
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
@@ -30,7 +31,7 @@ open class MainScreenModel : ViewModel() {
 
     var stats = MutableLiveData<Map<String, Int>>()
 
-    private var priceDao: PriceInfoDao? = null
+    val deals = MutableLiveData<List<Product>>()
 
     init {
         loadProducts()
@@ -39,7 +40,7 @@ open class MainScreenModel : ViewModel() {
         calculateStats()
     }
 
-    private fun calculateStats() {
+   private fun calculateStats() {
         Async.run({
             return@run mapOf(
                 "product" to AppDatabase.getDatabase().product().getCount(),
@@ -72,7 +73,7 @@ open class MainScreenModel : ViewModel() {
         Async.run({
             return@run AppDatabase.getDatabase().priceInfo().getDailyTotalPrices()
         }, {
-                dailyTotals.value = it
+            dailyTotals.value = it
 
         })
     }
@@ -80,13 +81,49 @@ open class MainScreenModel : ViewModel() {
     /**
      * load products from database
      */
-    fun loadProducts() {
+    private fun loadProducts() {
         Async.run({
             return@run AppDatabase.getDatabase().product().getAllProducts()
         }, {
             products.value = it
+
         })
     }
+
+
+    /**
+     * load deals from amazon
+     */
+    fun loadDeals(then: (list: List<String>) -> Unit = {}) {
+        AmznScrape().getPopular({ asins ->
+            val tempList = mutableListOf<Product>()
+            asins.slice(0..9).forEach { asin ->
+                thread {
+                    AmznScrape().scrapeFromAsin(asin, {
+                        if (it.title != "") {
+                            tempList.add(it)
+                            if (tempList.size % 3 == 0) {
+                                deals.value = tempList
+                            }
+                        }
+                    })
+                }
+            }
+            then(asins)
+        })
+    }
+
+    /**
+     * add product list
+     */
+    fun addProductList(list: List<Product>) {
+        Async.run({
+            return@run AppDatabase.getDatabase().product().insertAll(list)
+        }, {
+            loadProducts()
+        })
+    }
+
 
     /**
      * emulate datas for preview
@@ -106,6 +143,8 @@ open class MainScreenModel : ViewModel() {
                 )
             })
         }
+
+        deals.value = products.value.orEmpty().map { it.product }
 
         var firstPrice = 2000L
         dailyTotals.value = (1..30).map {
@@ -128,12 +167,4 @@ open class MainScreenModel : ViewModel() {
             (latestUpdates as MutableStateFlow<List<LatestUpdate>>).emit(list)
         }
     }
-
-    fun addOneDeal(then: (url: String) -> Unit = {}) {
-        AmznScrape().getPopular({
-            val dealAsin = it.random()
-            then(AmznScrape.urlFromAsin(dealAsin))
-        })
-    }
-
 }

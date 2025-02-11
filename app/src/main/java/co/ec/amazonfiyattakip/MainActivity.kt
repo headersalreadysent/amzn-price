@@ -92,7 +92,9 @@ fun AppContent(
                     }) {
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
-                    IconButton(onClick = { /* Handle click */ }) {
+                    IconButton(onClick = {
+                        appModel.generateFakePrices()
+                    }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                     Spacer(Modifier.weight(1f, true))

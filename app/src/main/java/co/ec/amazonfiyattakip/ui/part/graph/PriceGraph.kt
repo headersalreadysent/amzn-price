@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import co.ec.helper.utils.unix
@@ -25,8 +27,11 @@ fun PriceGraph(
     modifier: Modifier = Modifier,
     prices: List<PriceGraphPair>,
     color: Color = MaterialTheme.colorScheme.primary,
+    hasCircles: Boolean = true,
     circleColor: Color = MaterialTheme.colorScheme.onPrimary,
-    onDrag: (pair: PriceGraphPair?) -> Unit = {}
+    onDrag: (pair: PriceGraphPair?) -> Unit = {},
+    closePath: Boolean = true,
+    drawStyle: DrawStyle = Fill,
 ) {
     var selectedIndex by remember { mutableIntStateOf(-1) }
 
@@ -36,9 +41,11 @@ fun PriceGraph(
         minPrice *= .8F
         maxPrice *= 1.2F
     }
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .then(modifier)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .then(modifier)
+    ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -79,26 +86,30 @@ fun PriceGraph(
                     path.lineTo(x, y)
                 }
             }
-            // Close the path to the bottom of the canvas
-            path.lineTo(width, height)
-            path.lineTo(0f, height)
-            path.close()
-            drawPath(path, color = color)
-            prices.forEachIndexed { index, priceDatePair ->
-                val x = width * index / (prices.size - 1)
-                val y = height - (priceDatePair.price - minPrice) * scaleY - subArea
-                if (selectedIndex == index) {
-                    drawCircle(
-                        circleColor.copy(alpha = .5F),
-                        radius = 36f,
-                        center = Offset(x, y)
-                    )
-                } else {
-                    drawCircle(
-                        circleColor.copy(alpha = .8F),
-                        radius = 4f,
-                        center = Offset(x, y)
-                    )
+            if(closePath) {
+                // Close the path to the bottom of the canvas
+                path.lineTo(width, height)
+                path.lineTo(0f, height)
+                path.close()
+            }
+            drawPath(path, color = color, style = drawStyle)
+            if (hasCircles) {
+                prices.forEachIndexed { index, priceDatePair ->
+                    val x = width * index / (prices.size - 1)
+                    val y = height - (priceDatePair.price - minPrice) * scaleY - subArea
+                    if (selectedIndex == index) {
+                        drawCircle(
+                            circleColor.copy(alpha = .5F),
+                            radius = 36f,
+                            center = Offset(x, y)
+                        )
+                    } else {
+                        drawCircle(
+                            circleColor.copy(alpha = .8F),
+                            radius = 4f,
+                            center = Offset(x, y)
+                        )
+                    }
                 }
             }
         }

@@ -73,6 +73,16 @@ data class Product(
         return description
     }
 
+    /**
+     * return short desc
+     */
+    fun shortTitle(limit: Int = 50): String {
+        if (title.length > limit) {
+            return title.substring(0..limit) + "..."
+        }
+        return title
+    }
+
     companion object {
         fun fake(): Product {
             return Product(
