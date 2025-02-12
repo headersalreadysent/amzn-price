@@ -14,3 +14,4 @@
 .cxx
 local.properties
 /.idea/runConfigurations.xml
+/app/release/app-release.aab
