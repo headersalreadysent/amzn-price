@@ -13,6 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -24,9 +26,7 @@ import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.CoilTrimTransform
 import co.ec.amazonfiyattakip.ui.PreviewProviders
-import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberAsyncImagePainter
-import coil.request.CachePolicy
 import coil.request.ImageRequest
 
 @Composable
@@ -55,6 +55,7 @@ fun ProductImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     showGradient: Boolean = true,
+    radialGradient: Boolean = false,
     color: Color = CardDefaults.cardColors().containerColor
 ) {
     Box(
@@ -83,27 +84,35 @@ fun ProductImage(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                color.copy(alpha = 1F),
-                                Color.Transparent
+                    .then(
+                        if(radialGradient){
+                            Modifier.drawBehind {
+                                val gradient = Brush.radialGradient(
+
+                                    0.0f to Color.Transparent,
+                                    .9F to color.copy(alpha = .1F),
+                                    1.0f to color.copy(alpha = 1F),
+                                    center = Offset(size.width, 0f), // Move center to top-end
+                                    radius = size.minDimension
+                                )
+                                drawRect(gradient)
+                            }
+                        } else {
+                            Modifier.background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        color.copy(alpha = 1F),
+                                        Color.Transparent
+                                    )
+                                )
                             )
-                        )
+                        }
                     )
+
+
+
             )
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                color.copy(alpha = 1F)
-                            )
-                        )
-                    )
-            )
+
         }
 
 
