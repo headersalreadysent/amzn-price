@@ -58,6 +58,7 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -141,7 +142,12 @@ fun NoProductScreen(
 
         }
     }
-    val deals by model.deals.observeAsState(listOf())
+    var deals by remember { mutableStateOf<List<Product>>(listOf()) }
+    LaunchedEffect(Unit) {
+        model.deals.collect { deal ->
+            deals = deals + deal
+        }
+    }
     var selectedDeals by remember { mutableStateOf<List<String>>(listOf()) }
     val selectedList by remember(deals, selectedDeals) {
         mutableStateOf(deals.filter { selectedDeals.contains(it.asin) })
@@ -156,93 +162,10 @@ fun NoProductScreen(
             })
         }
     }
-    Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier
-                .shadow(1.dp)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .statusBarsPadding()
-                .aspectRatio(3F)
-        ) {
-            Crossfade(
-                targetState = selectedDeals.isEmpty()
-            ) {
-                if (it) {
-
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text("Hiç ürün kaydedilmemiş.")
-                        Button(
-                            onClick = {
-
-                            }, modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Icon(Icons.Filled.Add, "add product")
-                            Text("Kendi Ürünümü Ekleyeyim")
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(3F), horizontalAlignment = Alignment.Start
-                        ) {
-                            Text(
-                                "Sepet toplamı",
-                                modifier = Modifier.padding(bottom = 4.dp),
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            )
-                            AutoText(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = selectedList.sumOf { it.price }.price(),
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            )
-                        }
-                        Column(
-                            modifier = Modifier.weight(2F), horizontalAlignment = Alignment.End
-                        ) {
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                selectedList.forEach {
-                                    ProductImage(
-                                        it,
-                                        modifier = Modifier
-                                            .padding(start = 5.dp)
-                                            .padding(vertical = 2.dp)
-                                            .width(25.dp)
-                                            .aspectRatio(1F)
-                                            .clip(CircleShape)
-                                            .shadow(1.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-            }
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1F),
+            modifier = Modifier.fillMaxSize()
+                .statusBarsPadding(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -341,6 +264,105 @@ fun NoProductScreen(
             }
         }
 
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.primary,
+                    cutShape(CutCorner.TOPRIGHT, 20.dp)
+                )
+                .shadow(
+                    1.dp,
+                    cutShape(CutCorner.TOPRIGHT, 20.dp)
+                )
+                .statusBarsPadding()
+                .aspectRatio(4F)
+
+        ) {
+            Crossfade(
+                targetState = selectedDeals.isEmpty()
+            ) {
+                if (it) {
+
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text("Hiç ürün kaydedilmemiş.",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onPrimary
+                            ))
+                        Button(
+                            onClick = {
+
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.onPrimary,
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Icon(Icons.Filled.Add, "add product")
+                            Text("Kendi Ürünümü Ekleyeyim")
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(3F), horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                "Sepet toplamı",
+                                modifier = Modifier.padding(bottom = 4.dp),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            )
+                            AutoText(
+                                modifier = Modifier.fillMaxWidth(),
+                                text = selectedList.sumOf { it.price }.price(),
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+                        Column(
+                            modifier = Modifier.weight(2F), horizontalAlignment = Alignment.End
+                        ) {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                selectedList.forEach {
+                                    ProductImage(
+                                        it,
+                                        modifier = Modifier
+                                            .padding(start = 5.dp)
+                                            .padding(vertical = 2.dp)
+                                            .width(25.dp)
+                                            .aspectRatio(1F)
+                                            .clip(CircleShape)
+                                            .shadow(1.dp),
+                                        showGradient = false
+                                    )
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
+        }
     }
 }
 
@@ -352,7 +374,7 @@ fun ProductListScreen(
     stats: Map<String, Int>
 ) {
     val density = LocalDensity.current
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column (modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -372,7 +394,7 @@ fun ProductListScreen(
                 ) {
                     PriceGraph(
                         modifier = Modifier,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = .5F),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5F),
                         prices = dailyTotals.map {
                             return@map PriceGraphPair(it.date, it.total.toFloat())
                         },
@@ -457,12 +479,11 @@ fun ProductListScreen(
         }
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1F)
+                .fillMaxSize(1F)
         ) {
             val listState = rememberLazyListState()
             val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
-            val navigator= LocalNavigation.current
+            val navigator = LocalNavigation.current
             LazyRow(
                 modifier = Modifier
                     .fillMaxSize()
@@ -621,7 +642,7 @@ fun ProductListScreen(
                                 )
                         )
 
-                        if(productWithPrices.priceInfoList.size>10){
+                        if (productWithPrices.priceInfoList.size > 10) {
                             val predict by remember { mutableStateOf(productWithPrices.predict()) }
 
                             Row(
@@ -728,9 +749,19 @@ fun ProductListScreen(
                 }
             }
         }
+
     }
 }
 
+
+@Composable
+@Preview(showBackground = true)
+fun MainScreenPreviewNoProduct(model: MainScreenModel = viewModel()) {
+    model.emulate()
+    PreviewProviders {
+        NoProductScreen(model)
+    }
+}
 
 @Composable
 @Preview(showBackground = true)

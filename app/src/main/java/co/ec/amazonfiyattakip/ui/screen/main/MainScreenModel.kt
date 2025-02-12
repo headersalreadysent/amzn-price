@@ -14,9 +14,16 @@ import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
@@ -31,7 +38,9 @@ open class MainScreenModel : ViewModel() {
 
     var stats = MutableLiveData<Map<String, Int>>()
 
-    val deals = MutableLiveData<List<Product>>()
+    private val dealFlow = MutableSharedFlow<Product>()
+    val deals: SharedFlow<Product> = dealFlow
+
 
     init {
         loadProducts()
@@ -40,7 +49,7 @@ open class MainScreenModel : ViewModel() {
         calculateStats()
     }
 
-   private fun calculateStats() {
+    private fun calculateStats() {
         Async.run({
             return@run mapOf(
                 "product" to AppDatabase.getDatabase().product().getCount(),
@@ -90,24 +99,36 @@ open class MainScreenModel : ViewModel() {
         })
     }
 
-
     /**
      * load deals from amazon
      */
     fun loadDeals(then: (list: List<String>) -> Unit = {}) {
         AmznScrape().getPopular({ asins ->
-            val tempList = mutableListOf<Product>()
-            asins.slice(0..9).forEach { asin ->
-                thread {
-                    AmznScrape().scrapeFromAsin(asin, {
-                        if (it.title != "") {
-                            tempList.add(it)
-                            if (tempList.size % 3 == 0) {
-                                deals.value = tempList
+            viewModelScope.launch {
+                asins.map { asin ->
+                    callbackFlow {
+                        // Call the callback-based function
+                        AmznScrape().scrapeFromAsin(asin, { result ->
+                            // Emit the result to the flow if the title is not empty
+                            if (result.title.isNotEmpty()) {
+                                trySend(result) // Send the result to the flow
+                            } else {
+                                trySend(null) // Send null if the title is empty
                             }
+                            close() // Close the flow after emitting the result
+                        },{
+                            close()
+                        })
+                        awaitClose {
+                            close()
                         }
-                    })
-                }
+                    }
+                }.merge()
+                    .collect { result ->
+                        result?.let {
+                            dealFlow.emit(it)
+                        }
+                    }
             }
             then(asins)
         })
@@ -143,9 +164,12 @@ open class MainScreenModel : ViewModel() {
                 )
             })
         }
-
-        deals.value = products.value.orEmpty().map { it.product }
-
+        viewModelScope.launch {
+            (1..12).forEach {
+                dealFlow.emit(fake)
+                delay((Random.nextFloat()*1000F).toLong())
+            }
+        }
         var firstPrice = 2000L
         dailyTotals.value = (1..30).map {
             firstPrice += (Random.nextFloat() * 400).toLong()

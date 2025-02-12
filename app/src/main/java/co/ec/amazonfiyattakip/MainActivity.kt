@@ -99,8 +99,8 @@ fun AppContent(
                     }
                     Spacer(Modifier.weight(1f, true))
                 },
-                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                contentColor = MaterialTheme.colorScheme.primary,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 floatingActionButton = {
                     fabAction?.let {
                         FloatingActionButton(
