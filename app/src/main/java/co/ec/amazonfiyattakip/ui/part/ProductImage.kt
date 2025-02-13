@@ -35,6 +35,7 @@ fun ProductImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     showGradient: Boolean = true,
+    radialGradient: Boolean = false,
     color: Color = CardDefaults.cardColors().containerColor
 ) {
     ProductImage(
@@ -43,7 +44,8 @@ fun ProductImage(
         modifier = modifier,
         contentScale = contentScale,
         showGradient = showGradient,
-        color = color
+        color = color,
+        radialGradient = radialGradient
 
     )
 }
@@ -90,7 +92,7 @@ fun ProductImage(
                                 val gradient = Brush.radialGradient(
 
                                     0.0f to Color.Transparent,
-                                    .9F to color.copy(alpha = .1F),
+                                    .85F to color.copy(alpha = .1F),
                                     1.0f to color.copy(alpha = 1F),
                                     center = Offset(size.width, 0f), // Move center to top-end
                                     radius = size.minDimension

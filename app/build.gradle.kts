@@ -73,30 +73,29 @@ dependencies {
     implementation(libs.cnsyn.android.helper)
 
 
-    implementation(libs.androidx.room.runtime)
-    annotationProcessor(libs.androidx.room.compiler)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
     implementation(libs.androidx.navigation.compose)
 
-    implementation(libs.ksoup.okio)
-
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.ksoup.okio)
 
 
-    implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.runtime)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.work.runtime.ktx)
+
 
     implementation(libs.coil.compose)
     implementation(libs.androidx.material.icons.extended)
-
-    implementation(libs.androidx.work.runtime)
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.ui.text.google.fonts)
+    implementation(libs.accompanist.systemuicontroller)
 
 
 }

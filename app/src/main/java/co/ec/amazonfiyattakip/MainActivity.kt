@@ -27,17 +27,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.ui.AppProviders
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +79,20 @@ class MainActivity : ComponentActivity() {
 fun AppContent(
     startDestination: String = "main", appModel: AppModel = viewModel()
 ) {
+    val uiController = rememberSystemUiController()
 
+    val primary = MaterialTheme.colorScheme.primary
+    val surface = MaterialTheme.colorScheme.surfaceContainer
+    SideEffect {
+        uiController.setNavigationBarColor(
+            color = primary,
+            darkIcons = ColorUtils.calculateLuminance(primary.toArgb()) > 0.5
+        )
+        uiController.setStatusBarColor(
+            color = androidx.compose.ui.graphics.Color.Transparent,
+            darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
+        )
+    }
     val fabAction by appModel.fabAction.observeAsState()
     val navigator = LocalNavigation.current
     Scaffold(

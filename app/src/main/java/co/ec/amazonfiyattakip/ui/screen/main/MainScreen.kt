@@ -2,6 +2,8 @@ package co.ec.amazonfiyattakip.ui.screen.main
 
 import android.icu.text.CaseMap.Title
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -164,7 +167,8 @@ fun NoProductScreen(
     }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .statusBarsPadding(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -290,10 +294,12 @@ fun NoProductScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text("Hiç ürün kaydedilmemiş.",
+                        Text(
+                            "Hiç ürün kaydedilmemiş.",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = MaterialTheme.colorScheme.onPrimary
-                            ))
+                            )
+                        )
                         Button(
                             onClick = {
 
@@ -374,14 +380,240 @@ fun ProductListScreen(
     stats: Map<String, Int>
 ) {
     val density = LocalDensity.current
-    Column (modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        val listState = rememberLazyListState()
+        Box(
+            modifier = Modifier
+                .fillMaxSize(1F)
+        ) {
+            val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+            val navigator = LocalNavigation.current
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 75.dp),
+                state = listState,
+                flingBehavior = flingBehavior,
+            ) {
+                items(products.size) { index ->
+                    val productWithPrices = products[index]
+
+                    CutCornerCard(
+                        modifier = Modifier
+                            .fillParentMaxWidth(1F)
+                            .padding(horizontal = 8.dp)
+                            .padding(bottom = 20.dp)
+                            .then(
+                                if (index == 0) Modifier.statusBarsPadding() else Modifier
+                            )
+                            .then(
+                                if (index == products.size - 1) Modifier.padding(bottom = 15.dp) else Modifier
+                            )
+                            .clickable {
+                                navigator.navigate("detail/${productWithPrices.product.id}")
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        ),
+                        cutSize = 20.dp,
+                        elevation = CardDefaults.elevatedCardElevation(
+                            defaultElevation = 15.dp
+                        )
+
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(2F)
+                        ) {
+                            ProductImage(
+                                productWithPrices.product,
+                                modifier = Modifier
+                                    .fillMaxHeight(.75F)
+                                    .aspectRatio(1F)
+                                    .alpha(.8F)
+                                    .align(Alignment.TopEnd),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                radialGradient = true
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                            ) {
+
+                                Text(
+                                    productWithPrices.product.title,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp)
+                                        .padding(top = 8.dp),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    ),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    productWithPrices.product.asin,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Light,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    ),
+                                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+                                )
+                                AutoText(
+                                    text = productWithPrices.product.price(),
+                                    modifier = Modifier
+                                        .fillMaxHeight(.3F)
+                                        .padding(horizontal = 8.dp),
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1F)
+                                ) {
+                                    var selectedPair by remember {
+                                        mutableStateOf<PriceGraphPair?>(
+                                            null
+                                        )
+                                    }
+                                    PriceGraph(
+                                        modifier = Modifier
+                                            .clickable(
+                                                interactionSource = null,
+                                                indication = null,
+                                                onClick = {
+
+                                                }
+                                            ),
+                                        prices = productWithPrices.priceInfoList.map {
+                                            return@map PriceGraphPair(it.date, it.price.toFloat())
+                                        },
+                                        onDrag = { pair ->
+                                            selectedPair = pair
+                                        },
+                                        hasCircles = false,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = .5F)
+                                    )
+                                    selectedPair?.let {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.BottomStart)
+                                                .padding(8.dp)
+                                        ) {
+
+                                            Text(
+                                                "${it.date.dateString()} ${it.date.timeString()}",
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontWeight = FontWeight.Light,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            )
+                                            Text(
+                                                it.price.toInt().price(),
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+
+                                                )
+                                            )
+                                        }
+
+                                    }
+                                }
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .height(IntrinsicSize.Max)
+                                    .align(Alignment.BottomEnd),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.Star, "",
+                                    modifier = Modifier.height(with(density) { 12.sp.toDp() })
+                                )
+                                Text(
+                                    productWithPrices.product.star.toString(),
+                                    fontSize = 10.sp
+                                )
+                                VerticalDivider(
+                                    modifier = Modifier.padding(2.dp)
+                                )
+                                Icon(
+                                    Icons.Filled.ChatBubble, "",
+                                    modifier = Modifier.height(with(density) { 12.sp.toDp() })
+                                )
+                                Text(
+                                    productWithPrices.product.comment.toString(),
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+
+
+                        if (productWithPrices.priceInfoList.size > 1000) {
+                            val predict by remember { mutableStateOf(productWithPrices.predict()) }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
+                                    .height(IntrinsicSize.Max)
+                            ) {
+                                (0..3).forEach {
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1F)
+                                            .padding(2.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        val date = (unix() + 7 * it * 86400).dateString()
+
+                                        Text(
+                                            date.replace(" 202", "\n202"),
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontWeight = FontWeight.Light,
+                                                fontSize = 12.sp,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        )
+                                        AutoText(
+                                            predict[it].toInt().price(),
+                                            fontSize = 1..16
+                                        )
+                                    }
+                                    if (it < 3) {
+                                        VerticalDivider(
+                                            modifier = Modifier.padding(2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+
+                    }
+                }
+            }
+        }
+
+        val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
         Column(
             modifier = Modifier
+                .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .shadow(2.dp)
-                .background(MaterialTheme.colorScheme.primary)
-                .statusBarsPadding()
-                .aspectRatio(3F)
+                .shadow(2.dp, cutCorner)
+                .background(MaterialTheme.colorScheme.primary, cutCorner)
+                .aspectRatio(4F)
         ) {
             var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
 
@@ -389,11 +621,11 @@ fun ProductListScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight(.8F)
+                        .fillMaxHeight(.6F)
                         .align(Alignment.BottomEnd)
                 ) {
                     PriceGraph(
-                        modifier = Modifier,
+                        modifier = Modifier.blur(1.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5F),
                         prices = dailyTotals.map {
                             return@map PriceGraphPair(it.date, it.total.toFloat())
@@ -401,7 +633,9 @@ fun ProductListScreen(
                         hasCircles = false,
                         onDrag = {
                             totalDragValue = it
-                        }
+                        },
+                        closePath = false,
+                        drawStyle = Stroke(12F)
                     )
                 }
 
@@ -477,279 +711,6 @@ fun ProductListScreen(
             }
 
         }
-        Box(
-            modifier = Modifier
-                .fillMaxSize(1F)
-        ) {
-            val listState = rememberLazyListState()
-            val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
-            val navigator = LocalNavigation.current
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 8.dp),
-                state = listState,
-                flingBehavior = flingBehavior,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(products.size) { index ->
-                    val productWithPrices = products[index]
-
-                    CutCornerCard(
-                        modifier = Modifier
-                            .fillParentMaxWidth(.8F)
-                            .padding(start = 8.dp)
-                            .padding(end = if (index == products.size - 1) 8.dp else 0.dp)
-                            .fillMaxHeight()
-                            .clickable {
-                                navigator.navigate("detail/${productWithPrices.product.id}")
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                        ),
-                        cutSize = 20.dp,
-                        elevation = CardDefaults.elevatedCardElevation(
-                            defaultElevation = 15.dp
-                        )
-
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(3F)
-                        ) {
-                            ProductImage(
-                                productWithPrices.product,
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .aspectRatio(1F)
-                                    .align(Alignment.CenterEnd),
-                                color = MaterialTheme.colorScheme.tertiaryContainer
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .height(IntrinsicSize.Max)
-                                    .align(Alignment.BottomEnd),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Filled.Star, "",
-                                    modifier = Modifier.height(with(density) { 12.sp.toDp() })
-                                )
-                                Text(
-                                    productWithPrices.product.star.toString(),
-                                    fontSize = 10.sp
-                                )
-                                VerticalDivider(
-                                    modifier = Modifier.padding(2.dp)
-                                )
-                                Icon(
-                                    Icons.Filled.ChatBubble, "",
-                                    modifier = Modifier.height(with(density) { 12.sp.toDp() })
-                                )
-                                Text(
-                                    productWithPrices.product.comment.toString(),
-                                    fontSize = 10.sp
-                                )
-                            }
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth(.8F)
-                                    .padding(8.dp)
-                            ) {
-
-                                Text(
-                                    productWithPrices.product.title,
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    productWithPrices.product.asin,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Light
-                                    ),
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                                AutoText(
-                                    text = productWithPrices.product.price(),
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(3F)
-                        ) {
-                            var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
-                            PriceGraph(
-                                modifier = Modifier
-                                    .clickable(
-                                        interactionSource = null,
-                                        indication = null,
-                                        onClick = {
-
-                                        }
-                                    ),
-                                prices = productWithPrices.priceInfoList.map {
-                                    return@map PriceGraphPair(it.date, it.price.toFloat())
-                                },
-                                onDrag = { pair ->
-                                    selectedPair = pair
-                                }
-                            )
-                            selectedPair?.let {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp)
-                                ) {
-
-                                    Text(
-                                        "${it.date.dateString()} ${it.date.timeString()}",
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontWeight = FontWeight.Light
-                                        )
-                                    )
-                                    Text(
-                                        it.price.toInt().price(),
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                }
-
-                            }
-                        }
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.primary,
-                                            Color.Transparent
-                                        )
-                                    )
-                                )
-                        )
-
-                        if (productWithPrices.priceInfoList.size > 10) {
-                            val predict by remember { mutableStateOf(productWithPrices.predict()) }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp)
-                                    .height(IntrinsicSize.Max)
-                            ) {
-                                (0..3).forEach {
-                                    Column(
-                                        modifier = Modifier
-                                            .weight(1F)
-                                            .padding(2.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        val date = (unix() + 7 * it * 86400).dateString()
-
-                                        Text(
-                                            date.replace(" 202", "\n202"),
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontWeight = FontWeight.Light,
-                                                fontSize = 12.sp,
-                                                textAlign = TextAlign.Center
-                                            )
-                                        )
-                                        AutoText(
-                                            predict[it].toInt().price(),
-                                            fontSize = 1..16
-                                        )
-                                    }
-                                    if (it < 3) {
-                                        VerticalDivider(
-                                            modifier = Modifier.padding(2.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 5.dp)
-                        )
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1F)
-                                .verticalScroll(rememberScrollState())
-                        ) {
-
-                            Text(
-                                productWithPrices.product.description,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    textAlign = TextAlign.Justify
-                                )
-                            )
-                            val extras = productWithPrices.product.extraMap().toList()
-                            FlowRow(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 4.dp),
-                                maxItemsInEachRow = 2,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                extras.forEach {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth(.48F)
-                                            .padding(vertical = 2.dp)
-                                            .background(
-                                                MaterialTheme.colorScheme.surfaceColorAtElevation(
-                                                    2.dp
-                                                )
-                                            )
-                                            .padding(4.dp)
-                                    ) {
-                                        Text(
-                                            it.first,
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontWeight = FontWeight.SemiBold,
-                                                fontSize = 11.sp
-                                            )
-                                        )
-                                        Text(
-                                            it.second,
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontSize = 13.sp
-                                            ),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-
     }
 }
 

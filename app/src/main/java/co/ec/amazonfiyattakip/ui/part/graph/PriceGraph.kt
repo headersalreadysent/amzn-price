@@ -111,6 +111,18 @@ fun PriceGraph(
                         )
                     }
                 }
+            } else {
+                prices.forEachIndexed { index, priceDatePair ->
+                    val x = width * index / (prices.size - 1)
+                    val y = height - (priceDatePair.price - minPrice) * scaleY - subArea
+                    if (selectedIndex == index) {
+                        drawCircle(
+                            circleColor.copy(alpha = .5F),
+                            radius = 36f,
+                            center = Offset(x, y)
+                        )
+                    }
+                }
             }
         }
     }
