@@ -102,10 +102,9 @@ fun ProductImage(
                         } else {
                             Modifier.background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(
-                                        color.copy(alpha = 1F),
-                                        Color.Transparent
-                                    )
+                                    0F to color.copy(alpha = 1F),
+                                    0.15F to color.copy(alpha = .8F),
+                                    1.0f to Color.Transparent
                                 )
                             )
                         }

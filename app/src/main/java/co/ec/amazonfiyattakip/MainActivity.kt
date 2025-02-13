@@ -81,7 +81,7 @@ fun AppContent(
 ) {
     val uiController = rememberSystemUiController()
 
-    val primary = MaterialTheme.colorScheme.primary
+    val primary = MaterialTheme.colorScheme.primaryContainer
     val surface = MaterialTheme.colorScheme.surfaceContainer
     SideEffect {
         uiController.setNavigationBarColor(
@@ -116,13 +116,14 @@ fun AppContent(
                     }
                     Spacer(Modifier.weight(1f, true))
                 },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 floatingActionButton = {
                     fabAction?.let {
                         FloatingActionButton(
                             onClick = it.second,
-                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
+                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
+                            containerColor = MaterialTheme.colorScheme.primary
                         ) {
                             Icon(it.first, contentDescription = "")
                         }
