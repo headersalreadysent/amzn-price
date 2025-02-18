@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip.ui.screen.settings
 
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import co.ec.helper.AppSharedSettings
@@ -13,7 +12,7 @@ class SettingsViewModel : ViewModel() {
 
 
     private var booleanKeys = listOf("dynamicTheme")
-    private var intKeys = listOf("")
+    private var intKeys = listOf("queryTime")
 
     fun startWatch(settings: AppSharedSettings) {
         shared = settings

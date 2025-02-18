@@ -32,36 +32,34 @@ import kotlin.concurrent.thread
 class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
 
-    private val productDao = AppDatabase.getDatabase().product()
 
     companion object {
 
-        val JOBTAG = "PriceUpdateJob"
-
-        @OptIn(DelicateCoroutinesApi::class)
-        fun setupJob() {
+        const val JOBTAG = "PriceUpdateJob"
+        fun setupJob(queryTime:Int=15) {
 
             val manager = WorkManager.getInstance(App.context())
             //test if work cancelled restart it
             val list = manager.getWorkInfosByTag(JOBTAG)
+            App.snack("Sorgu zamanı $queryTime olarak ayarlandı.")
             list.addListener(
                 {
                     val workInfos = list.get()
                     AppLogger.d("$JOBTAG is $workInfos", "Job")
                     if (workInfos != null && workInfos.isEmpty()) {
-                        startJob()
+                        startJob(queryTime)
                         return@addListener
                     }
                     workInfos?.forEach { workInfo ->
                         when (workInfo.state) {
                             WorkInfo.State.CANCELLED -> {
                                 AppLogger.d("$JOBTAG is cancelled", "Job")
-                                startJob()
+                                startJob(queryTime)
                             }
 
                             WorkInfo.State.FAILED -> {
                                 AppLogger.d("$JOBTAG is failed", "Job")
-                                startJob()
+                                startJob(queryTime)
                             }
 
                             else -> {
@@ -72,12 +70,9 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 },
                 ContextCompat.getMainExecutor(App.context())
             )
-            GlobalScope.launch {
-              //  collectPrices()
-            }
         }
 
-        fun startJob() {
+        fun startJob(queryTime:Int=15) {
             val manager = WorkManager.getInstance(App.context())
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -85,7 +80,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
 
             val updatePriceRequest =
-                PeriodicWorkRequestBuilder<PriceUpdate>(15, TimeUnit.MINUTES)
+                PeriodicWorkRequestBuilder<PriceUpdate>(queryTime.toLong(), TimeUnit.MINUTES)
                     // .setInitialDelay(1, TimeUnit.MINUTES)
                     .addTag(JOBTAG)
                     // .setConstraints(constraints)
@@ -97,14 +92,14 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             //add jobs
             manager.enqueue(updatePriceRequest)
 
-
+/*
             val oneTimeWorkRequest =
                 OneTimeWorkRequestBuilder<PriceUpdate>()
                     // .setInitialDelay(1, TimeUnit.MINUTES)
                     .addTag(JOBTAG)
                     // .setConstraints(constraints)
                     .build()
-            manager.enqueue(oneTimeWorkRequest)
+            manager.enqueue(oneTimeWorkRequest)*/
 
             AppLogger.d("$JOBTAG is started", "Job")
 

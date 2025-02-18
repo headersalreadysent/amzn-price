@@ -27,7 +27,7 @@ object AmznRequest {
         )
     ).build()
 
-    val sharedSettings = AppSharedSettings.get()
+    var sharedSettings = AppSharedSettings.get()
 
     init {
         obtainCookieJar()

@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
@@ -79,6 +80,8 @@ fun AppContent(
             darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
         )
     }
+    val coroutineScope= rememberCoroutineScope()
+    App.setupSnackbar(LocalSnackbar.current, coroutineScope)
     val fabAction by appModel.fabAction.observeAsState()
     val navigator = LocalNavigation.current
     Scaffold(

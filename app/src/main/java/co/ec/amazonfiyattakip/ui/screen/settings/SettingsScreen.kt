@@ -71,17 +71,18 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
 
             val settings by model.map.observeAsState(mapOf())
             if (settings.keys.isNotEmpty()) {
-                /*
-                var dramaticTime: Int = readValue(settings, "dramaticTime", 3) as Int
-                ValueDialog(
-                    initialValue = dramaticTime.toString(),
-                    title = stringResource(R.string.settings_dramatic_selection_timeout)
-                ) {
-                    dramaticTime = it.toInt()
-                    model.set("dramaticTime", it.toInt())
-                }*/
-                var dynamicTheme: Boolean = readValue(settings, "dynamicTheme", false) as Boolean
 
+
+                var queryTime: Int = readValue(settings, "queryTime", 15) as Int
+                ValueDialog(
+                    initialValue = queryTime.toString(),
+                    title = "Sorgulama sıklığı (dakika",
+                    desc = "En az 15 dakika olacak şekilde sorgulama sıklığı"
+                ) {
+                    queryTime = it.toInt()
+                    model.set("queryTime", it.toInt())
+                }
+                var dynamicTheme: Boolean = readValue(settings, "dynamicTheme", false) as Boolean
                 ToggleSettings(
                     initialValue = dynamicTheme,
                     title = "Dinamik Tema",
@@ -108,7 +109,10 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
-                modifier = Modifier.fillMaxWidth().padding(16.dp).padding(top = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .padding(top = 8.dp)
             )
         }
     }
