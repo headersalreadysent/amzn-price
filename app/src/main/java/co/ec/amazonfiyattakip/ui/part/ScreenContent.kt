@@ -14,6 +14,7 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.screen.add.AddScreen
 import co.ec.amazonfiyattakip.ui.screen.detail.DetailScreen
 import co.ec.amazonfiyattakip.ui.screen.main.MainScreen
+import co.ec.amazonfiyattakip.ui.screen.settings.SettingsScreen
 
 
 @Composable
@@ -37,6 +38,9 @@ fun ScreenContent(
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getInt("id")
             DetailScreen(id) // Pass the id to your DetailScreen
+        }
+        composable("settings") {
+            SettingsScreen()
         }
     }
 }

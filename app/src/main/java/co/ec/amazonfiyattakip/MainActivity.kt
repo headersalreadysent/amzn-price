@@ -96,6 +96,7 @@ fun AppContent(
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
                     IconButton(onClick = {
+                        navigator.navigate("settings")
                         appModel.generateFakePrices()
                     }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")

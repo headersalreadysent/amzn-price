@@ -11,7 +11,15 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import co.ec.helper.AppEventBus
+import co.ec.helper.AppSharedSettings
+
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
     onPrimary = onPrimaryLight,
@@ -260,8 +268,17 @@ fun AmazonFiyatTakipTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+
+    var dynamicSettings by remember { mutableStateOf(AppSharedSettings.get().getBoolean("dynamicTheme")) }
+    LaunchedEffect(Unit) {
+        AppEventBus.subscribe<AppSharedSettings.SettingsChange> {
+            if(it.name=="dynamicTheme"){
+                dynamicSettings=it.value as Boolean
+            }
+        }
+    }
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        dynamicSettings && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
