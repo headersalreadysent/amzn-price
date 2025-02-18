@@ -6,9 +6,11 @@ import androidx.lifecycle.ViewModel
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.db.product.ProductDao
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
+import com.fleeksoft.ksoup.KsoupEngineInstance.init
 import kotlin.random.Random
 
 open class DetailViewModel : ViewModel() {
@@ -16,8 +18,7 @@ open class DetailViewModel : ViewModel() {
     val product = MutableLiveData<Product>()
     val prices = MutableLiveData<List<PriceInfo>>()
 
-    init {
-    }
+
 
     fun loadProduct(productId: Int) {
         Async.run({
@@ -32,23 +33,31 @@ open class DetailViewModel : ViewModel() {
         })
     }
 
-    fun stopFallowProduct() {
+    fun stopFollow() {
+
         Async.run({
-            product.value?.let {
-                val copy = it.copy(
-                    status = ProductStatus.PASSIVE
-                )
-                return@run AppDatabase.getDatabase().product().update(copy)
-            }
-            return@run null
+            val copy = product.value!!.copy(
+                status = ProductStatus.PASSIVE
+            )
+            AppDatabase.getDatabase().product().update(copy)
+            return@run copy
         }, {
-            product.value = product.value?.let {
-                return@let it.copy(
-                    status = ProductStatus.PASSIVE
-                )
-            }
+            product.value = it
         })
     }
+
+    fun startFollow() {
+        Async.run({
+            val copy = product.value!!.copy(
+                status = ProductStatus.ACTIVE
+            )
+            AppDatabase.getDatabase().product().update(copy)
+            return@run copy
+        }, {
+            product.value = it
+        })
+    }
+
 
     fun emulate() {
         //generate fake products

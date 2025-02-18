@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +23,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -30,6 +34,7 @@ import androidx.compose.material.icons.outlined.ChatBubble
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,9 +42,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -48,6 +55,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,14 +78,17 @@ import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CalendarScreen
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
+import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.ProductStat
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.amazonfiyattakip.ui.part.TitleBar
@@ -88,6 +99,7 @@ import co.ec.helper.composable.AutoText
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -147,6 +159,7 @@ fun DetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(scrollState)
+                    .padding(bottom = 80.dp)
             ) {
 
                 Box(
@@ -223,69 +236,115 @@ fun DetailScreen(
 
                     prices?.let {
                         TreePriceRow(it)
-                        Column(
+                        HorizontalDivider(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainer)
                                 .padding(vertical = 8.dp)
-                        ) {
-                            CalendarScreen(modifier = Modifier
+                        )
+                        CalendarPriceData(it)
+                        val coroutine = rememberCoroutineScope()
+                        val snackbar = LocalSnackbar.current
+
+
+                        TitleBar(
+                            title = "Fiyat Değişimi",
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(horizontal = 8.dp)
-                                .padding(vertical = 8.dp),
-                                priceList = it.map { Pair(it.date.dateString(), it.price) }.toMap()
-                            )
-                        }
-                    }
-                }
-
-
-
-                priceListData.reversed().let {
-                    TitleBar(title = "Fiyat Değişimi",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .clickable(
-                                indication = null, interactionSource = null
-                            ) {
-                                showOnlyChanges = !showOnlyChanges
-                            },
-                        extra = {
-                            Icon(
-                                if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
-                                contentDescription = "filter",
-                                modifier = Modifier.scale(.7F)
-                            )
-                        })
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        it.forEach {
-                            ListItem(modifier = Modifier.padding(bottom = 2.dp), headlineContent = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                .clickable(
+                                    indication = null, interactionSource = null
                                 ) {
-                                    Text(
-                                        it.date.dateString() + " " + it.date.timeString(),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        it.price(),
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                    )
-                                }
+                                    showOnlyChanges = !showOnlyChanges
+                                    coroutine.launch {
+                                        snackbar.showSnackbar(
+                                            if (showOnlyChanges)
+                                                "Sadece değişimler gösteriliyor" else
+                                                "Tüm sorgular gösteriliyor",
+                                            duration = SnackbarDuration.Short
+                                        )
+
+                                    }
+                                },
+                            extra = {
+                                Icon(
+                                    if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
+                                    contentDescription = "filter",
+                                    modifier = Modifier.scale(.7F),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                             })
+                        var showPrice by remember { mutableStateOf(true) }
+                        priceListData.reversed().let { list ->
+
+                            Column(modifier = Modifier
+                                .padding(8.dp)
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = null
+                                ) {
+                                    showPrice = !showPrice
+                                }) {
+                                list.forEachIndexed { index, it ->
+                                    val prevPrice=if(list.size>index+1){
+                                        list[index+1].price
+                                    } else 0
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 4.dp)
+                                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                            .height(40.dp)
+                                            .shadow(.5.dp)
+                                            .padding(8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            it.date.dateString() + " " + it.date.timeString(),
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                        )
+                                        if (showPrice) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    it.price(),
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                                    ),
+                                                )
+                                                Icon(
+                                                    if(prevPrice<it.price){
+                                                        Icons.AutoMirrored.Outlined.TrendingUp
+                                                    } else {
+                                                        Icons.AutoMirrored.Outlined.TrendingDown
+                                                    },
+                                                    contentDescription = "trend",
+                                                    modifier = Modifier.padding(start = 4.dp).scale(.6F),
+                                                    tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
+                                                )
+
+                                            }
+
+                                        } else {
+                                            PriceStat(it)
+                                        }
+                                    }
+                                }
+                            }
+
                         }
+
                     }
-
                 }
-
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
 
 
                 CutCornerCard(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
                 ) {
                     Text(
                         text = product.description,
@@ -294,28 +353,52 @@ fun DetailScreen(
                     )
                 }
 
-                ExtrasArea(product = product)
-                OutlinedButton(
-                    onClick = {
-                        model.stopFallowProduct()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text(text = "Takibi Bırak")
+                ExtrasArea(
+                    product = product,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                if (product.status == ProductStatus.ACTIVE) {
+                    OutlinedButton(
+                        onClick = {
+                            model.stopFollow()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .padding(bottom = 10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text(text = "Takibi Durdur")
+                    }
                 }
+                if (product.status == ProductStatus.PASSIVE) {
+                    OutlinedButton(
+                        onClick = {
+                            model.startFollow()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .padding(bottom = 10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(text = "Takibi Başlat")
+                    }
+                }
+
 
             }
             val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(4F)
+                    .aspectRatio(5F)
                     .align(Alignment.BottomStart)
                     .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
                     .shadow(1.dp, cutCorner)
@@ -334,7 +417,11 @@ fun DetailScreen(
  * show three price info
  */
 @Composable
-fun TreePriceRow(prices: List<PriceInfo>) {
+fun TreePriceRow(
+    prices: List<PriceInfo>,
+    containerColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
+    contentColor: Color = MaterialTheme.colorScheme.onTertiaryContainer
+) {
     val min = (prices.minOfOrNull { it.price } ?: 0)
     val max = (prices.maxOfOrNull { it.price } ?: 0)
     Row(
@@ -344,16 +431,16 @@ fun TreePriceRow(prices: List<PriceInfo>) {
         val columnModifier =
             Modifier
                 .weight(1F)
-                .background(MaterialTheme.colorScheme.secondary)
+                .background(containerColor)
                 .padding(4.dp)
         val titleStyle = MaterialTheme.typography.bodySmall.copy(
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSecondary.copy(alpha = .8F)
+            color = contentColor.copy(alpha = .8F)
         )
         val valueStyle = MaterialTheme.typography.bodyLarge.copy(
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSecondary
+            color = contentColor
         )
         Column(modifier = columnModifier) {
             Text(
@@ -400,7 +487,7 @@ fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
             var dragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
             PriceGraph(
                 modifier = Modifier.align(Alignment.BottomEnd),
-                aspectRatio = 5F,
+                aspectRatio = 6F,
                 prices = graphData,
                 onDrag = {
                     dragValue = it
@@ -437,6 +524,99 @@ fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
 
 }
 
+@Composable
+fun PriceStat(
+    price: PriceInfo,
+    color: Color = MaterialTheme.colorScheme.onTertiaryContainer
+) {
+    Row(
+        modifier = Modifier
+            .height(IntrinsicSize.Max),
+        verticalAlignment = Alignment.CenterVertically,
+
+        ) {
+        val density = LocalDensity.current
+        Icon(
+            Icons.Filled.Star, "",
+            modifier = Modifier
+                .height(with(density) { 13.sp.toDp() })
+                .padding(end = 4.dp),
+            tint = color.copy(alpha = .8F)
+        )
+        Text(
+            price.star.toString(),
+            color = color,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        VerticalDivider(
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .fillMaxHeight(.8F)
+        )
+        Icon(
+            Icons.Filled.ChatBubble, "",
+            modifier = Modifier
+                .height(with(density) { 13.sp.toDp() })
+                .padding(end = 4.dp),
+            tint = color.copy(alpha = .8F)
+        )
+        Text(
+            price.comment.toString(),
+            color = color,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+fun CalendarPriceData(prices: List<PriceInfo>) {
+    //get scpoe
+    val coroutine = rememberCoroutineScope()
+    val snackbar = LocalSnackbar.current
+    var calendarView by remember { mutableStateOf(false) }
+    TitleBar(title = "Günlük Fiyatlar",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .clickable(
+                indication = null, interactionSource = null
+            ) {
+                //change view type
+                calendarView = !calendarView
+            },
+        extra = {
+            Icon(
+                Icons.Filled.CalendarMonth,
+                contentDescription = "days",
+                modifier = Modifier.scale(.7F),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        })
+    Crossfade(targetState = calendarView) { state ->
+        if (!state) {
+            //date row or
+            DateRow(
+                priceList = prices.map { Pair(it.date.toInt(), it.price) }.toMap(),
+            ) {
+                coroutine.launch {
+                    snackbar.showSnackbar(
+                        "${
+                            it.first.toLong().dateString()
+                        } ortalama fiyat ${it.second.price()}"
+                    )
+                }
+            }
+        } else {
+            //or full calendar
+            CalendarScreen(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .padding(vertical = 8.dp),
+                priceList = prices.map { Pair(it.date.dateString(), it.price) }.toMap()
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
