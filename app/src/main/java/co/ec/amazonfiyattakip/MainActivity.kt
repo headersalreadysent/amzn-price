@@ -41,6 +41,7 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
+import co.ec.amazonfiyattakip.ui.theme.primaryLight
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 class MainActivity : ComponentActivity() {
@@ -49,20 +50,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge(
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT,Color.TRANSPARENT)
         )
-
-       /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val controller = window.insetsController
-            controller?.let {
-                it.hide(WindowInsets.Type.systemBars())
-                it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                            View.SYSTEM_UI_FLAG_FULLSCREEN
-                    )
-        }*/
         val destination = intent?.getStringExtra("destination") ?: "main"
         setContent {
             AppProviders {
@@ -81,12 +68,11 @@ fun AppContent(
 ) {
     val uiController = rememberSystemUiController()
 
-    val primary = MaterialTheme.colorScheme.primaryContainer
-    val surface = MaterialTheme.colorScheme.surfaceContainer
+    val surface = MaterialTheme.colorScheme.secondaryContainer
     SideEffect {
         uiController.setNavigationBarColor(
-            color = primary,
-            darkIcons = ColorUtils.calculateLuminance(primary.toArgb()) > 0.5
+            color = surface,
+            darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
         )
         uiController.setStatusBarColor(
             color = androidx.compose.ui.graphics.Color.Transparent,
@@ -116,8 +102,8 @@ fun AppContent(
                     }
                     Spacer(Modifier.weight(1f, true))
                 },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary,
                 floatingActionButton = {
                     fabAction?.let {
                         FloatingActionButton(

@@ -51,8 +51,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -74,6 +76,7 @@ import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
+import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
@@ -94,13 +97,26 @@ import kotlin.random.Random
 
 @Composable
 fun DetailScreen(
-    productId: Int? = null,
-    model: DetailViewModel = viewModel()
+    productId: Int? = null, model: DetailViewModel = viewModel()
 ) {
     val urlHandler = LocalUriHandler.current
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
     var showOnlyChanges by remember { mutableStateOf(true) }
+    val priceListData by remember(showOnlyChanges, prices) {
+        var lastPrice = -1
+        mutableStateOf(prices.orEmpty().filter {
+            //filter by show only
+            if (!showOnlyChanges) {
+                return@filter true
+            }
+            if (lastPrice == it.price) {
+                return@filter false
+            }
+            lastPrice = it.price
+            return@filter true
+        })
+    }
 
     DisposableEffect(Unit) {
         productId?.let {
@@ -158,13 +174,10 @@ fun DetailScreen(
                             .statusBarsPadding()
                     ) {
                         Text(
-                            text = product.title,
-                            style = MaterialTheme.typography.titleMedium.copy(
+                            text = product.title, style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 fontWeight = FontWeight.Bold
-                            ),
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
+                            ), maxLines = 3, overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             modifier = Modifier
@@ -183,8 +196,9 @@ fun DetailScreen(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         )
-                        ProductStat(product,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        ProductStat(
+                            product, color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     }
 
                 }
@@ -197,9 +211,11 @@ fun DetailScreen(
                             .padding(vertical = 30.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val alpha by rememberBlink()
                         Text(
-                            text = "Henüz fiyat değişimi oluşmadı.",
-                            style = MaterialTheme.typography.bodySmall
+                            text = "Fiyat değişimleri bekleniyor.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.alpha(alpha)
                         )
                         LinearProgressIndicator(modifier = Modifier.padding(top = 4.dp))
                     }
@@ -213,12 +229,10 @@ fun DetailScreen(
                                 .background(MaterialTheme.colorScheme.surfaceContainer)
                                 .padding(vertical = 8.dp)
                         ) {
-                            CalendarScreen(
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .padding(vertical = 8.dp),
-                                priceList = it.map { Pair(it.date.dateString(), it.price) }
-                                    .toMap()
+                            CalendarScreen(modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .padding(vertical = 8.dp),
+                                priceList = it.map { Pair(it.date.dateString(), it.price) }.toMap()
                             )
                         }
                     }
@@ -226,17 +240,17 @@ fun DetailScreen(
 
 
 
-                prices?.reversed()?.let {
+                priceListData.reversed().let {
                     TitleBar(title = "Fiyat Değişimi",
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
                             .clickable(
-                                indication = null,
-                                interactionSource = null
+                                indication = null, interactionSource = null
                             ) {
                                 showOnlyChanges = !showOnlyChanges
-                            }, extra = {
+                            },
+                        extra = {
                             Icon(
                                 if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
                                 contentDescription = "filter",
@@ -244,37 +258,24 @@ fun DetailScreen(
                             )
                         })
                     Column(modifier = Modifier.padding(8.dp)) {
-
-                        var lastPrice = 0
                         it.forEach {
-                            if (showOnlyChanges && lastPrice == it.price) {
-                                return@forEach
-                            }
-                            lastPrice = it.price
-                            ListItem(
-                                modifier = Modifier.padding(bottom = 2.dp),
-                                colors = ListItemDefaults.colors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-
-                                    ),
-                                headlineContent = {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            it.date.dateString() + " " + it.date.timeString(),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            it.price(),
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.SemiBold
-                                            ),
-                                        )
-                                    }
+                            ListItem(modifier = Modifier.padding(bottom = 2.dp), headlineContent = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        it.date.dateString() + " " + it.date.timeString(),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        it.price(),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                    )
                                 }
-                            )
+                            })
                         }
                     }
 
@@ -284,14 +285,12 @@ fun DetailScreen(
 
 
                 CutCornerCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = product.description,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .padding(8.dp)
+                        modifier = Modifier.padding(8.dp)
                     )
                 }
 
@@ -312,22 +311,18 @@ fun DetailScreen(
                 }
 
             }
-            CutCornerCard(
+            val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(4F)
-                    .align(Alignment.BottomStart),
-                cutSize = 20.dp,
-                corner = CutCorner.TOPRIGHT,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                    .align(Alignment.BottomStart)
+                    .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
+                    .shadow(1.dp, cutCorner)
             ) {
-                prices?.let {
-                    PricesGraphWithDrag(showOnlyChanges, it) {
-                        showOnlyChanges = !showOnlyChanges
-                    }
-                }
+                PricesGraphWithDrag(
+                    prices = priceListData
+                )
             }
         }
     }
@@ -346,36 +341,31 @@ fun TreePriceRow(prices: List<PriceInfo>) {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        val columnModifier = Modifier
-            .weight(1F)
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .padding(4.dp)
+        val columnModifier =
+            Modifier
+                .weight(1F)
+                .background(MaterialTheme.colorScheme.secondary)
+                .padding(4.dp)
         val titleStyle = MaterialTheme.typography.bodySmall.copy(
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
+            color = MaterialTheme.colorScheme.onSecondary.copy(alpha = .8F)
         )
         val valueStyle = MaterialTheme.typography.bodyLarge.copy(
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onTertiaryContainer
+            color = MaterialTheme.colorScheme.onSecondary
         )
         Column(modifier = columnModifier) {
             Text(
-                text = "En Düşük",
-                modifier = Modifier.fillMaxWidth(),
-                style = titleStyle
+                text = "En Düşük", modifier = Modifier.fillMaxWidth(), style = titleStyle
             )
             Text(
-                text = min.price(),
-                modifier = Modifier.fillMaxWidth(),
-                style = valueStyle
+                text = min.price(), modifier = Modifier.fillMaxWidth(), style = valueStyle
             )
         }
         Column(modifier = columnModifier) {
             Text(
-                text = "Ortalama",
-                modifier = Modifier.fillMaxWidth(),
-                style = titleStyle
+                text = "Ortalama", modifier = Modifier.fillMaxWidth(), style = titleStyle
             )
             Text(
                 text = ((min + max) / 2F).toInt().price(),
@@ -385,55 +375,45 @@ fun TreePriceRow(prices: List<PriceInfo>) {
         }
         Column(modifier = columnModifier) {
             Text(
-                text = "En Yüksek",
-                modifier = Modifier.fillMaxWidth(),
-                style = titleStyle
+                text = "En Yüksek", modifier = Modifier.fillMaxWidth(), style = titleStyle
             )
             Text(
-                text = max.price(),
-                modifier = Modifier.fillMaxWidth(),
-                style = valueStyle
+                text = max.price(), modifier = Modifier.fillMaxWidth(), style = valueStyle
             )
         }
     }
 }
 
 @Composable
-fun PricesGraphWithDrag(
-    showOnlyChanges: Boolean,
-    prices: List<PriceInfo>,
-    then: (() -> Unit) = {}
-) {
+fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
     val graphData by remember {
-        mutableStateOf(
-            prices.map { PriceGraphPair(it.date, it.price / 100F) }
-        )
+        mutableStateOf(prices.map {
+            PriceGraphPair(
+                it.date, it.price / 100F
+            )
+        })
     }
-    var lastPrice = -1F
-    val onlyChanges by remember {
-        mutableStateOf(
-            prices.map { PriceGraphPair(it.date, it.price / 100F) }
-                .filter {
-                    if (lastPrice == it.price) {
-                        return@filter false
-                    }
-                    lastPrice = it.price
-                    return@filter true
-                }
-        )
-    }
-    if (onlyChanges.size > 2) {
+    if (graphData.size > 2) {
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
             var dragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
-            //animate by dragValue
+            PriceGraph(
+                modifier = Modifier.align(Alignment.BottomEnd),
+                aspectRatio = 5F,
+                prices = graphData,
+                onDrag = {
+                    dragValue = it
+                },
+                hasCircles = false,
+                closePath = false,
+                drawStyle = Stroke(10F)
+            )
             Row(
                 modifier = Modifier
                     .padding(end = 20.dp, start = 8.dp)
-                    .padding(top = 8.dp)
-                    .fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(top = 16.dp)
+                    .fillMaxSize(), horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 dragValue?.let {
                     Text(
@@ -452,26 +432,6 @@ fun PricesGraphWithDrag(
                     )
                 }
             }
-
-            PriceGraph(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(.4F)
-                    .align(Alignment.BottomEnd)
-                    .clickable(
-                        interactionSource = null,
-                        indication = null
-                    ) {
-                        then()
-                    },
-                if (showOnlyChanges) onlyChanges else graphData, onDrag = {
-                    dragValue = it
-                },
-
-                color = MaterialTheme.colorScheme.onPrimary,
-                closePath = false,
-                drawStyle = Stroke(10F)
-            )
         }
     }
 

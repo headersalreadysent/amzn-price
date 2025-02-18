@@ -2,7 +2,11 @@ package co.ec.amazonfiyattakip.ui.screen.main
 
 import android.icu.text.CaseMap.Title
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,12 +79,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -91,6 +98,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
@@ -104,6 +112,7 @@ import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.predictNextPrices
 import co.ec.amazonfiyattakip.helper.price
+import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
@@ -274,7 +283,7 @@ fun NoProductScreen(
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .background(
-                    MaterialTheme.colorScheme.primary,
+                    MaterialTheme.colorScheme.secondaryContainer,
                     cutShape(CutCorner.TOPRIGHT, 20.dp)
                 )
                 .shadow(
@@ -298,7 +307,7 @@ fun NoProductScreen(
                         Text(
                             "Hiç ürün kaydedilmemiş.",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         )
                         Button(
@@ -306,8 +315,8 @@ fun NoProductScreen(
 
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onPrimary,
-                                contentColor = MaterialTheme.colorScheme.primary
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             ),
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
@@ -329,7 +338,7 @@ fun NoProductScreen(
                                 "Sepet toplamı",
                                 modifier = Modifier.padding(bottom = 4.dp),
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     fontWeight = FontWeight.SemiBold,
                                 )
                             )
@@ -338,7 +347,7 @@ fun NoProductScreen(
                                 text = selectedList.sumOf { it.price }.price(),
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             )
                         }
@@ -392,7 +401,7 @@ fun ProductListScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 75.dp),
+                    .padding(bottom = 80.dp),
                 state = listState,
                 flingBehavior = flingBehavior,
             ) {
@@ -414,9 +423,9 @@ fun ProductListScreen(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .shadow(2.dp, cutCorner)
-                .background(MaterialTheme.colorScheme.primaryContainer, cutCorner)
-                .aspectRatio(4F)
+                .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
+                .shadow(1.dp, cutCorner)
+                .aspectRatio(3.5F)
         ) {
             var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
 
@@ -428,8 +437,9 @@ fun ProductListScreen(
                         .align(Alignment.BottomEnd)
                 ) {
                     PriceGraph(
-                        modifier = Modifier.blur(1.dp),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = .5F),
+                        modifier = Modifier.blur(.2.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = .8F),
+                        circleColor = MaterialTheme.colorScheme.primary,
                         prices = dailyTotals.map {
                             return@map PriceGraphPair(it.date, it.total.toFloat())
                         },
@@ -438,7 +448,7 @@ fun ProductListScreen(
                             totalDragValue = it
                         },
                         closePath = false,
-                        drawStyle = Stroke(12F)
+                        drawStyle = Stroke(9F)
                     )
                 }
 
@@ -450,7 +460,7 @@ fun ProductListScreen(
                     Text(
                         "Sepet Toplamı",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     )
                     AutoText(
@@ -459,15 +469,16 @@ fun ProductListScreen(
                             .price(),
                         fontSize = 20..35,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.SemiBold
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontWeight = FontWeight.Bold,
+                            shadow = Shadow(MaterialTheme.colorScheme.secondary, Offset(1F,1F))
                         )
                     )
                     totalDragValue?.let {
                         Text(
                             it.date.dateString(),
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontSize = 10.sp
                             ),
                             modifier = Modifier.graphicsLayer {
@@ -485,12 +496,12 @@ fun ProductListScreen(
                     val titleStyle = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 8.sp,
                         lineHeight = 8.sp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     val numberStyle = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.sp,
                         lineHeight = 12.sp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.End
                     )
                     if (stats.containsKey("product")) {
@@ -522,8 +533,8 @@ fun ProductListScreen(
 fun MainProductCard(
     productWithPrices: ProductWithPrices, isFirst: Boolean, isLast: Boolean,
     onClick: () -> Unit = {},
-    containerColor: Color = MaterialTheme.colorScheme.secondaryContainer,
-    contentColor: Color = MaterialTheme.colorScheme.onSecondaryContainer
+    containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+    contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     CutCornerCard(
         modifier = Modifier
@@ -604,57 +615,76 @@ fun MainProductCard(
                         .fillMaxWidth()
                         .weight(1F)
                 ) {
-                    var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
-                    PriceGraph(
-                        modifier = Modifier
-                            .clickable(
-                                interactionSource = null,
-                                indication = null,
-                                onClick = {
+                    Crossfade(targetState = productWithPrices.priceInfoList.size>1) {
 
+                        if(it){
+                            var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
+                            PriceGraph(
+                                modifier = Modifier
+                                    .clickable(
+                                        interactionSource = null,
+                                        indication = null,
+                                        onClick = {
+
+                                        }
+                                    ),
+                                prices = productWithPrices.priceInfoList.map {
+                                    return@map PriceGraphPair(it.date, it.price.toFloat())
+                                },
+                                onDrag = { pair ->
+                                    selectedPair = pair
+                                },
+                                hasCircles = false,
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = .8F)
+                            )
+                            selectedPair?.let {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .align(Alignment.BottomStart)
+                                        .padding(8.dp)
+                                ) {
+
+                                    Text(
+                                        "${it.date.dateString()} ${it.date.timeString()}",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Light,
+                                            color = contentColor
+                                        )
+                                    )
+                                    Text(
+                                        it.price.toInt().price(),
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = contentColor
+
+                                        )
+                                    )
                                 }
-                            ),
-                        prices = productWithPrices.priceInfoList.map {
-                            return@map PriceGraphPair(it.date, it.price.toFloat())
-                        },
-                        onDrag = { pair ->
-                            selectedPair = pair
-                        },
-                        hasCircles = false,
-                        color = contentColor.copy(alpha = .5F)
-                    )
-                    selectedPair?.let {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomStart)
-                                .padding(8.dp)
-                        ) {
 
-                            Text(
-                                "${it.date.dateString()} ${it.date.timeString()}",
+                            }
+                        } else {
+                            val alpha by rememberBlink()
+                            Text("Fiyat değişimleri bekleniyor.",
+                                modifier = Modifier.fillMaxSize()
+                                    .alpha(alpha),
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Light,
-                                    color = contentColor
+                                    textAlign = TextAlign.Center,
+                                    fontStyle = FontStyle.Italic,
+                                    fontSize = 11.sp
                                 )
                             )
-                            Text(
-                                it.price.toInt().price(),
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = contentColor
 
-                                )
-                            )
                         }
-
                     }
+
                 }
             }
+            val contentOver=ColorUtils.calculateLuminance(contentColor.toArgb())
             ProductStat(
                 productWithPrices.product,
                 modifier = Modifier.align(Alignment.BottomCenter),
-                color = contentColor
+                color = if(contentOver>.5F) Color.Black else Color.White
             )
 
         }
