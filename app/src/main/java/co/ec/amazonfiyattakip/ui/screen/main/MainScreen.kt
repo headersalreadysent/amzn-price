@@ -471,7 +471,7 @@ fun ProductListScreen(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.Bold,
-                            shadow = Shadow(MaterialTheme.colorScheme.secondary, Offset(1F,1F))
+                            shadow = Shadow(MaterialTheme.colorScheme.secondary, Offset(1F, 1F))
                         )
                     )
                     totalDragValue?.let {
@@ -533,7 +533,7 @@ fun ProductListScreen(
 fun MainProductCard(
     productWithPrices: ProductWithPrices, isFirst: Boolean, isLast: Boolean,
     onClick: () -> Unit = {},
-    containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
     contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     CutCornerCard(
@@ -603,10 +603,11 @@ fun MainProductCard(
                 AutoText(
                     text = productWithPrices.product.price(),
                     modifier = Modifier
-                        .fillMaxHeight(.3F)
+                        .fillMaxWidth()
+                        .weight(.6F)
                         .padding(horizontal = 8.dp),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = contentColor,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
                     )
                 )
@@ -615,9 +616,9 @@ fun MainProductCard(
                         .fillMaxWidth()
                         .weight(1F)
                 ) {
-                    Crossfade(targetState = productWithPrices.priceInfoList.size>1) {
+                    Crossfade(targetState = productWithPrices.priceInfoList.size > 1) {
 
-                        if(it){
+                        if (it) {
                             var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
                             PriceGraph(
                                 modifier = Modifier
@@ -628,9 +629,14 @@ fun MainProductCard(
 
                                         }
                                     ),
-                                prices = productWithPrices.priceInfoList.map {
-                                    return@map PriceGraphPair(it.date, it.price.toFloat())
-                                },
+                                prices = productWithPrices.priceInfoList
+                                    .groupBy { it.date.dateString() }
+                                    .map {
+
+                                        val ave = it.value.toList().sumOf { it.price }
+                                            .toFloat() / it.value.size
+                                        return@map PriceGraphPair(it.value[0].date, ave)
+                                    },
                                 onDrag = { pair ->
                                     selectedPair = pair
                                 },
@@ -665,8 +671,10 @@ fun MainProductCard(
                             }
                         } else {
                             val alpha by rememberBlink()
-                            Text("Fiyat değişimleri bekleniyor.",
-                                modifier = Modifier.fillMaxSize()
+                            Text(
+                                "Fiyat değişimleri bekleniyor.",
+                                modifier = Modifier
+                                    .fillMaxSize()
                                     .alpha(alpha),
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     textAlign = TextAlign.Center,
@@ -680,11 +688,11 @@ fun MainProductCard(
 
                 }
             }
-            val contentOver=ColorUtils.calculateLuminance(contentColor.toArgb())
+            val contentOver = ColorUtils.calculateLuminance(contentColor.toArgb())
             ProductStat(
                 productWithPrices.product,
                 modifier = Modifier.align(Alignment.BottomCenter),
-                color = if(contentOver>.5F) Color.Black else Color.White
+                color = if (contentOver > .5F) Color.Black else Color.White
             )
 
         }
