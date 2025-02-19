@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip.ui.part
 
+import android.graphics.drawable.ColorDrawable
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,6 +19,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.CoilTrimTransform
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.helper.AppLogger
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 
@@ -73,6 +76,12 @@ fun ProductImage(
                     .data(image)
                     .crossfade(true)
                     .transformations(CoilTrimTransform())
+                    .error(ColorDrawable(Color.White.toArgb()))
+                    .listener(
+                        onError = { _, throwable ->
+                            AppLogger.e("coil error",throwable.throwable)
+                        }
+                    )
                     .build()
             )
         }

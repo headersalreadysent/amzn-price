@@ -25,14 +25,19 @@ import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.helper.composable.AutoText
 
 @Composable
-fun ProductBox(product:Product){
+fun ProductBox(
+    product: Product,
+    modifier: Modifier = Modifier,
+    type: String = "box"
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .background(MaterialTheme.colorScheme.secondaryContainer)
-            .aspectRatio(2F)
+            .aspectRatio(if (type == "box") 2F else 3F)
             .shadow(1.dp)
+            .then(modifier)
     ) {
         ProductImage(
             product,
@@ -45,16 +50,19 @@ fun ProductBox(product:Product){
         )
         Column(
             modifier = Modifier
-                .fillMaxWidth(.8F)
+                .fillMaxWidth(if (type == "box") .8F else 1F)
                 .fillMaxHeight()
                 .padding(horizontal = 16.dp)
-                .statusBarsPadding()
+                .then(if (type == "box") Modifier.statusBarsPadding() else Modifier.padding(top = 8.dp))
         ) {
             Text(
-                text = product.title, style = MaterialTheme.typography.titleMedium.copy(
+                text = product.title,
+                style = MaterialTheme.typography.titleMedium.copy(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontWeight = FontWeight.Bold
-                ), maxLines = 3, overflow = TextOverflow.Ellipsis
+                ),
+                maxLines = if (type == "box") 3 else 2,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 modifier = Modifier
@@ -73,9 +81,12 @@ fun ProductBox(product:Product){
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             )
-            ProductStat(
-                product, color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+            if (type == "box") {
+
+                ProductStat(
+                    product, color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
         }
 
     }
@@ -83,7 +94,7 @@ fun ProductBox(product:Product){
 
 @Preview(showBackground = true)
 @Composable
-private fun ProductBoxPreview(){
+private fun ProductBoxPreview() {
     PreviewProviders {
         ProductBox(Product.fake())
     }

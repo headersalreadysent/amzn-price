@@ -2,27 +2,19 @@ package co.ec.amazonfiyattakip.composables
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +45,8 @@ fun CutInput(
     placeholder: String = "",
     icon: ImageVector? = null,
     textStyle: TextStyle = TextStyle.Default,
+    actionColor: Color = MaterialTheme.colorScheme.tertiary,
+    actionContent: Color = MaterialTheme.colorScheme.onTertiary,
     color: Color = MaterialTheme.colorScheme.tertiaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
     corner: CutCorner = CutCorner.TOPRIGHT,
@@ -124,10 +118,8 @@ fun CutInput(
                 .wrapContentWidth()
                 .height(height),
             colors = ButtonDefaults.buttonColors().copy(
-                containerColor = color.copy(
-                    alpha = .80F
-                ),
-                contentColor = contentColor
+                containerColor = actionColor,
+                contentColor = actionContent
             ),
             shape = RectangleShape
         ) {

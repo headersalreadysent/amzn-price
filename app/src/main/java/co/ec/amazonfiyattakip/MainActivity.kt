@@ -111,7 +111,6 @@ fun AppContent(
                     fabAction?.let {
                         FloatingActionButton(
                             onClick = it.second,
-                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
                             containerColor = MaterialTheme.colorScheme.primary
                         ) {
                             Icon(it.first, contentDescription = "")

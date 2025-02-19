@@ -1,14 +1,20 @@
 package co.ec.amazonfiyattakip.service
 
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.service.AmznRequest.client
 import co.ec.helper.AppLogger
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.OkHttpClient
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class AmznScrape {
 
@@ -35,6 +41,12 @@ class AmznScrape {
     ) {
         scrapeFromUrl(urlFromAsin(asin), then, err)
 
+    }
+
+    suspend fun suspendScrape(url: String): Product = withContext(Dispatchers.IO) {
+        val pageUrl=if(url.startsWith("http")) url else urlFromAsin(url)
+        val response = AmznRequest.suspendRequest(pageUrl)
+        extractProductDetails(response)
     }
 
 
@@ -105,13 +117,14 @@ class AmznScrape {
      * @param err error callback
      */
     fun search(
-        searchText:String,
+        searchText: String,
         then: (res: List<String>) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
         Async.run({
             //generate url
-            AmznRequest.request(":https://www.amazon.com.tr/s?k="+searchText.toHttpUrl(), { html ->
+            val encoded = URLEncoder.encode(searchText, StandardCharsets.UTF_8.toString())
+            AmznRequest.request("https://www.amazon.com.tr/s?k=$encoded", { html ->
                 //get html
                 html?.let {
                     try {
@@ -179,7 +192,7 @@ class AmznScrape {
             asin = asin,
             date = unix(),
             title = title,
-            description = description.replace("Daha fazla ürün bilgisi",""),
+            description = description.replace("Daha fazla ürün bilgisi", ""),
             price = price,
             star = starCount,
             comment = comment,
@@ -189,17 +202,22 @@ class AmznScrape {
     }
 
     private fun extractPrice(doc: Document): Int {
-        doc.getElementById("twister-plus-price-data-price")?.let {
-            return (it.value().toFloat() * 100).toInt()
-        }
-        doc.getElementsByAttributeValue("name", "priceValue").first()?.let {
-            return (it.value().toFloat() * 100).toInt()
-        }
-        doc.getElementsByAttributeValue("name", "items[0.base][customerVisiblePrice][amount]")
-            .first()?.let {
+        try {
+            doc.getElementById("twister-plus-price-data-price")?.let {
                 return (it.value().toFloat() * 100).toInt()
             }
-        return 0;
+            doc.getElementsByAttributeValue("name", "priceValue").first()?.let {
+                return (it.value().toFloat() * 100).toInt()
+            }
+            doc.getElementsByAttributeValue("name", "items[0.base][customerVisiblePrice][amount]")
+                .first()?.let {
+                    return (it.value().toFloat() * 100).toInt()
+                }
+        }catch (e:Throwable){
+            return 0
+        }
+        return 0
+
     }
 
     /**

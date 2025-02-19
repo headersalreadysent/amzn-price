@@ -1,9 +1,12 @@
 package co.ec.amazonfiyattakip.service
 
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.helper.AppSharedSettings
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
@@ -124,6 +127,23 @@ object AmznRequest {
 
 
     }
+
+    suspend fun suspendRequest(url: String): String = withContext(Dispatchers.IO) {
+
+        var request = Request.Builder()
+            .url(url)
+        request = generateHeaders(request)
+        try {
+            val response = client.newCall(request.build()).execute()
+            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+            val html = response.body?.string() ?: throw IllegalStateException("Empty response body")
+            html
+        } catch (t: Throwable) {
+            throw t
+        }
+    }
+
 
     private fun generateHeaders(
         req: Request.Builder,
