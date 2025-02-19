@@ -134,25 +134,38 @@ fun CalendarGrid(
     baseColor: Color = MaterialTheme.colorScheme.primary,
     passiveColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
-    val calendar = Calendar.getInstance().apply {
-        set(year, month, 1)
+    val allDays by remember(year, month, firstDayOfWeek) {
+        val calendar = Calendar.getInstance().apply {
+            set(year, month, 1)
+        }
+        val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val shift = firstDayOfWeek - Calendar.SUNDAY
+        val firstDayIndex = (calendar.get(Calendar.DAY_OF_WEEK) - shift + 6) % 7
+
+        val days = (1..daysInMonth).map { it.toString() }
+        val emptyDays = List(firstDayIndex) { "" }
+        var dayList = emptyDays + days
+        if (dayList.size % 7 != 0) {
+            dayList = dayList + List(7 - dayList.size % 7) { "" }
+        }
+        mutableStateOf(dayList)
     }
-    val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-    val days = (1..daysInMonth).map { it.toString() }
-    val shift = firstDayOfWeek - Calendar.SUNDAY
-    val firstDayIndex = (calendar.get(Calendar.DAY_OF_WEEK) - shift + 6) % 7
-    val emptyDays = List(firstDayIndex) { "" }
-    var allDays = emptyDays + days
-    if (allDays.size % 7 != 0) {
-        allDays = allDays + List(7 - allDays.size % 7) { "" }
+
+
+
+    val colorList by remember(priceList) {
+        val prices =  priceList.map { it.value }
+        var min = prices.minBy { it }.toFloat()
+        val max = prices.maxBy { it }.toFloat()
+        if (min == max) {
+            min = 0F
+        }
+        val colors = priceList.map {
+            val ratio = ((it.value - min) / (max - min)) * .8F
+            Pair(it.key, baseColor.copy(alpha = ratio + .2F))
+        }.toMap()
+        mutableStateOf(colors)
     }
-    //calculate colors
-    val min = priceList.map { it.value }.minBy { it }.toFloat()
-    val max = priceList.map { it.value }.maxBy { it }.toFloat()
-    val colorList = priceList.map {
-        val ratio = ((it.value - min) / (max - min)) * .8F
-        Pair(it.key, baseColor.copy(alpha = ratio + .2F))
-    }.toMap()
 
     val cutShape = cutShape(CutCorner.BOTTOMRIGHT, 3.dp)
     val now = unix()

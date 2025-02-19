@@ -36,8 +36,9 @@ fun DateRow(
         mutableStateOf(
             priceList.toList().groupBy { it.first.toLong().dateString() }
                 .map {
-                    val ave=it.value.toList().sumOf { it.second.toLong() }.toFloat() / it.value.size
-                    return@map Pair(it.value[0].first,ave.toInt())
+                    val ave =
+                        it.value.toList().sumOf { it.second.toLong() }.toFloat() / it.value.size
+                    return@map Pair(it.value[0].first, ave.toInt())
                 }.toMap()
         )
     }
@@ -45,8 +46,11 @@ fun DateRow(
 
     val prices = aveList.map { it.value }
     //calculate colors
-    val min = prices.minBy { it }.toFloat()
+    var min = prices.minBy { it }.toFloat()
     val max = prices.maxBy { it }.toFloat()
+    if (min == max) {
+        min = 0F
+    }
     val colorList by remember(aveList) {
         mutableStateOf(
             aveList.map {
@@ -61,10 +65,13 @@ fun DateRow(
 
     val dateList by remember(aveList) {
         val dates = priceList.map { it.key }
-        val minDate = findDayStart(dates.minBy { it }.toLong())
+        var minDate = findDayStart(dates.minBy { it }.toLong())
         val maxDate = findDayStart(dates.maxBy { it }.toLong())
         val list = mutableListOf<Triple<Long, Color, Int>>()
-        var day = minDate
+        if (minDate > maxDate - itemCount * 86400) {
+            minDate = maxDate - itemCount * 86400
+        }
+        var day = minDate + 1
         while (day < maxDate + 86400) {
             val color = colorList.getOrDefault(day.dateString(), null)
             list.add(
@@ -84,7 +91,8 @@ fun DateRow(
     LazyRow(
         state = listState,
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.End
     ) {
         items(dateList.size) {
             val item = dateList[it]

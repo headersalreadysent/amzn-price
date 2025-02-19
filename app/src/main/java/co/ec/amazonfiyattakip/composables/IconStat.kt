@@ -38,6 +38,7 @@ fun IconStat(
             .fillMaxWidth()
             .padding(4.dp)
             .then(modifier),
+        shape = cutShape(CutCorner.BOTTOMRIGHT,10.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),

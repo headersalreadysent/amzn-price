@@ -1,9 +1,7 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,34 +14,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.ChatBubble
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
-import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemColors
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarDuration
@@ -64,12 +49,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,32 +63,21 @@ import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
-import co.ec.amazonfiyattakip.composables.ProductStat
+import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
-import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
-import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.amazonfiyattakip.ui.part.TitleBar
-import co.ec.amazonfiyattakip.ui.part.graph.PriceBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
-import co.ec.helper.composable.AutoText
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
-import co.ec.helper.utils.unix
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Calendar
-import java.util.Date
-import kotlin.random.Random
 
 @Composable
 fun DetailScreen(
@@ -161,60 +133,7 @@ fun DetailScreen(
                     .verticalScroll(scrollState)
                     .padding(bottom = 80.dp)
             ) {
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .aspectRatio(2F)
-                        .shadow(1.dp)
-                ) {
-                    ProductImage(
-                        product,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth(.5F)
-                            .aspectRatio(1F)
-                            .align(Alignment.CenterEnd),
-                        color = MaterialTheme.colorScheme.secondaryContainer
-                    )
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(.8F)
-                            .fillMaxHeight()
-                            .padding(horizontal = 16.dp)
-                            .statusBarsPadding()
-                    ) {
-                        Text(
-                            text = product.title, style = MaterialTheme.typography.titleMedium.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.Bold
-                            ), maxLines = 3, overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 5.dp),
-                            text = product.asin,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        )
-                        AutoText(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = product.price(),
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        )
-                        ProductStat(
-                            product, color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-
-                }
+                ProductBox(product)
 
 
                 if (prices == null) {
@@ -398,7 +317,7 @@ fun DetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(5F)
+                    .then(if(priceListData.size>2) Modifier.aspectRatio(5F) else Modifier.height(40.dp))
                     .align(Alignment.BottomStart)
                     .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
                     .shadow(1.dp, cutCorner)

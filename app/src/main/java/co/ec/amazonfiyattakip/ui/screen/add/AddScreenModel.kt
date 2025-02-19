@@ -1,24 +1,20 @@
 package co.ec.amazonfiyattakip.ui.screen.add
 
-import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.helper.App
 import co.ec.helper.AppLogger
 import co.ec.helper.AppSharedSettings
 import co.ec.helper.Async
-import com.fleeksoft.ksoup.KsoupEngineInstance.init
 
 class AddScreenModel : ViewModel() {
 
     val product = MutableLiveData<Product?>(null)
 
-    init {
 
-    }
 
     fun recordFromShareUrl() {
         val url = AppSharedSettings.get().getString("sharedUrl") ?: ""
@@ -30,30 +26,27 @@ class AddScreenModel : ViewModel() {
                 it.printStackTrace()
             })
         } else {
-            //Toast.makeText(App.context(), "Url bulunamadı.", Toast.LENGTH_SHORT).show()
+            App.snack("Ürün bağlantısı bulunamadı.")
         }
     }
 
-    fun recordProductFromAsin(asin: String) {
 
-        AmznScrape().scrapeFromAsin(asin, {
+    /**
+     * save to database
+     */
+    fun saveProduct(then: (product:Product) -> Unit = {}) {
+        product.value?.let { record ->
             Async.run({
-                AppDatabase.getDatabase().product().insert(it)
-            })
-        })
-    }
-
-    fun saveProductToDatabase() {
-        product.value?.let {
-            Async.run({
-                val id=AppDatabase.getDatabase().product().insert(it)
-                val price=it.toPriceInfo(id.toInt(),it.price)
+                val id=AppDatabase.getDatabase().product().insert(record)
+                val price=record.toPriceInfo(id.toInt(),record.price)
                 AppDatabase.getDatabase().priceInfo().insert(price)
                 return@run id
             }, { id ->
-                product.value = it.copy(
+                product.value = record.copy(
                     id = id.toInt()
                 )
+                App.snack("${record.title} kaydedildi.")
+                then(record)
             })
         }
 
