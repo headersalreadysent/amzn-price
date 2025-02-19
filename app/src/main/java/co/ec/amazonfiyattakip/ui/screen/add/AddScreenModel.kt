@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.service.AmznRequest
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.AppLogger
 import co.ec.helper.AppSharedSettings
@@ -19,7 +20,11 @@ class AddScreenModel : ViewModel() {
     fun recordFromShareUrl() {
         val url = AppSharedSettings.get().getString("sharedUrl") ?: ""
         if (url != "") {
-            AmznScrape().scrapeFromUrl(url, { scraped ->
+            var page=url
+            if(!url.startsWith("http")){
+                page=AmznScrape.urlFromAsin(url)
+            }
+            AmznScrape().scrapeFromUrl(page, { scraped ->
                 AppLogger.d(scraped.toString())
                 product.value = scraped
             }, {

@@ -40,7 +40,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +56,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CalendarScreen
 import co.ec.amazonfiyattakip.composables.CutCorner
@@ -70,14 +70,12 @@ import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
-import kotlinx.coroutines.launch
 
 @Composable
 fun DetailScreen(
@@ -161,10 +159,6 @@ fun DetailScreen(
                                 .padding(vertical = 8.dp)
                         )
                         CalendarPriceData(it)
-                        val coroutine = rememberCoroutineScope()
-                        val snackbar = LocalSnackbar.current
-
-
                         TitleBar(
                             title = "Fiyat Değişimi",
                             modifier = Modifier
@@ -174,15 +168,9 @@ fun DetailScreen(
                                     indication = null, interactionSource = null
                                 ) {
                                     showOnlyChanges = !showOnlyChanges
-                                    coroutine.launch {
-                                        snackbar.showSnackbar(
-                                            if (showOnlyChanges)
-                                                "Sadece değişimler gösteriliyor" else
-                                                "Tüm sorgular gösteriliyor",
-                                            duration = SnackbarDuration.Short
-                                        )
-
-                                    }
+                                    App.snack(if (showOnlyChanges)
+                                        "Sadece değişimler gösteriliyor" else
+                                        "Tüm sorgular gösteriliyor",)
                                 },
                             extra = {
                                 Icon(
@@ -489,9 +477,6 @@ fun PriceStat(
 
 @Composable
 fun CalendarPriceData(prices: List<PriceInfo>) {
-    //get scpoe
-    val coroutine = rememberCoroutineScope()
-    val snackbar = LocalSnackbar.current
     var calendarView by remember { mutableStateOf(false) }
     TitleBar(title = "Günlük Fiyatlar",
         modifier = Modifier
@@ -517,12 +502,10 @@ fun CalendarPriceData(prices: List<PriceInfo>) {
             DateRow(
                 priceList = prices.map { Pair(it.date.toInt(), it.price) }.toMap(),
             ) {
-                coroutine.launch {
-                    snackbar.showSnackbar(
-                        "${
-                            it.first.toLong().dateString()
-                        } ortalama fiyat ${it.second.price()}"
-                    )
+                if(it.second!=0){
+                    App.snack("${
+                        it.first.toLong().dateString()
+                    } ortalama fiyat ${it.second.price()}")
                 }
             }
         } else {

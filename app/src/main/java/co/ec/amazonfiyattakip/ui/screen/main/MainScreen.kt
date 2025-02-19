@@ -148,6 +148,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 fun NoProductScreen(
     model: MainScreenModel,
 ) {
+    val navigator= LocalNavigation.current
     //load deals
     DisposableEffect(Unit) {
         model.loadDeals()
@@ -167,7 +168,9 @@ fun NoProductScreen(
     }
     LaunchedEffect(selectedList) {
         if (selectedList.isEmpty()) {
-            AppModel.setFab(Icons.Filled.Add, {})
+            AppModel.setFab(Icons.Filled.Add, {
+                navigator.navigate("find")
+            })
         } else {
             AppModel.setFab(Icons.Filled.Check, {
                 //add products to list
@@ -310,9 +313,10 @@ fun NoProductScreen(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         )
+
                         Button(
                             onClick = {
-
+                                navigator.navigate("find")
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -415,6 +419,7 @@ fun ProductListScreen(
                         })
 
                 }
+
             }
         }
 
@@ -545,7 +550,7 @@ fun MainProductCard(
                 if (isFirst) Modifier.statusBarsPadding() else Modifier
             )
             .then(
-                if (isLast) Modifier.padding(bottom = 15.dp) else Modifier
+                if (isLast) Modifier.padding(bottom = 45.dp) else Modifier
             )
             .clickable {
                 onClick()
@@ -620,6 +625,22 @@ fun MainProductCard(
 
                         if (it) {
                             var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
+                            val grouppedPrices by remember{
+                                var group=productWithPrices.priceInfoList
+                                    .groupBy { it.date.dateString("yyyyMMdd") }
+                                if(group.size==1){
+                                    group=productWithPrices.priceInfoList
+                                        .groupBy { it.date.dateString("yyyyMMdd-hhmm") }
+                                }
+
+
+                                mutableStateOf(group.map {
+
+                                    val ave = it.value.toList().sumOf { it.price }
+                                        .toFloat() / it.value.size
+                                    return@map PriceGraphPair(it.value[0].date, ave)
+                                })
+                            }
                             PriceGraph(
                                 modifier = Modifier
                                     .clickable(
@@ -629,14 +650,7 @@ fun MainProductCard(
 
                                         }
                                     ),
-                                prices = productWithPrices.priceInfoList
-                                    .groupBy { it.date.dateString() }
-                                    .map {
-
-                                        val ave = it.value.toList().sumOf { it.price }
-                                            .toFloat() / it.value.size
-                                        return@map PriceGraphPair(it.value[0].date, ave)
-                                    },
+                                prices = grouppedPrices,
                                 onDrag = { pair ->
                                     selectedPair = pair
                                 },

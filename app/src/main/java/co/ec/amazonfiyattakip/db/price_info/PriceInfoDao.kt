@@ -23,10 +23,10 @@ interface PriceInfoDao {
     @Query("SELECT SUM(latest_price) AS total, date FROM (SELECT \n" +
             "   MAX(price) AS latest_price,\n" +
             "   MAX(date) AS date,\n" +
-            "   DATE(date, 'unixepoch') AS day\n" +
+            "   strftime(:format, DATETIME(date, 'unixepoch', 'localtime')) as day\n" +
             "   FROM priceinfo\n" +
             "GROUP BY day,productId) WHERE date > strftime('%s', 'now') -:day*86400 GROUP BY day ORDER BY day ASC")
-    fun getDailyTotalPrices(day:Int=30) : List<DailyTotal>
+    fun getDailyTotalPrices(day:Int=30,format:String="%Y-%m-%d") : List<DailyTotal>
 
     @Query("SELECT priceinfo.productId, priceinfo.price,product.title,product.image,priceinfo.date from priceinfo " +
             "LEFT JOIN product ON productId=product.id ORDER BY priceinfo.id DESC")

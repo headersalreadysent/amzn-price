@@ -8,27 +8,22 @@ import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
-import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.helper.Async
 import co.ec.helper.utils.unix
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.concurrent.thread
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.random.Random
-import kotlin.random.nextUInt
 
 open class MainScreenModel : ViewModel() {
 
@@ -66,7 +61,6 @@ open class MainScreenModel : ViewModel() {
      */
     private fun loadLatestUpdates() {
         try {
-
             latestUpdates = AppDatabase.getDatabase().priceInfo().getLatestUpdates()
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         } catch (_: Throwable) {
@@ -78,12 +72,11 @@ open class MainScreenModel : ViewModel() {
     /**
      * load daily stats
      */
-    private fun loadDailyTotals() {
+    private fun loadDailyTotals(format: String = "%Y-%m-%d") {
         Async.run({
-            return@run AppDatabase.getDatabase().priceInfo().getDailyTotalPrices()
+            return@run AppDatabase.getDatabase().priceInfo().getDailyTotalPrices(format = format)
         }, {
             dailyTotals.value = it
-
         })
     }
 
@@ -95,7 +88,6 @@ open class MainScreenModel : ViewModel() {
             return@run AppDatabase.getDatabase().product().getAllProducts()
         }, {
             products.value = it
-
         })
     }
 
@@ -103,32 +95,24 @@ open class MainScreenModel : ViewModel() {
      * load deals from amazon
      */
     fun loadDeals(then: (list: List<String>) -> Unit = {}) {
+        val semaphore = Semaphore(10)
+
         AmznScrape().getPopular({ asins ->
             viewModelScope.launch {
-                asins.map { asin ->
-                    callbackFlow {
-                        // Call the callback-based function
-                        AmznScrape().scrapeFromAsin(asin, { result ->
-                            // Emit the result to the flow if the title is not empty
-                            if (result.title.isNotEmpty()) {
-                                trySend(result) // Send the result to the flow
-                            } else {
-                                trySend(null) // Send null if the title is empty
+                channelFlow {
+                    asins.forEach { asin ->
+                        launch {
+                            semaphore.withPermit {
+                                runCatching { AmznScrape().suspendScrape(asin) }
+                                    .onSuccess { send(it) }
                             }
-                            close() // Close the flow after emitting the result
-                        },{
-                            close()
-                        })
-                        awaitClose {
-                            close()
                         }
                     }
-                }.merge()
-                    .collect { result ->
-                        result?.let {
-                            dealFlow.emit(it)
-                        }
+                }.collect { result ->
+                    if(result.title.isNotEmpty()){
+                        dealFlow.emit(result)
                     }
+                }
             }
             then(asins)
         })
@@ -167,7 +151,7 @@ open class MainScreenModel : ViewModel() {
         viewModelScope.launch {
             (1..12).forEach {
                 dealFlow.emit(fake)
-                delay((Random.nextFloat()*1000F).toLong())
+                delay((Random.nextFloat() * 1000F).toLong())
             }
         }
         var firstPrice = 2000L
