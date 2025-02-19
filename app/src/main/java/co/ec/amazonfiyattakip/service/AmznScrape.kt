@@ -8,6 +8,7 @@ import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
 class AmznScrape {
 
@@ -38,7 +39,7 @@ class AmznScrape {
 
 
     /**
-     * screpe product from url
+     * scrape product from url
      * @param url url of amazon
      * @param then result callback
      * @param err error callback
@@ -69,6 +70,11 @@ class AmznScrape {
         })
     }
 
+    /**
+     * get popular
+     * @param then result callback
+     * @param err error callback
+     */
     fun getPopular(
         then: (res: List<String>) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
@@ -82,6 +88,36 @@ class AmznScrape {
                         //parse product from html
                         val deals = extractPopularProducts(it)
                         then(deals)
+                    } catch (t: Throwable) {
+                        err(t)
+                    }
+                }
+            }, {
+                AppLogger.e("amzn", it)
+                err(it)
+            })
+        })
+    }
+
+    /**
+     * get popular
+     * @param then result callback
+     * @param err error callback
+     */
+    fun search(
+        searchText:String,
+        then: (res: List<String>) -> Unit = { _ -> },
+        err: (res: Throwable) -> Unit = { _ -> }
+    ) {
+        Async.run({
+            //generate url
+            AmznRequest.request(":https://www.amazon.com.tr/s?k="+searchText.toHttpUrl(), { html ->
+                //get html
+                html?.let {
+                    try {
+                        //parse product from html
+                        val searchAsins = extractSearchResults(it)
+                        then(searchAsins)
                     } catch (t: Throwable) {
                         err(t)
                     }
@@ -143,7 +179,7 @@ class AmznScrape {
             asin = asin,
             date = unix(),
             title = title,
-            description = description,
+            description = description.replace("Daha fazla ürün bilgisi",""),
             price = price,
             star = starCount,
             comment = comment,
@@ -175,6 +211,20 @@ class AmznScrape {
 
         val doc = Ksoup.parse(html ?: "")
         return doc.select("li.a-carousel-card").map {
+            val asin = it.getElementsByAttribute("data-asin").attr("data-asin")
+            return@map asin
+        }
+    }
+
+    /**
+     * extract product details from amazon page content
+     * @param html:String page content
+     * @return Product
+     */
+    private fun extractSearchResults(html: String): List<String> {
+
+        val doc = Ksoup.parse(html ?: "")
+        return doc.select("div[role='listitem'][data-asin]").map {
             val asin = it.getElementsByAttribute("data-asin").attr("data-asin")
             return@map asin
         }

@@ -114,7 +114,9 @@ object AmznRequest {
                         throw IOException("Unexpected code $response")
                     }
                     recordCookies(response.headers("set-cookie"))
-                    return@run response.body?.string()
+                    val body=response.body?.string()
+                    response.body?.close()
+                    return@run body
                 }
         }, {
             then(it)
