@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.composables
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -45,13 +48,12 @@ fun CutInput(
     placeholder: String = "",
     icon: ImageVector? = null,
     textStyle: TextStyle = TextStyle.Default,
-    actionColor: Color = MaterialTheme.colorScheme.tertiary,
-    actionContent: Color = MaterialTheme.colorScheme.onTertiary,
-    color: Color = MaterialTheme.colorScheme.tertiaryContainer,
-    contentColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
+    actionColor: Color = MaterialTheme.colorScheme.secondary,
+    color: Color = MaterialTheme.colorScheme.primary,
     corner: CutCorner = CutCorner.TOPRIGHT,
     cutSize: Dp = 10.dp,
 ) {
+    val contentColor= contentColorFor(color)
 
     val shape = cutShape(corner, cutSize)
     var inputText by remember { mutableStateOf(value) }
@@ -77,7 +79,9 @@ fun CutInput(
                 inputText = it
                 valueChange(it)
             },
-            textStyle = textStyle,
+            textStyle = textStyle.copy(
+                color=contentColor
+            ),
             decorationBox = { innerTextField ->
                 Row(
                     modifier = Modifier
@@ -103,6 +107,10 @@ fun CutInput(
                         Text(
                             modifier = Modifier.alpha(visibility),
                             text = placeholder,
+                            style = textStyle.copy(
+                                color=contentColor,
+                                fontStyle = FontStyle.Italic
+                            ),
                             fontSize = 14.sp
                         )
                     }
@@ -116,10 +124,11 @@ fun CutInput(
             },
             modifier = Modifier
                 .wrapContentWidth()
+                .border(1.dp,color,shape)
                 .height(height),
             colors = ButtonDefaults.buttonColors().copy(
                 containerColor = actionColor,
-                contentColor = actionContent
+                contentColor = contentColorFor(actionColor)
             ),
             shape = RectangleShape
         ) {

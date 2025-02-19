@@ -1,31 +1,27 @@
 package co.ec.amazonfiyattakip
 
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -42,14 +38,13 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
-import co.ec.amazonfiyattakip.ui.theme.primaryLight
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT,Color.TRANSPARENT)
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
         val destination = intent?.getStringExtra("destination") ?: "main"
         setContent {
@@ -80,7 +75,7 @@ fun AppContent(
             darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
         )
     }
-    val coroutineScope= rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
     App.setupSnackbar(LocalSnackbar.current, coroutineScope)
     val fabAction by appModel.fabAction.observeAsState()
     val navigator = LocalNavigation.current
@@ -105,8 +100,9 @@ fun AppContent(
                     }
                     Spacer(Modifier.weight(1f, true))
                 },
+                modifier = Modifier.fillMaxWidth()
+                    .background(surface),
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
                 floatingActionButton = {
                     fabAction?.let {
                         FloatingActionButton(
@@ -123,8 +119,11 @@ fun AppContent(
 
     ) { screen ->
         //make screen finish just below bottombar
-        Box(modifier = Modifier.padding(
-            bottom = (screen.calculateBottomPadding().value-5).dp)) {
+        Box(
+            modifier = Modifier.padding(
+                bottom = (screen.calculateBottomPadding().value - 5).dp
+            )
+        ) {
             ScreenContent(startDestination = startDestination)
         }
 
@@ -132,7 +131,6 @@ fun AppContent(
 
 
 }
-
 
 
 @Preview(showBackground = true)

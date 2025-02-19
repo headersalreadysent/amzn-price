@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingFlat
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChatBubble
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
+import androidx.compose.material.icons.outlined.TrendingFlat
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -138,7 +140,7 @@ fun DetailScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 30.dp),
+                            .padding(vertical = 60.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val alpha by rememberBlink()
@@ -168,9 +170,11 @@ fun DetailScreen(
                                     indication = null, interactionSource = null
                                 ) {
                                     showOnlyChanges = !showOnlyChanges
-                                    App.snack(if (showOnlyChanges)
-                                        "Sadece değişimler gösteriliyor" else
-                                        "Tüm sorgular gösteriliyor",)
+                                    App.snack(
+                                        if (showOnlyChanges)
+                                            "Sadece değişimler gösteriliyor" else
+                                            "Tüm sorgular gösteriliyor",
+                                    )
                                 },
                             extra = {
                                 Icon(
@@ -192,8 +196,8 @@ fun DetailScreen(
                                     showPrice = !showPrice
                                 }) {
                                 list.forEachIndexed { index, it ->
-                                    val prevPrice=if(list.size>index+1){
-                                        list[index+1].price
+                                    val prevPrice = if (list.size > index + 1) {
+                                        list[index + 1].price
                                     } else 0
                                     Row(
                                         modifier = Modifier
@@ -222,14 +226,20 @@ fun DetailScreen(
                                                     ),
                                                 )
                                                 Icon(
-                                                    if(prevPrice<it.price){
+                                                    if (prevPrice == it.price) {
+                                                        Icons.AutoMirrored.Outlined.TrendingFlat
+                                                    } else if (prevPrice < it.price) {
                                                         Icons.AutoMirrored.Outlined.TrendingUp
                                                     } else {
                                                         Icons.AutoMirrored.Outlined.TrendingDown
                                                     },
                                                     contentDescription = "trend",
-                                                    modifier = Modifier.padding(start = 4.dp).scale(.6F),
-                                                    tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
+                                                    modifier = Modifier
+                                                        .padding(start = 4.dp)
+                                                        .scale(.6F),
+                                                    tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
+                                                        alpha = .8F
+                                                    )
                                                 )
 
                                             }
@@ -305,10 +315,15 @@ fun DetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if(priceListData.size>2) Modifier.aspectRatio(5F) else Modifier.height(40.dp))
+                    .then(
+                        if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
+                            40.dp
+                        )
+                    )
                     .align(Alignment.BottomStart)
-                    .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
                     .shadow(1.dp, cutCorner)
+                    .padding(top = 1.dp)
+                    .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
             ) {
                 PricesGraphWithDrag(
                     prices = priceListData
@@ -502,10 +517,12 @@ fun CalendarPriceData(prices: List<PriceInfo>) {
             DateRow(
                 priceList = prices.map { Pair(it.date.toInt(), it.price) }.toMap(),
             ) {
-                if(it.second!=0){
-                    App.snack("${
-                        it.first.toLong().dateString()
-                    } ortalama fiyat ${it.second.price()}")
+                if (it.second != 0) {
+                    App.snack(
+                        "${
+                            it.first.toLong().dateString()
+                        } ortalama fiyat ${it.second.price()}"
+                    )
                 }
             }
         } else {

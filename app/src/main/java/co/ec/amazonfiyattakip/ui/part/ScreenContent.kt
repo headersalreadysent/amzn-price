@@ -1,10 +1,8 @@
 package co.ec.amazonfiyattakip.ui.part
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,7 +24,7 @@ fun ScreenContent(
     NavHost(navController = navController, startDestination = startDestination) {
         composable("main") {
             MainScreen()
-            AppModel.setFab(Icons.Filled.Add) {
+            AppModel.setFab(Icons.Filled.Search) {
                 navController.navigate("find")
             }
         }

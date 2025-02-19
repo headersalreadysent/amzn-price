@@ -53,11 +53,12 @@ class App : Application() {
         GlobalScope.launch {
             AppEventBus.subscribe<AppSharedSettings.SettingsChange> {
                 if(it.name=="queryTime"){
-                    PriceUpdate.setupJob(it.value as Int)
+                    PriceUpdate.setupJob()
 
                 }
             }
         }
+        PriceUpdate.setupJob()
     }
 
 

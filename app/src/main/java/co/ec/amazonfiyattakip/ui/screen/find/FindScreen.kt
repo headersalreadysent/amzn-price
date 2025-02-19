@@ -8,12 +8,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -52,6 +56,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutInput
 import co.ec.amazonfiyattakip.composables.ProductBox
@@ -61,6 +66,7 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.helper.AppSharedSettings
+import co.ec.helper.utils.rememberKeyboardVisibleState
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -70,6 +76,12 @@ fun FindScreen(model: FindViewModel = viewModel()) {
     var searchStarted by remember { mutableStateOf(false) }
 
     var searchKeyword by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<Product>>(listOf()) }
+    LaunchedEffect(Unit) {
+        model.searchResults.collect { result ->
+            searchResults = searchResults + result
+        }
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
         Column(
@@ -77,18 +89,14 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            var searchResults by remember { mutableStateOf<List<Product>>(listOf()) }
-            LaunchedEffect(Unit) {
-                model.searchResults.collect { result ->
-                    searchResults = searchResults + result
-                }
-            }
             val navigation = LocalNavigation.current
             if (searchStarted) {
                 if (searchResults.isEmpty()) {
-                    Box(Modifier
-                        .fillMaxSize()
-                        .weight(1F), Alignment.Center) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .weight(1F), Alignment.Center
+                    ) {
                         Column(modifier = Modifier.fillMaxWidth(.8F)) {
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                             Text(
@@ -113,7 +121,9 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Box(modifier = Modifier.fillMaxWidth().statusBarsPadding())
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding())
                         searchResults.forEach {
 
                             Box(modifier = Modifier
@@ -127,7 +137,8 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                                         .putString("sharedUrl", it.asin)
                                     navigation.navigate("add")
                                 }) {
-                                ProductImage(it,
+                                ProductImage(
+                                    it,
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .aspectRatio(.9F)
@@ -160,30 +171,40 @@ fun FindScreen(model: FindViewModel = viewModel()) {
 
                             }
                         }
-                        Box(modifier = Modifier.fillMaxWidth().height(40.dp))
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp))
                     }
                 }
             }
 
 
         }
+        val keyboard by rememberKeyboardVisibleState()
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomStart)
-                .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
                 .shadow(1.dp, cutCorner)
+                .padding(1.dp)
+                .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
                 .padding(horizontal = 16.dp)
                 .padding(top = 16.dp, bottom = 16.dp)
+                .padding(bottom = if (keyboard) 16.dp else 0.dp) // Add padding
         ) {
             CutInput(
                 value = searchKeyword,
                 valueChange = { searchKeyword = it },
                 action = "Ara",
                 click = {
-                    model.search(searchKeyword)
-                    searchStarted = true
-                    keyboardController?.hide()
+                    if (searchKeyword.length > 3) {
+                        model.search(searchKeyword)
+                        searchResults = listOf()
+                        searchStarted = true
+                        keyboardController?.hide()
+                    } else {
+                        App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
+                    }
                 },
                 placeholder = "Ürün adı veya ASIN",
             )

@@ -18,6 +18,7 @@ import co.ec.amazonfiyattakip.db.AsinId
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.AppLogger
+import co.ec.helper.AppSharedSettings
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -36,30 +37,33 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     companion object {
 
         const val JOBTAG = "PriceUpdateJob"
-        fun setupJob(queryTime:Int=15) {
+        fun setupJob() {
 
             val manager = WorkManager.getInstance(App.context())
             //test if work cancelled restart it
             val list = manager.getWorkInfosByTag(JOBTAG)
-            App.snack("Sorgu zamanı $queryTime olarak ayarlandı.")
+            if(list.get().isEmpty()){
+                setupJob()
+            }
+
             list.addListener(
                 {
                     val workInfos = list.get()
                     AppLogger.d("$JOBTAG is $workInfos", "Job")
                     if (workInfos != null && workInfos.isEmpty()) {
-                        startJob(queryTime)
+                        startJob()
                         return@addListener
                     }
                     workInfos?.forEach { workInfo ->
                         when (workInfo.state) {
                             WorkInfo.State.CANCELLED -> {
                                 AppLogger.d("$JOBTAG is cancelled", "Job")
-                                startJob(queryTime)
+                                startJob()
                             }
 
                             WorkInfo.State.FAILED -> {
                                 AppLogger.d("$JOBTAG is failed", "Job")
-                                startJob(queryTime)
+                                startJob()
                             }
 
                             else -> {
@@ -72,7 +76,8 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             )
         }
 
-        fun startJob(queryTime:Int=15) {
+        fun startJob() {
+            var queryTime = AppSharedSettings.get().getInt("queryTime")
             val manager = WorkManager.getInstance(App.context())
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -92,20 +97,20 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             //add jobs
             manager.enqueue(updatePriceRequest)
 
-/*
-            val oneTimeWorkRequest =
-                OneTimeWorkRequestBuilder<PriceUpdate>()
-                    // .setInitialDelay(1, TimeUnit.MINUTES)
-                    .addTag(JOBTAG)
-                    // .setConstraints(constraints)
-                    .build()
-            manager.enqueue(oneTimeWorkRequest)*/
+            /*
+                        val oneTimeWorkRequest =
+                            OneTimeWorkRequestBuilder<PriceUpdate>()
+                                // .setInitialDelay(1, TimeUnit.MINUTES)
+                                .addTag(JOBTAG)
+                                // .setConstraints(constraints)
+                                .build()
+                        manager.enqueue(oneTimeWorkRequest)*/
 
             AppLogger.d("$JOBTAG is started", "Job")
 
         }
 
-        private suspend fun collectPrices() : Result{
+        private suspend fun collectPrices(): Result {
             val productDao = AppDatabase.getDatabase().product()
             return try {
                 coroutineScope {
@@ -126,7 +131,6 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 Result.failure()
             }
         }
-
 
 
         /**
