@@ -109,7 +109,7 @@ open class MainScreenModel : ViewModel() {
                         }
                     }
                 }.collect { result ->
-                    if(result.title.isNotEmpty()){
+                    if (result.title.isNotEmpty() && result.price > 0) {
                         dealFlow.emit(result)
                     }
                 }

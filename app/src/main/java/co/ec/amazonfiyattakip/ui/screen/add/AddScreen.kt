@@ -58,7 +58,7 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
             AppModel.setFab(Icons.Filled.Save) {
                 //lets save product
                 model.saveProduct {
-                    navigator.navigate("detail/${it.id}")
+                    navigator.navigate("detail/$it")
                 }
             }
         }

@@ -124,7 +124,7 @@ class AmznScrape {
         Async.run({
             //generate url
             val encoded = URLEncoder.encode(searchText, StandardCharsets.UTF_8.toString())
-            AmznRequest.request("https://www.amazon.com.tr/s?k=$encoded", { html ->
+            AmznRequest.request("https://www.amazon.com.tr/s?k=\"$encoded\"", { html ->
                 //get html
                 html?.let {
                     try {

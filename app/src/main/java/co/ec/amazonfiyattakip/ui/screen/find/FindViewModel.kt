@@ -39,7 +39,9 @@ open class FindViewModel : ViewModel() {
                         }
                     }
                 }.collect { result ->
-                    searchFlow.emit(result)
+                    if(result.title.isNotEmpty() && result.price>0){
+                        searchFlow.emit(result)
+                    }
                 }
             }
             then(asins)

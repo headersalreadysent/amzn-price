@@ -39,7 +39,7 @@ class AddScreenModel : ViewModel() {
     /**
      * save to database
      */
-    fun saveProduct(then: (product:Product) -> Unit = {}) {
+    fun saveProduct(then: (id:Int) -> Unit = {}) {
         product.value?.let { record ->
             Async.run({
                 val id=AppDatabase.getDatabase().product().insert(record)
@@ -51,7 +51,7 @@ class AddScreenModel : ViewModel() {
                     id = id.toInt()
                 )
                 App.snack("${record.title} kaydedildi.")
-                then(record)
+                then(id.toInt())
             })
         }
 
