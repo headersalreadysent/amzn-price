@@ -19,3 +19,26 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keep class com.google.firebase.** { *; }
+-keep class co.ec.amazonfiyattakip.db.FireDB$ProductRecord { *; }
+
+# Keep Room entities and their fields
+-keepclassmembers class * {
+    @androidx.room.* <fields>;
+}
+
+# Keep Room DAO interfaces
+-keep @androidx.room.Dao class * {
+    *;
+}
+
+# Keep Room Database class
+-keep @androidx.room.Database class * {
+    *;
+}
+
+# Keep Entity classes (prevent ProGuard from removing default constructors)
+-keepclassmembers class * {
+    @androidx.room.Entity <fields>;
+    public <init>(...);
+}

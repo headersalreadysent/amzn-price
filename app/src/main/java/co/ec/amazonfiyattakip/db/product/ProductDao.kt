@@ -78,4 +78,7 @@ interface ProductDao {
     fun getCount(
         filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
     ): Int
+
+    @Query("SELECT * FROM product WHERE asin=:asin LIMIT 1")
+    fun getByAsin(asin: String): Product?
 }

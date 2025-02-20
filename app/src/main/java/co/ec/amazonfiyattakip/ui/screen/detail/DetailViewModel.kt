@@ -4,6 +4,7 @@ package co.ec.amazonfiyattakip.ui.screen.detail
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductDao
@@ -30,6 +31,7 @@ open class DetailViewModel : ViewModel() {
             product.value = it.first
             //if more than two point
             prices.value =  it.second
+            FireDB.addProduct(it.first.asin)
         })
     }
 

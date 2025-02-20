@@ -5,6 +5,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.helper.utils.unix
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import java.text.NumberFormat
@@ -96,6 +97,21 @@ data class Product(
                 comment = 1793,
                 image = "https://m.media-amazon.com/images/I/61Z5J-fq7KL.__AC_SY445_SX342_QL70_ML2_.jpg",
                 extras = "{\"Uyumlu Cihazlar\":\"Müzik Çalar\",\"Konnektör Türü\":\"Kablosuz\",\"Renk\":\"beyaz\",\"Marka\":\"Apple\",\"Ürün Ağırlığı\":\"0.18 Kilogram\"}"
+            )
+        }
+
+        fun empty(): Product {
+            return Product(
+                id = 0,
+                asin = "",
+                date = 0,
+                title = "",
+                description = "",
+                price = 0,
+                star = 0.0,
+                comment = 0,
+                image = "",
+                extras = "{}"
             )
         }
     }

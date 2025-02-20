@@ -1,10 +1,9 @@
 package co.ec.amazonfiyattakip.helper
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import java.text.NumberFormat
 import java.util.Locale
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
 
 
 fun Int.price(): String {
@@ -12,3 +11,11 @@ fun Int.price(): String {
     return format.format(this.toFloat() / 100F)
 }
 
+fun Any.autoToString(): String {
+    val className = this::class.simpleName
+    val properties = this::class.memberProperties.joinToString { prop ->
+        val value = runCatching { prop.get(this as Nothing) }.getOrNull() ?: "null"
+        "${prop.name}=$value"
+    }
+    return "$className($properties)"
+}
