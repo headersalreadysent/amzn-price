@@ -39,6 +39,7 @@ import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.firebase.analytics.FirebaseAnalytics
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,6 +80,16 @@ fun AppContent(
     App.setupSnackbar(LocalSnackbar.current, coroutineScope)
     val fabAction by appModel.fabAction.observeAsState()
     val navigator = LocalNavigation.current
+    navigator.addOnDestinationChangedListener { _, destination, _ ->
+        val screenName = destination.label?.toString() ?: destination.route
+        screenName?.let {
+            App.event(
+                FirebaseAnalytics.Event.SCREEN_VIEW, mapOf(
+                    FirebaseAnalytics.Param.SCREEN_NAME to screenName
+                )
+            )
+        }
+    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = {

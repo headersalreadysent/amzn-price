@@ -51,6 +51,11 @@ class AddScreenModel : ViewModel() {
                     id = id.toInt()
                 )
                 App.snack("${record.title} kaydedildi.")
+                App.event("product_add", mapOf(
+                    "productTitle" to record.title,
+                    "productAsin" to record.asin,
+                    "productPrice" to record.price
+                ))
                 then(id.toInt())
             })
         }

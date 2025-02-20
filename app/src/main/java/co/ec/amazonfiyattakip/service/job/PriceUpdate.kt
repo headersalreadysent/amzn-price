@@ -161,6 +161,13 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     )
 
                     AppLogger.d("$JOBTAG ${product.price} : ${product.title}", "Job")
+
+                    App.event("price_update", mapOf(
+                        "productAsin" to product.asin,
+                        "productPrice" to product.price,
+                        "productStar" to product.star.toString(),
+                        "productComment" to product.comment.toString()
+                    ))
                 }
                 //complete defer with correct price
                 deferred.complete(Pair(asin.asin, update.price))
