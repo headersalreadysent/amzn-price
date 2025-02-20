@@ -492,46 +492,21 @@ fun PriceStat(
 
 @Composable
 fun CalendarPriceData(prices: List<PriceInfo>) {
-    var calendarView by remember { mutableStateOf(false) }
-    TitleBar(title = "Günlük Fiyatlar",
+    TitleBar(
+        title = "Günlük Fiyatlar",
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .clickable(
-                indication = null, interactionSource = null
-            ) {
-                //change view type
-                calendarView = !calendarView
-            },
-        extra = {
-            Icon(
-                Icons.Filled.CalendarMonth,
-                contentDescription = "days",
-                modifier = Modifier.scale(.7F),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        })
-    Crossfade(targetState = calendarView) { state ->
-        if (!state) {
-            //date row or
-            DateRow(
-                priceList = prices.map { Pair(it.date.toInt(), it.price) }.toMap(),
-            ) {
-                if (it.second != 0) {
-                    App.snack(
-                        "${
-                            it.first.toLong().dateString()
-                        } ortalama fiyat ${it.second.price()}"
-                    )
-                }
-            }
-        } else {
-            //or full calendar
-            CalendarScreen(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .padding(vertical = 8.dp),
-                priceList = prices.map { Pair(it.date.dateString(), it.price) }.toMap()
+    )
+
+    DateRow(
+        priceList = prices.map { Pair(it.date.toInt(), it.price) }.toMap(),
+    ) {
+        if (it.second != 0) {
+            App.snack(
+                "${
+                    it.first.toLong().dateString()
+                } ortalama fiyat ${it.second.price()}"
             )
         }
     }

@@ -1,9 +1,14 @@
 package co.ec.amazonfiyattakip.ui.screen.find
 
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.db.FireDB
+import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.helper.Async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -16,17 +21,32 @@ import kotlin.random.Random
 
 open class FindViewModel : ViewModel() {
 
+    val recorded = MutableLiveData<List<Product>>()
 
     private val searchFlow = MutableSharedFlow<Product>()
     val searchResults: SharedFlow<Product> = searchFlow
 
+    init {
+        viewModelScope.launch {
+
+            val serverProducts=FireDB.collect()
+            Async.run({
+                return@run AppDatabase.getDatabase().product().getAllAsin()
+            }, { asins ->
+                recorded.value = serverProducts
+                    .filter { !asins.contains(it.asin) }
+                    .sortedByDescending { it.date }
+            })
+
+
+        }
+    }
 
     /**
      * load deals from amazon
      */
     fun search(text: String, then: (list: List<String>) -> Unit = {}) {
         AmznScrape().search(text, { asins ->
-
             val semaphore = Semaphore(10)
             viewModelScope.launch {
                 channelFlow {
@@ -39,7 +59,7 @@ open class FindViewModel : ViewModel() {
                         }
                     }
                 }.collect { result ->
-                    if(result.title.isNotEmpty() && result.price>0){
+                    if (result.title.isNotEmpty() && result.price > 0) {
                         searchFlow.emit(result)
                     }
                 }
@@ -56,7 +76,7 @@ open class FindViewModel : ViewModel() {
         viewModelScope.launch {
             (1..12).forEach {
                 searchFlow.emit(Product.fake())
-                delay((Random.nextFloat()*1000F).toLong())
+                delay((Random.nextFloat() * 1000F).toLong())
             }
         }
     }

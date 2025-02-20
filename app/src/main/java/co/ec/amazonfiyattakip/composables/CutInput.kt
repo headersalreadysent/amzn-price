@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -48,12 +51,13 @@ fun CutInput(
     placeholder: String = "",
     icon: ImageVector? = null,
     textStyle: TextStyle = TextStyle.Default,
-    actionColor: Color = MaterialTheme.colorScheme.secondary,
-    color: Color = MaterialTheme.colorScheme.primary,
+    actionColor: Color = MaterialTheme.colorScheme.primary,
+    color: Color = MaterialTheme.colorScheme.surfaceContainer,
     corner: CutCorner = CutCorner.TOPRIGHT,
     cutSize: Dp = 10.dp,
+    maxLines: Int = 1
 ) {
-    val contentColor= contentColorFor(color)
+    val contentColor = contentColorFor(color)
 
     val shape = cutShape(corner, cutSize)
     var inputText by remember { mutableStateOf(value) }
@@ -80,8 +84,13 @@ fun CutInput(
                 valueChange(it)
             },
             textStyle = textStyle.copy(
-                color=contentColor
+                color = contentColor
             ),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                click(inputText)
+            }),
+            maxLines = maxLines,
             decorationBox = { innerTextField ->
                 Row(
                     modifier = Modifier
@@ -91,7 +100,8 @@ fun CutInput(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     icon?.let {
-                        Icon(it,
+                        Icon(
+                            it,
                             "$placeholder icon",
                             modifier = Modifier.padding(end = 4.dp),
                         )
@@ -108,10 +118,9 @@ fun CutInput(
                             modifier = Modifier.alpha(visibility),
                             text = placeholder,
                             style = textStyle.copy(
-                                color=contentColor,
+                                color = contentColor,
                                 fontStyle = FontStyle.Italic
-                            ),
-                            fontSize = 14.sp
+                            )
                         )
                     }
 
@@ -124,7 +133,7 @@ fun CutInput(
             },
             modifier = Modifier
                 .wrapContentWidth()
-                .border(1.dp,color,shape)
+                .border(1.dp, color, shape)
                 .height(height),
             colors = ButtonDefaults.buttonColors().copy(
                 containerColor = actionColor,

@@ -30,11 +30,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.SearchBox
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutInput
 import co.ec.amazonfiyattakip.composables.ProductBox
@@ -65,6 +68,7 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
+import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.AppSharedSettings
 import co.ec.helper.utils.rememberKeyboardVisibleState
 
@@ -89,7 +93,6 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            val navigation = LocalNavigation.current
             if (searchStarted) {
                 if (searchResults.isEmpty()) {
                     Box(
@@ -114,6 +117,7 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                     }
 
                 } else {
+
                     FlowRow(
                         modifier = Modifier
                             .weight(1F)
@@ -121,63 +125,78 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Box(modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding())
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .statusBarsPadding()
+                        )
                         searchResults.forEach {
-
-                            Box(modifier = Modifier
-                                .fillMaxWidth(.5F)
-                                .padding(4.dp)
-                                .aspectRatio(2F)
-                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .border(1.dp, MaterialTheme.colorScheme.primaryContainer)
-                                .clickable {
-                                    AppSharedSettings.get()
-                                        .putString("sharedUrl", it.asin)
-                                    navigation.navigate("add")
-                                }) {
-                                ProductImage(
-                                    it,
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .aspectRatio(.9F)
-                                        .align(Alignment.CenterEnd)
-                                        .alpha(.8F),
-                                    color = MaterialTheme.colorScheme.surfaceContainer
-                                )
-                                Text(
-                                    it.shortTitle(50),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp)
-                                        .padding(end = 16.dp),
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                )
-                                Text(
-                                    it.price(),
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .align(Alignment.BottomStart)
-                                        .padding(end = 16.dp),
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                )
-
-                            }
+                            SearchBox(it)
                         }
-                        Box(modifier = Modifier
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                        )
+                    }
+                }
+            } else {
+                val recordedProducts by model.recorded.observeAsState(null)
+                if(recordedProducts==null){
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .weight(1F), Alignment.Center
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth(.8F)) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            Text(
+                                "hazır takipler yükleniyor", modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        top = 8.dp
+                                    ), style = MaterialTheme.typography.bodySmall.copy(
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.Light,
+                                    fontStyle = FontStyle.Italic
+                                )
+                            )
+                        }
+                    }
+                } else {
+
+                    FlowRow(
+                        modifier = Modifier
+                            .weight(1F)
+                            .padding(horizontal = 4.dp)
                             .fillMaxWidth()
-                            .height(40.dp))
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .statusBarsPadding()
+                        ) {
+                            TitleBar(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        horizontal = 8.dp
+                                    ),
+                                title = "Hazır Takipler"
+                            )
+                        }
+                        recordedProducts.orEmpty().forEach {
+                            SearchBox(it)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                        )
                     }
                 }
             }
-
 
         }
         val keyboard by rememberKeyboardVisibleState()
@@ -196,6 +215,8 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                 value = searchKeyword,
                 valueChange = { searchKeyword = it },
                 action = "Ara",
+                height = 60.dp,
+                textStyle = MaterialTheme.typography.bodyLarge,
                 click = {
                     if (searchKeyword.length > 3) {
                         model.search(searchKeyword)

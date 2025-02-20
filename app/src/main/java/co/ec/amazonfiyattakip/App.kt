@@ -3,6 +3,7 @@ package co.ec.amazonfiyattakip
 import android.app.Application
 import androidx.compose.material3.SnackbarHostState
 import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.service.job.DeleteOldProducts
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.AppEventBus
 import co.ec.helper.AppSharedSettings
@@ -79,6 +80,7 @@ class App : co.ec.helper.App() {
             }
         }
         PriceUpdate.setupJob()
+        DeleteOldProducts.setupJob()
     }
 
 
