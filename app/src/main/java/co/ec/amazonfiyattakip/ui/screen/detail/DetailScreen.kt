@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
@@ -73,6 +74,7 @@ import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
@@ -87,6 +89,7 @@ fun DetailScreen(
     val urlHandler = LocalUriHandler.current
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
+
     var showOnlyChanges by remember { mutableStateOf(true) }
     val priceListData by remember(showOnlyChanges, prices) {
         var lastPrice = -1
@@ -278,42 +281,63 @@ fun DetailScreen(
                     product = product,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
-                if (product.status == ProductStatus.ACTIVE) {
+                Row(modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (product.status == ProductStatus.ACTIVE) {
+                        OutlinedButton(
+                            onClick = {
+                                model.stopFollow()
+                            },
+                            modifier = Modifier
+                                .weight(1F)
+                                .padding(bottom = 10.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.tertiary
+                            )
+                        ) {
+                            Text(text = "Takibi Durdur")
+                        }
+                    }
+                    if (product.status == ProductStatus.PASSIVE) {
+                        OutlinedButton(
+                            onClick = {
+                                model.startFollow()
+                            },
+                            modifier = Modifier
+                                .weight(1F)
+                                .padding(bottom = 10.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text(text = "Takibi Başlat")
+                        }
+                    }
+
+                    val navigation = LocalNavigation.current
                     OutlinedButton(
                         onClick = {
-                            model.stopFollow()
+                            model.deleteProduct {
+                                App.snack("Ürün silindi.")
+                                navigation.navigate("main")
+                            }
                         },
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
+                            .weight(1F)
                             .padding(bottom = 10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text(text = "Takibi Durdur")
+                        Text(text = "Takibi Sil")
                     }
                 }
-                if (product.status == ProductStatus.PASSIVE) {
-                    OutlinedButton(
-                        onClick = {
-                            model.startFollow()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                            .padding(bottom = 10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text(text = "Takibi Başlat")
-                    }
-                }
-
-
             }
             val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
             Column(

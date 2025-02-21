@@ -86,4 +86,8 @@ interface ProductDao {
 
     @Query("SELECT * FROM product WHERE asin=:asin LIMIT 1")
     fun getByAsin(asin: String): Product?
+
+
+    @Query("DELETE FROM product WHERE id=:productId")
+    fun delete(productId: Int)
 }

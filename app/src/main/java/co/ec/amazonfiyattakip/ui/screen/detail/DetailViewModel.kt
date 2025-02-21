@@ -82,6 +82,18 @@ open class DetailViewModel : ViewModel() {
         })
     }
 
+    fun deleteProduct(then: () -> Unit = {}){
+        Async.run({
+            product.value?.let {
+                AppDatabase.getDatabase().priceInfo().delete(it.id)
+                AppDatabase.getDatabase().product().delete(it.id)
+            }
+            return@run
+        },{
+            then()
+        })
+    }
+
 
     fun emulate() {
         //generate fake products

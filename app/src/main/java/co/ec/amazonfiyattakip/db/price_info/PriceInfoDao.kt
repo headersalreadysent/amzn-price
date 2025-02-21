@@ -53,5 +53,8 @@ interface PriceInfoDao {
 
         }
     }
+
+    @Query("DELETE FROM priceinfo WHERE productId=:productId")
+    fun delete(productId:Int): Int
 }
 
