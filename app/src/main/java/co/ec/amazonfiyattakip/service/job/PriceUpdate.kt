@@ -176,6 +176,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     App.event(
                         "price_update", mapOf(
                             "productAsin" to product.asin,
+                            "productTitle" to product.title,
                             "productPrice" to product.price,
                             "productStar" to product.star.toString(),
                             "productComment" to product.comment.toString()
