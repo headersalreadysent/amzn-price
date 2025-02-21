@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.ui.LocalNavigation
+import co.ec.amazonfiyattakip.ui.joblog.JobLogScreen
 import co.ec.amazonfiyattakip.ui.screen.add.AddScreen
 import co.ec.amazonfiyattakip.ui.screen.detail.DetailScreen
 import co.ec.amazonfiyattakip.ui.screen.find.FindScreen
@@ -43,6 +44,9 @@ fun ScreenContent(
         }
         composable("settings") {
             SettingsScreen()
+        }
+        composable("joblog") {
+            JobLogScreen()
         }
     }
 }

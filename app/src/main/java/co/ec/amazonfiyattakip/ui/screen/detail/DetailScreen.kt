@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -170,13 +171,16 @@ fun DetailScreen(
                                     indication = null, interactionSource = null
                                 ) {
                                     showOnlyChanges = !showOnlyChanges
-                                    App.snack(
-                                        if (showOnlyChanges)
-                                            "Sadece değişimler gösteriliyor" else
-                                            "Tüm sorgular gösteriliyor",
-                                    )
                                 },
                             extra = {
+                                Text(
+                                    text = if (showOnlyChanges) "(Değişimler)" else "(Tüm)",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontStyle = FontStyle.Italic
+                                    )
+                                )
                                 Icon(
                                     if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
                                     contentDescription = "filter",

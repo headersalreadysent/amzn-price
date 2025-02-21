@@ -7,6 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -15,10 +16,13 @@ import androidx.work.await
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.AsinId
+import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
+import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.AppLogger
 import co.ec.helper.AppSharedSettings
+import co.ec.helper.utils.unix
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -42,8 +46,8 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             val manager = WorkManager.getInstance(App.context())
             //test if work cancelled restart it
             val list = manager.getWorkInfosByTag(JOBTAG)
-            if(list.get().isEmpty()){
-                setupJob()
+            if (list.get().isEmpty()) {
+                startJob()
             }
 
             list.addListener(
@@ -76,35 +80,29 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             )
         }
 
-        fun startJob() {
-            var queryTime = AppSharedSettings.get().getInt("queryTime")
+        private fun startJob() {
+            val queryTime = AppSharedSettings.get().getInt("queryTime", 15)
             val manager = WorkManager.getInstance(App.context())
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
 
-
-            val updatePriceRequest =
-                PeriodicWorkRequestBuilder<PriceUpdate>(queryTime.toLong(), TimeUnit.MINUTES)
-                    // .setInitialDelay(1, TimeUnit.MINUTES)
-                    .addTag(JOBTAG)
-                    // .setConstraints(constraints)
-                    .build()
 
             //clear all jobs
             manager.cancelAllWorkByTag(JOBTAG)
             manager.pruneWork()
-            //add jobs
-            manager.enqueue(updatePriceRequest)
 
-            /*
-                        val oneTimeWorkRequest =
-                            OneTimeWorkRequestBuilder<PriceUpdate>()
-                                // .setInitialDelay(1, TimeUnit.MINUTES)
-                                .addTag(JOBTAG)
-                                // .setConstraints(constraints)
-                                .build()
-                        manager.enqueue(oneTimeWorkRequest)*/
+
+            manager.enqueue(
+                PeriodicWorkRequestBuilder<PriceUpdate>(queryTime.toLong(), TimeUnit.MINUTES)
+                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                    .addTag(JOBTAG)
+                    .build()
+            )
+
+
+            manager.enqueue(
+                OneTimeWorkRequestBuilder<PriceUpdate>()
+                    .addTag(JOBTAG)
+                    .build()
+            )
 
             AppLogger.d("$JOBTAG is started", "Job")
 
@@ -112,6 +110,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
         private suspend fun collectPrices(): Result {
             val productDao = AppDatabase.getDatabase().product()
+            val jobLog = AppDatabase.getDatabase().jobLog()
             return try {
                 coroutineScope {
                     val asinList = productDao.getScrapeWaitingAsinCodes()
@@ -122,6 +121,16 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     val outputData = Data.Builder()
                         .putString("output", "$responseList")
                         .build()
+                    //insert job log
+                    jobLog.insert(
+                        JobLog(
+                            asin = asinList.map { it.asin }.joinToString(", "),
+                            date = unix(),
+                            detail = responseList.map {
+                                "${it.first} => ${it.second.price()}"
+                            }.joinToString("\n")
+                        )
+                    )
                     //mark error stop if access to limit
                     productDao.markErrorStop()
                     Result.success(outputData)
@@ -162,12 +171,14 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
                     AppLogger.d("$JOBTAG ${product.price} : ${product.title}", "Job")
 
-                    App.event("price_update", mapOf(
-                        "productAsin" to product.asin,
-                        "productPrice" to product.price,
-                        "productStar" to product.star.toString(),
-                        "productComment" to product.comment.toString()
-                    ))
+                    App.event(
+                        "price_update", mapOf(
+                            "productAsin" to product.asin,
+                            "productPrice" to product.price,
+                            "productStar" to product.star.toString(),
+                            "productComment" to product.comment.toString()
+                        )
+                    )
                 }
                 //complete defer with correct price
                 deferred.complete(Pair(asin.asin, update.price))

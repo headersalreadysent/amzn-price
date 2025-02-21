@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip
 
 import android.app.Application
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.service.job.DeleteOldProducts
@@ -32,7 +33,8 @@ class App : co.ec.helper.App() {
         fun snack(text: String) {
             snackOptions?.let {
                 it.second.launch {
-                    it.first.showSnackbar(text)
+                    it.first.showSnackbar(text,
+                        duration = SnackbarDuration.Short )
                 }
             }
         }

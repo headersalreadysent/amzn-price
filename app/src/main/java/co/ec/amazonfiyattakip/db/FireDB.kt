@@ -102,21 +102,24 @@ object FireDB {
 
     suspend fun syncProduct(product: Product) {
         try {
-            //first get product
-            val productRef = Firebase.firestore.collection("products").document(product.asin)
-            val prices = AppDatabase.getDatabase().priceInfo().getPricesByProduct(product.id)
-            val snapshot = productRef.get().await()
-            if (snapshot.exists()) {
-                snapshot.toObject(ProductRecord::class.java)?.let {
-                    it.sync(product, prices)
-                    productRef.set(it)
-                    AppLogger.d("Firebase ${product.asin} updated ${it.autoToString()}")
+            GlobalScope.launch {
+                //first get product
+                val productRef = Firebase.firestore.collection("products").document(product.asin)
+                val prices = AppDatabase.getDatabase().priceInfo().getPricesByProduct(product.id)
+                val snapshot = productRef.get().await()
+                if (snapshot.exists()) {
+                    snapshot.toObject(ProductRecord::class.java)?.let {
+                        it.sync(product, prices)
+                        productRef.set(it)
+                        AppLogger.d("Firebase ${product.asin} updated ${it.autoToString()}")
+                    }
+                } else {
+                    val record = ProductRecord(product, prices)
+                    productRef.set(record)
+                    AppLogger.d("Firebase ${product.asin} inserted ${record.autoToString()}")
                 }
-            } else {
-                val record = ProductRecord(product, prices)
-                productRef.set(record)
-                AppLogger.d("Firebase ${product.asin} inserted ${record.autoToString()}")
             }
+
         } catch (e: Throwable) {
 
             AppLogger.d("Firebase error ${e.message}")

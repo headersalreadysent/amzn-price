@@ -23,10 +23,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,8 +42,10 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
+import co.ec.helper.AppLogger
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,6 +96,13 @@ fun AppContent(
             )
         }
     }
+    var settingsClick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true){
+            settingsClick = if(settingsClick>0) settingsClick-- else 0
+            delay(1000)
+        }
+    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = {
@@ -105,13 +118,24 @@ fun AppContent(
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
                     IconButton(onClick = {
-                        navigator.navigate("settings")
+                        settingsClick++
+                        AppLogger.d("settingsClick $settingsClick")
+                        if (settingsClick > 5) {
+
+                            navigator.navigate("joblog")
+                        } else {
+                            if(navigator.currentDestination?.route!=="settings"){
+                                navigator.navigate("settings")
+                            }
+
+                        }
                     }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                     Spacer(Modifier.weight(1f, true))
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .background(surface),
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 floatingActionButton = {

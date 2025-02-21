@@ -6,13 +6,15 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.db.job_log.JobLog
+import co.ec.amazonfiyattakip.db.job_log.JobLogDao
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductDao
 
 
-@Database(entities = [Product::class,PriceInfo::class], version = 1)
+@Database(entities = [Product::class, PriceInfo::class, JobLog::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -20,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun priceInfo(): PriceInfoDao
 
-
+    abstract fun jobLog(): JobLogDao
 
     companion object {
         @Volatile
