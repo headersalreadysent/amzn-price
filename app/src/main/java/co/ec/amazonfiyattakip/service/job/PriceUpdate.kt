@@ -94,7 +94,6 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
             manager.enqueue(
                 PeriodicWorkRequestBuilder<PriceUpdate>(queryTime.toLong(), TimeUnit.MINUTES)
-                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                     .addTag(JOBTAG)
                     .build()
             )
@@ -116,26 +115,27 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             return try {
                 coroutineScope {
                     val asinList = productDao.getScrapeWaitingAsinCodes()
-                    AppLogger.d("$JOBTAG products: $asinList", "Job")
-                    val responseList = asinList.map {
-                        return@map async { collectDayInfo(it) }
-                    }.awaitAll()
                     val outputData = Data.Builder()
-                        .putString("output", "$responseList")
-                        .build()
-                    //insert job log
-                    jobLog.insert(
-                        JobLog(
-                            asin = asinList.map { it.asin }.joinToString(", "),
-                            date = unix(),
-                            detail = responseList.map {
-                                "${it.first} => ${it.second.price()}"
-                            }.joinToString("\n")
+                    if (asinList.isNotEmpty()) {
+                        AppLogger.d("$JOBTAG products: $asinList", "Job")
+                        val responseList = asinList.map {
+                            return@map async { collectDayInfo(it) }
+                        }.awaitAll()
+                        outputData.putString("output", "$responseList")
+                        //insert job log
+                        jobLog.insert(
+                            JobLog(
+                                asin = asinList.map { it.asin }.joinToString(", "),
+                                date = unix(),
+                                detail = responseList.map {
+                                    "${it.first} => ${it.second.price()}"
+                                }.joinToString("\n")
+                            )
                         )
-                    )
-                    //mark error stop if access to limit
-                    productDao.markErrorStop()
-                    Result.success(outputData)
+                        //mark error stop if access to limit
+                        productDao.markErrorStop()
+                    }
+                    Result.success(outputData.build())
                 }
             } catch (e: Exception) {
                 AppLogger.e("$JOBTAG ${e.localizedMessage}", e, "Job")

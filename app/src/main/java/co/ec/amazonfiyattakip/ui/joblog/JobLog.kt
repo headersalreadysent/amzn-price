@@ -27,21 +27,26 @@ import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.helper.Async
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
+import kotlinx.coroutines.delay
 
 @Composable
-fun JobLogScreen(){
+fun JobLogScreen() {
 
-    var logs by remember{ mutableStateOf<List<JobLog>?>(null) }
+    var logs by remember { mutableStateOf<List<JobLog>?>(null) }
     LaunchedEffect(Unit) {
-        Async.run({
-            return@run AppDatabase.getDatabase().jobLog().getAll()
-        },{
-            logs=it
-        })
+        while (true) {
+            Async.run({
+                return@run AppDatabase.getDatabase().jobLog().getAll()
+            }, {
+                logs = it
+            })
+            delay(5000)
+        }
     }
-    LazyColumn (modifier = Modifier.fillMaxSize()
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
     ) {
-        if(logs==null){
+        if (logs == null) {
             item {
                 Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
                     Text("hiç log bulunmuyor.")
@@ -49,17 +54,22 @@ fun JobLogScreen(){
             }
         }
         item {
-            Box(modifier = Modifier.fillMaxWidth().statusBarsPadding())
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding())
         }
         logs?.let { logs ->
 
             items(logs.size) {
-                val log=logs[it]
+                val log = logs[it]
                 ListItem(
                     colors = ListItemDefaults.colors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                     ),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).padding(bottom = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .padding(bottom = 4.dp),
                     headlineContent = {
                         Text(log.detail)
                     },

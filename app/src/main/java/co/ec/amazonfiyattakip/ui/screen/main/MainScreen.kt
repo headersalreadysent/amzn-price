@@ -252,12 +252,13 @@ fun NoProductScreen(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .background(
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    cutShape(CutCorner.TOPRIGHT, 20.dp)
-                )
                 .shadow(
                     1.dp,
+                    cutShape(CutCorner.TOPRIGHT, 20.dp)
+                )
+                .padding(top=1.dp)
+                .background(
+                    MaterialTheme.colorScheme.secondaryContainer,
                     cutShape(CutCorner.TOPRIGHT, 20.dp)
                 )
                 .statusBarsPadding()
