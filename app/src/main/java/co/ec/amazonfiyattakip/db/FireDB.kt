@@ -77,9 +77,19 @@ object FireDB {
                 )
             }
             //merge lists and
+            var lastDate = 0
             val priceList = (serverPriceList + localPriceList)
                 .distinctBy { it.first() }
                 .sortedBy { it.first() }
+                .filter {
+                    val date = it[0].toInt()
+                    if (date - lastDate < 60 * 3) {
+                        //if this is too close the last one
+                        return@filter false
+                    }
+                    lastDate = date
+                    return@filter true
+                }
             prices = priceList.map { it.joinToString("|") }
             //update local product
             priceList.lastOrNull()?.let {
@@ -100,7 +110,7 @@ object FireDB {
     }
 
 
-    suspend fun syncProduct(product: Product) {
+    fun syncProduct(product: Product) {
         try {
             GlobalScope.launch {
                 //first get product

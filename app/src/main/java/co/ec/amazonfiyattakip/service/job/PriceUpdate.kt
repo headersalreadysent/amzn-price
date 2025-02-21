@@ -16,8 +16,10 @@ import androidx.work.await
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.AsinId
+import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
+import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.AppLogger
@@ -145,20 +147,20 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         /**
          * collect price and save to database
          */
-        private suspend fun collectDayInfo(asin: AsinId): Pair<String, Int> {
+        private suspend fun collectDayInfo(product: Product): Pair<String, Int> {
 
             val productDao = AppDatabase.getDatabase().product()
-            AppLogger.d("$JOBTAG product $asin", "Job")
+            AppLogger.d("$JOBTAG product ${product.asin}", "Job")
             val deferred = CompletableDeferred<Pair<String, Int>>()
 
             val scraper = AmznScrape()
             //collect one asin
-            scraper.scrapeFromAsin(asin.asin, { update ->
+            scraper.scrapeFromAsin(product.asin, { update ->
 
                 //insert into database
                 thread {
                     val product = update.copy(
-                        id = asin.id
+                        id = product.id
                     )
                     PriceInfoDao.insertNewUpdate(product)
                     //add next run time
@@ -181,12 +183,13 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     )
                 }
                 //complete defer with correct price
-                deferred.complete(Pair(asin.asin, update.price))
+                deferred.complete(Pair(product.asin, update.price))
             }, {
                 AppLogger.e(it.localizedMessage ?: it.message ?: "", it)
                 //complete defer with correct -1 because of error
-                thread { productDao.addErrorCount(asin.id) }
-                deferred.complete(Pair(asin.asin, -1))
+                thread { productDao.addErrorCount(product.id) }
+                deferred.complete(Pair(product.asin, -1))
+                FireDB.syncProduct(product)
             })
             //return response
             return deferred.await()

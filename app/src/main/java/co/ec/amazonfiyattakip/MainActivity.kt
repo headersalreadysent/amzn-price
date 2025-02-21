@@ -99,8 +99,8 @@ fun AppContent(
     var settingsClick by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         while (true){
-            settingsClick = if(settingsClick>0) settingsClick-- else 0
-            delay(1000)
+            settingsClick = 0
+            delay(2000)
         }
     }
     Scaffold(
@@ -118,10 +118,11 @@ fun AppContent(
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
                     IconButton(onClick = {
+
                         settingsClick++
                         AppLogger.d("settingsClick $settingsClick")
-                        if (settingsClick > 5) {
-
+                        if (settingsClick == 5) {
+                            settingsClick=0
                             navigator.navigate("joblog")
                         } else {
                             if(navigator.currentDestination?.route!=="settings"){
