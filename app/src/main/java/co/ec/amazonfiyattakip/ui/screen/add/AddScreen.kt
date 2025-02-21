@@ -4,6 +4,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,11 +20,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -106,9 +111,17 @@ fun ProductScreen(product: Product) {
             .fillMaxSize()
             .padding(horizontal = 8.dp)
     ) {
+        val limit=300
         if (product.description.isNotEmpty()) {
+            var fullDesc by remember { mutableStateOf(product.description.length<limit) }
             Card(
-                shape = RoundedCornerShape(.5.dp)
+                modifier = Modifier.animateContentSize(),
+                shape = RoundedCornerShape(.5.dp),
+                onClick = {
+                    if(product.description.length>limit){
+                        fullDesc=!fullDesc
+                    }
+                }
             ) {
                 Text(
                     modifier = Modifier
@@ -117,8 +130,18 @@ fun ProductScreen(product: Product) {
                     style = MaterialTheme.typography.bodyMedium.copy(
                         textAlign = TextAlign.Justify
                     ),
-                    text = product.description
+                    text = if(fullDesc) product.description else product.shortDesc(limit)
                 )
+                if(!fullDesc && product.description.length>limit){
+                    TextButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(0.dp),
+                        onClick = {
+                        fullDesc=!fullDesc
+                    }) {
+                        Text("Devamını görüntüle")
+                    }
+                }
             }
         }
 
