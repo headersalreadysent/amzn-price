@@ -294,7 +294,7 @@ fun DetailScreen(
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                contentColor = MaterialTheme.colorScheme.tertiary
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         ) {
                             Text(text = "Takibi Durdur")
@@ -311,7 +311,7 @@ fun DetailScreen(
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.primary
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         ) {
                             Text(text = "Takibi Başlat")
@@ -332,7 +332,7 @@ fun DetailScreen(
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
                         )
                     ) {
                         Text(text = "Takibi Sil")

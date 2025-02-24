@@ -1,15 +1,13 @@
 package co.ec.amazonfiyattakip.service
 
 import co.ec.amazonfiyattakip.App
-import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.helper.AppSharedSettings
-import co.ec.helper.Async
+import co.ec.helper.helpers.SettingsHelper
+import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -30,7 +28,7 @@ object AmznRequest {
         )
     ).build()
 
-    var sharedSettings = AppSharedSettings.get()
+    var sharedSettings = SettingsHelper.get()
 
     init {
         obtainCookieJar()
@@ -82,7 +80,7 @@ object AmznRequest {
 
 
     private fun obtainCookieJar() {
-        Async.run({
+        asyncRun({
             //look old cookies
             var request = Request.Builder()
                 .url("https://www.amazon.com.tr/")
@@ -92,7 +90,7 @@ object AmznRequest {
 
             if (!response.isSuccessful) throw IOException("Unexpected code $response")
             val cookie = response.headers("set-cookie").toList()
-            return@run cookie
+            return@asyncRun cookie
         }, {
             recordCookies(it)
         })
@@ -105,7 +103,7 @@ object AmznRequest {
         then: (res: String?) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
-        Async.run({
+        asyncRun({
             var request = Request.Builder()
                 .url(url)
             request = generateHeaders(request)
@@ -119,7 +117,7 @@ object AmznRequest {
                     recordCookies(response.headers("set-cookie"))
                     val body=response.body?.string()
                     response.body?.close()
-                    return@run body
+                    return@asyncRun body
                 }
         }, {
             then(it)
@@ -194,7 +192,7 @@ object AmznRequest {
         then: (res: String) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
-        Async.run({
+        asyncRun({
             val client = OkHttpClient.Builder()
                 .followRedirects(false)
                 .build()
@@ -207,7 +205,7 @@ object AmznRequest {
                 .execute().use { response: Response ->
                     if (response.isRedirect) {
                         val redirectUrl = response.header("Location") ?: ""
-                        return@run redirectUrl
+                        return@asyncRun redirectUrl
                     } else {
                         throw IOException("No redirect $response")
                     }

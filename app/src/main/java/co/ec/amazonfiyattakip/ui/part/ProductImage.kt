@@ -1,13 +1,10 @@
 package co.ec.amazonfiyattakip.ui.part
 
 import android.graphics.drawable.ColorDrawable
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +25,8 @@ import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.CoilTrimTransform
 import co.ec.amazonfiyattakip.ui.PreviewProviders
-import co.ec.helper.AppLogger
+import co.ec.helper.helpers.LogHelper
+
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 
@@ -79,7 +77,7 @@ fun ProductImage(
                     .error(ColorDrawable(Color.White.toArgb()))
                     .listener(
                         onError = { _, throwable ->
-                            AppLogger.e("coil error",throwable.throwable)
+                            LogHelper.e("coil error",throwable.throwable)
                         }
                     )
                     .build()

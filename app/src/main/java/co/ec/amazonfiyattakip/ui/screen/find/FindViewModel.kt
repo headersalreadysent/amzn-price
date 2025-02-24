@@ -5,10 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.FireDB
-import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.helper.Async
+import co.ec.helper.utils.asyncRun
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,8 +29,8 @@ open class FindViewModel : ViewModel() {
         viewModelScope.launch {
 
             val serverProducts=FireDB.collect()
-            Async.run({
-                return@run AppDatabase.getDatabase().product().getAllAsin()
+            asyncRun({
+                return@asyncRun AppDatabase.getDatabase().product().getAllAsin()
             }, { asins ->
                 recorded.value = serverProducts
                     .filter { !asins.contains(it.asin) }

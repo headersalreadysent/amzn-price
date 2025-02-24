@@ -5,10 +5,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.room.PrimaryKey
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
-import co.ec.helper.Async
+import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import kotlin.random.Random
 
@@ -37,7 +36,7 @@ class AppModel : ViewModel() {
 
 
     fun generateFakePrices(){
-        Async.run({
+        asyncRun({
             val products=AppDatabase.getDatabase().product().getAllProducts()
             (1..20).forEach { no ->
                 products.forEach { it ->

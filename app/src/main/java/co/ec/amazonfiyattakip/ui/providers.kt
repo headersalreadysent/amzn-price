@@ -10,12 +10,12 @@ import androidx.navigation.compose.rememberNavController
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.mock.MockSettings
 import co.ec.amazonfiyattakip.ui.theme.AmazonFiyatTakipTheme
-import co.ec.helper.AppSharedSettings
+import co.ec.helper.helpers.SettingsHelper
 
 val LocalDB = compositionLocalOf<AppDatabase> { error("No DB provided") }
 val LocalNavigation = compositionLocalOf<NavHostController> { error("No navcontroller provided") }
 val LocalSnackbar = compositionLocalOf<SnackbarHostState> { error("No snackbarhost provided") }
-val LocalSettings = compositionLocalOf<AppSharedSettings> { error("No settings provided") }
+val LocalSettings = compositionLocalOf<SettingsHelper> { error("No settings provided") }
 
 @Composable
 fun AppProviders(
@@ -25,7 +25,7 @@ fun AppProviders(
     val navController = rememberNavController()
     val db = AppDatabase.getDatabase()
     val snackbarHostState = SnackbarHostState()
-    val settings = AppSharedSettings(context)
+    val settings = SettingsHelper(context)
     CompositionLocalProvider(
         LocalNavigation provides navController,
         LocalDB provides db,
@@ -51,7 +51,7 @@ fun PreviewProviders(
         LocalNavigation provides navController,
         LocalSnackbar provides snackbarHostState,
     ) {
-        AmazonFiyatTakipTheme(darkTheme = false, dynamicColor = false) {
+        AmazonFiyatTakipTheme(darkTheme = false) {
             content()
         }
     }

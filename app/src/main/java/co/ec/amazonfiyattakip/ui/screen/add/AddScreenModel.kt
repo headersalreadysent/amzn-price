@@ -5,11 +5,10 @@ import androidx.lifecycle.ViewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.service.AmznRequest
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.helper.AppLogger
-import co.ec.helper.AppSharedSettings
-import co.ec.helper.Async
+import co.ec.helper.helpers.LogHelper
+import co.ec.helper.helpers.SettingsHelper
+import co.ec.helper.utils.asyncRun
 
 class AddScreenModel : ViewModel() {
 
@@ -18,14 +17,14 @@ class AddScreenModel : ViewModel() {
 
 
     fun recordFromShareUrl() {
-        val url = AppSharedSettings.get().getString("sharedUrl") ?: ""
+        val url = SettingsHelper.get().getString("sharedUrl") ?: ""
         if (url != "") {
             var page=url
             if(!url.startsWith("http")){
                 page=AmznScrape.urlFromAsin(url)
             }
             AmznScrape().scrapeFromUrl(page, { scraped ->
-                AppLogger.d(scraped.toString())
+                LogHelper.d(scraped.toString())
                 product.value = scraped
             }, {
                 it.printStackTrace()
@@ -41,11 +40,11 @@ class AddScreenModel : ViewModel() {
      */
     fun saveProduct(then: (id:Int) -> Unit = {}) {
         product.value?.let { record ->
-            Async.run({
+            asyncRun({
                 val id=AppDatabase.getDatabase().product().insert(record)
                 val price=record.toPriceInfo(id.toInt(),record.price)
                 AppDatabase.getDatabase().priceInfo().insert(price)
-                return@run id
+                return@asyncRun id
             }, { id ->
                 product.value = record.copy(
                     id = id.toInt()

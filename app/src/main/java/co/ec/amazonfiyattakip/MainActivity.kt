@@ -42,7 +42,7 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
-import co.ec.helper.AppLogger
+import co.ec.helper.helpers.LogHelper
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.delay
@@ -120,7 +120,7 @@ fun AppContent(
                     IconButton(onClick = {
 
                         settingsClick++
-                        AppLogger.d("settingsClick $settingsClick")
+                        LogHelper.d("settingsClick $settingsClick")
                         if (settingsClick == 5) {
                             settingsClick=0
                             navigator.navigate("joblog")

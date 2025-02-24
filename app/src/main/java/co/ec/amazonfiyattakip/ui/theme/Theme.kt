@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -13,12 +14,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import co.ec.helper.AppEventBus
-import co.ec.helper.AppSharedSettings
+import co.ec.helper.helpers.EventBus
+import co.ec.helper.helpers.SettingsHelper
 
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
@@ -265,15 +267,18 @@ val unspecified_scheme = ColorFamily(
 @Composable
 fun AmazonFiyatTakipTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-
-    var dynamicSettings by remember { mutableStateOf(AppSharedSettings.get().getBoolean("dynamicTheme")) }
+    val settings = SettingsHelper.get()
+    var dynamicSettings by remember { mutableStateOf(settings.getBoolean("dynamicTheme")) }
+    var colorContrast by remember { mutableIntStateOf(settings.getInt("colorContrast",1)) }
     LaunchedEffect(Unit) {
-        AppEventBus.subscribe<AppSharedSettings.SettingsChange> {
+        EventBus.subscribe<SettingsHelper.SettingsChange> {
             if(it.name=="dynamicTheme"){
                 dynamicSettings=it.value as Boolean
+            }
+            if(it.name=="colorContrast"){
+                colorContrast=it.value as Int
             }
         }
     }
@@ -282,13 +287,16 @@ fun AmazonFiyatTakipTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
-        darkTheme -> darkScheme
+        darkTheme && colorContrast==3 -> highContrastDarkColorScheme
+        !darkTheme && colorContrast==3 -> highContrastLightColorScheme
+        darkTheme && colorContrast==2 -> mediumContrastDarkColorScheme
+        !darkTheme && colorContrast==2 -> mediumContrastLightColorScheme
+        darkTheme && colorContrast==1 -> darkScheme
         else -> lightScheme
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme =colorScheme,
         typography = Typography,
         content = content
     )

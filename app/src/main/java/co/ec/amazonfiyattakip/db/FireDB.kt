@@ -6,9 +6,8 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.autoToString
-import co.ec.helper.AppEventBus
-import co.ec.helper.AppLogger
-import co.ec.helper.Async
+import co.ec.helper.helpers.EventBus
+import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.unix
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -17,7 +16,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.concurrent.thread
-import kotlin.time.Duration.Companion.seconds
 
 
 object FireDB {
@@ -104,7 +102,7 @@ object FireDB {
             }
             latestUpdate = unix()
             GlobalScope.launch {
-                AppEventBus.publish(ProductSync(product.asin))
+                EventBus.publish(ProductSync(product.asin))
             }
         }
     }
@@ -121,18 +119,18 @@ object FireDB {
                     snapshot.toObject(ProductRecord::class.java)?.let {
                         it.sync(product, prices)
                         productRef.set(it)
-                        AppLogger.d("Firebase ${product.asin} updated ${it.autoToString()}")
+                        LogHelper.d("Firebase ${product.asin} updated ${it.autoToString()}")
                     }
                 } else {
                     val record = ProductRecord(product, prices)
                     productRef.set(record)
-                    AppLogger.d("Firebase ${product.asin} inserted ${record.autoToString()}")
+                    LogHelper.d("Firebase ${product.asin} inserted ${record.autoToString()}")
                 }
             }
 
         } catch (e: Throwable) {
 
-            AppLogger.d("Firebase error ${e.message}")
+            LogHelper.d("Firebase error ${e.message}")
         }
     }
 
@@ -176,7 +174,7 @@ object FireDB {
 
             snapshot.documents.forEach { it.reference.delete().await() }
         } catch (e: Exception) {
-            AppLogger.d("Firebase error while deleting old records ${e.message}")
+            LogHelper.d("Firebase error while deleting old records ${e.message}")
         }
     }
 }

@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.job_log.JobLog
-import co.ec.helper.Async
+import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 import kotlinx.coroutines.delay
@@ -35,8 +35,8 @@ fun JobLogScreen() {
     var logs by remember { mutableStateOf<List<JobLog>?>(null) }
     LaunchedEffect(Unit) {
         while (true) {
-            Async.run({
-                return@run AppDatabase.getDatabase().jobLog().getAll()
+            asyncRun({
+                return@asyncRun AppDatabase.getDatabase().jobLog().getAll()
             }, {
                 logs = it
             })

@@ -1,8 +1,8 @@
 package co.ec.amazonfiyattakip.mock
-import co.ec.helper.AppSharedSettings
 import android.content.Context
+import co.ec.helper.helpers.SettingsHelper
 
-class MockSettings(context: Context) : AppSharedSettings(context) {
+class MockSettings(context: Context) : SettingsHelper(context) {
 
     private val mockPreferences = mutableMapOf<String, Any?>()
 

@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.part.ProductImage
-import co.ec.helper.AppSharedSettings
+import co.ec.helper.helpers.SettingsHelper
 
 @Composable
 fun SearchBox(product:Product){
@@ -31,7 +31,7 @@ fun SearchBox(product:Product){
         .background(MaterialTheme.colorScheme.surfaceContainer)
         .border(1.dp, MaterialTheme.colorScheme.primaryContainer)
         .clickable {
-            AppSharedSettings.get()
+            SettingsHelper.get()
                 .putString("sharedUrl", product.asin)
             navigation.navigate("add")
         }) {

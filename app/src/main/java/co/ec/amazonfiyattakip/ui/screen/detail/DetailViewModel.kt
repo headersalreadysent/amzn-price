@@ -9,13 +9,10 @@ import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.FireDB.ProductSync
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.db.product.ProductDao
 import co.ec.amazonfiyattakip.db.product.ProductStatus
-import co.ec.helper.AppEventBus
-import co.ec.helper.Async
+import co.ec.helper.helpers.EventBus
+import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
-import com.fleeksoft.ksoup.KsoupEngineInstance.init
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -27,7 +24,7 @@ open class DetailViewModel : ViewModel() {
     init {
 
         viewModelScope.launch {
-            AppEventBus.subscribe<ProductSync> { update ->
+            EventBus.subscribe<ProductSync> { update ->
                 product.value?.let {
                     if(it.asin==update.asin){
                         loadProduct(it.id,false)
@@ -39,8 +36,8 @@ open class DetailViewModel : ViewModel() {
 
 
     fun loadProduct(productId: Int,refresh:Boolean=true) {
-        Async.run({
-            return@run Pair(
+        asyncRun({
+            return@asyncRun Pair(
                 AppDatabase.getDatabase().product().getProduct(productId),
                 AppDatabase.getDatabase().priceInfo().getPricesByProduct(productId)
             )
@@ -59,36 +56,36 @@ open class DetailViewModel : ViewModel() {
 
     fun stopFollow() {
 
-        Async.run({
+        asyncRun({
             val copy = product.value!!.copy(
                 status = ProductStatus.PASSIVE
             )
             AppDatabase.getDatabase().product().update(copy)
-            return@run copy
+            return@asyncRun copy
         }, {
             product.value = it
         })
     }
 
     fun startFollow() {
-        Async.run({
+        asyncRun({
             val copy = product.value!!.copy(
                 status = ProductStatus.ACTIVE
             )
             AppDatabase.getDatabase().product().update(copy)
-            return@run copy
+            return@asyncRun copy
         }, {
             product.value = it
         })
     }
 
     fun deleteProduct(then: () -> Unit = {}){
-        Async.run({
+        asyncRun({
             product.value?.let {
                 AppDatabase.getDatabase().priceInfo().delete(it.id)
                 AppDatabase.getDatabase().product().delete(it.id)
             }
-            return@run
+            return@asyncRun
         },{
             then()
         })

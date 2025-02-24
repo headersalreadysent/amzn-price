@@ -1,9 +1,8 @@
 package co.ec.amazonfiyattakip.service
 
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.service.AmznRequest.client
-import co.ec.helper.AppLogger
-import co.ec.helper.Async
+import co.ec.helper.helpers.LogHelper
+import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
@@ -11,8 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.OkHttpClient
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -61,7 +58,7 @@ class AmznScrape {
         then: (res: Product) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
-        Async.run({
+        asyncRun({
             //generate url
             AmznRequest.request(url, { html ->
                 //get html
@@ -69,14 +66,14 @@ class AmznScrape {
                     try {
                         //parse product from html
                         val product = extractProductDetails(it)
-                        AppLogger.d(product.toString())
+                        LogHelper.d(product.toString())
                         then(product)
                     } catch (t: Throwable) {
                         err(t)
                     }
                 }
             }, {
-                AppLogger.e("amzn", it)
+                LogHelper.e("amzn", it)
                 err(it)
             })
         })
@@ -91,7 +88,7 @@ class AmznScrape {
         then: (res: List<String>) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
-        Async.run({
+        asyncRun({
             //generate url
             AmznRequest.request("https://www.amazon.com.tr/gp/bestsellers", { html ->
                 //get html
@@ -105,7 +102,7 @@ class AmznScrape {
                     }
                 }
             }, {
-                AppLogger.e("amzn", it)
+                LogHelper.e("amzn", it)
                 err(it)
             })
         })
@@ -121,7 +118,7 @@ class AmznScrape {
         then: (res: List<String>) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
-        Async.run({
+        asyncRun({
             //generate url
             val encoded = URLEncoder.encode(searchText, StandardCharsets.UTF_8.toString())
             AmznRequest.request("https://www.amazon.com.tr/s?k=\"$encoded\"", { html ->
@@ -136,7 +133,7 @@ class AmznScrape {
                     }
                 }
             }, {
-                AppLogger.e("amzn", it)
+                LogHelper.e("amzn", it)
                 err(it)
             })
         })

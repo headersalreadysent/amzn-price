@@ -5,13 +5,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import co.ec.amazonfiyattakip.service.AmznRequest
-import co.ec.helper.AppSharedSettings
+import co.ec.helper.helpers.SettingsHelper
 
 class ShareActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        var sharedSettings = AppSharedSettings.get()
+        var sharedSettings = SettingsHelper.get()
 
         // Check if the activity was started by a share intent
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {

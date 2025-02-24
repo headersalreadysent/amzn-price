@@ -10,7 +10,7 @@ import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.helper.Async
+import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,8 +45,8 @@ open class MainScreenModel : ViewModel() {
     }
 
     private fun calculateStats() {
-        Async.run({
-            return@run mapOf(
+       asyncRun({
+            return@asyncRun mapOf(
                 "product" to AppDatabase.getDatabase().product().getCount(),
                 "update" to AppDatabase.getDatabase().priceInfo().getCount()
             )
@@ -73,8 +73,8 @@ open class MainScreenModel : ViewModel() {
      * load daily stats
      */
     private fun loadDailyTotals(format: String = "%Y-%m-%d") {
-        Async.run({
-            return@run AppDatabase.getDatabase().priceInfo().getDailyTotalPrices(format = format)
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().priceInfo().getDailyTotalPrices(format = format)
         }, {
             dailyTotals.value = it
         })
@@ -84,8 +84,8 @@ open class MainScreenModel : ViewModel() {
      * load products from database
      */
     private fun loadProducts() {
-        Async.run({
-            return@run AppDatabase.getDatabase().product().getAllProducts()
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().product().getAllProducts()
         }, {
             products.value = it
         })
@@ -122,8 +122,8 @@ open class MainScreenModel : ViewModel() {
      * add product list
      */
     fun addProductList(list: List<Product>) {
-        Async.run({
-            return@run AppDatabase.getDatabase().product().insertAll(list)
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().product().insertAll(list)
         }, {
             loadProducts()
         })

@@ -2,32 +2,25 @@ package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
 import androidx.core.content.ContextCompat
-import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.Data
-import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.await
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
-import co.ec.amazonfiyattakip.db.AsinId
 import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.helper.AppLogger
-import co.ec.helper.AppSharedSettings
+import co.ec.helper.helpers.LogHelper
+import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -55,7 +48,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             list.addListener(
                 {
                     val workInfos = list.get()
-                    AppLogger.d("$JOBTAG is $workInfos", "Job")
+                    LogHelper.d("$JOBTAG is $workInfos", "Job")
                     if (workInfos != null && workInfos.isEmpty()) {
                         startJob()
                         return@addListener
@@ -63,17 +56,17 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     workInfos?.forEach { workInfo ->
                         when (workInfo.state) {
                             WorkInfo.State.CANCELLED -> {
-                                AppLogger.d("$JOBTAG is cancelled", "Job")
+                                LogHelper.d("$JOBTAG is cancelled", "Job")
                                 startJob()
                             }
 
                             WorkInfo.State.FAILED -> {
-                                AppLogger.d("$JOBTAG is failed", "Job")
+                                LogHelper.d("$JOBTAG is failed", "Job")
                                 startJob()
                             }
 
                             else -> {
-                                AppLogger.d("$JOBTAG state is ${workInfo.state}", "job")
+                                LogHelper.d("$JOBTAG state is ${workInfo.state}", "job")
                             }
                         }
                     }
@@ -83,7 +76,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         }
 
         private fun startJob() {
-            val queryTime = AppSharedSettings.get().getInt("queryTime", 15)
+            val queryTime = SettingsHelper.get().getInt("queryTime", 15)
             val manager = WorkManager.getInstance(App.context())
 
 
@@ -105,7 +98,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     .build()
             )
 
-            AppLogger.d("$JOBTAG is started", "Job")
+            LogHelper.d("$JOBTAG is started", "Job")
 
         }
 
@@ -117,7 +110,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     val asinList = productDao.getScrapeWaitingAsinCodes()
                     val outputData = Data.Builder()
                     if (asinList.isNotEmpty()) {
-                        AppLogger.d("$JOBTAG products: $asinList", "Job")
+                        LogHelper.d("$JOBTAG products: $asinList", "Job")
                         val responseList = asinList.map {
                             return@map async { collectDayInfo(it) }
                         }.awaitAll()
@@ -138,7 +131,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     Result.success(outputData.build())
                 }
             } catch (e: Exception) {
-                AppLogger.e("$JOBTAG ${e.localizedMessage}", e, "Job")
+                LogHelper.e("$JOBTAG ${e.localizedMessage}", e, "Job")
                 Result.failure()
             }
         }
@@ -150,7 +143,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         private suspend fun collectDayInfo(product: Product): Pair<String, Int> {
 
             val productDao = AppDatabase.getDatabase().product()
-            AppLogger.d("$JOBTAG product ${product.asin}", "Job")
+            LogHelper.d("$JOBTAG product ${product.asin}", "Job")
             val deferred = CompletableDeferred<Pair<String, Int>>()
 
             val scraper = AmznScrape()
@@ -171,7 +164,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                         product.comment
                     )
 
-                    AppLogger.d("$JOBTAG ${product.price} : ${product.title}", "Job")
+                    LogHelper.d("$JOBTAG ${product.price} : ${product.title}", "Job")
 
                     App.event(
                         "price_update", mapOf(
@@ -186,7 +179,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 //complete defer with correct price
                 deferred.complete(Pair(product.asin, update.price))
             }, {
-                AppLogger.e(it.localizedMessage ?: it.message ?: "", it)
+                LogHelper.e(it.localizedMessage ?: it.message ?: "", it)
                 //complete defer with correct -1 because of error
                 thread { productDao.addErrorCount(product.id) }
                 deferred.complete(Pair(product.asin, -1))

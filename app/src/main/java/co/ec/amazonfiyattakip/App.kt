@@ -6,8 +6,9 @@ import androidx.compose.material3.SnackbarHostState
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.service.job.DeleteOldProducts
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
-import co.ec.helper.AppEventBus
-import co.ec.helper.AppSharedSettings
+import co.ec.helper.CnsynApp
+import co.ec.helper.helpers.EventBus
+import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.unix
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
@@ -16,9 +17,9 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-class App : co.ec.helper.App() {
+class App : CnsynApp() {
 
-    private lateinit var sharedSettings:AppSharedSettings
+    private lateinit var sharedSettings:SettingsHelper
     lateinit var firebaseAnalytics: FirebaseAnalytics
 
 
@@ -28,7 +29,7 @@ class App : co.ec.helper.App() {
 
         private var snackOptions: Pair<SnackbarHostState, CoroutineScope>? = null
 
-        fun context() = co.ec.helper.App.context()
+        fun context() = CnsynApp.context()
 
         fun snack(text: String) {
             snackOptions?.let {
@@ -74,7 +75,7 @@ class App : co.ec.helper.App() {
         AppDatabase.getDatabase()
 
         GlobalScope.launch {
-            AppEventBus.subscribe<AppSharedSettings.SettingsChange> {
+            EventBus.subscribe<SettingsHelper.SettingsChange> {
                 if(it.name=="queryTime"){
                     PriceUpdate.setupJob()
 
@@ -88,7 +89,7 @@ class App : co.ec.helper.App() {
 
     private fun setupSharedSettings() {
         //activate or deactivate collection
-        sharedSettings= AppSharedSettings(applicationContext)
+        sharedSettings= SettingsHelper(applicationContext)
         //set run times
         if (sharedSettings.getBoolean("firstRun", true)) {
             sharedSettings.putBoolean("firstRun", false)
@@ -98,6 +99,7 @@ class App : co.ec.helper.App() {
         sharedSettings.apply {
             putInt("queryTime", getInt("queryTime",15))
             putBoolean("dynamicTheme", getBoolean("dynamicTheme",false))
+            putInt("colorContrast", getInt("colorContrast",1))
 
         }
 

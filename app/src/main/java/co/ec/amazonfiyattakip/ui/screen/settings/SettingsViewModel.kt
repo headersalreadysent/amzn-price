@@ -9,14 +9,14 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.service.job.PriceUpdate.Companion.JOBTAG
-import co.ec.helper.AppSharedSettings
+import co.ec.helper.helpers.SettingsHelper
 
 class SettingsViewModel : ViewModel() {
 
     private val workManager = WorkManager.getInstance(App.context())
     var map = MutableLiveData<Map<String, Any?>>(mapOf())
 
-    private var shared = AppSharedSettings.get()
+    private var shared = SettingsHelper.get()
 
     private val _nextWorkTime = MutableLiveData<Long?>()
     val nextWorkTime: LiveData<Long?> get() = _nextWorkTime
