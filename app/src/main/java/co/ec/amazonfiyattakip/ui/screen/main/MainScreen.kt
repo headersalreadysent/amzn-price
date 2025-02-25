@@ -414,7 +414,7 @@ fun ProductListScreen(
                     PriceGraph(
                         modifier = Modifier.blur(.2.dp),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = .8F),
-                        circleColor = MaterialTheme.colorScheme.primary,
+                        circleColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         prices = dailyTotals.map {
                             return@map PriceGraphPair(it.date, it.total.toFloat())
                         },
@@ -435,7 +435,7 @@ fun ProductListScreen(
                     Text(
                         "Sepet Toplamı",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     )
                     AutoText(
@@ -444,16 +444,15 @@ fun ProductListScreen(
                             .price(),
                         fontSize = 20..35,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                             fontWeight = FontWeight.Bold,
-                            shadow = Shadow(MaterialTheme.colorScheme.secondary, Offset(1F, 1F))
                         )
                     )
                     totalDragValue?.let {
                         Text(
                             it.date.dateString(),
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.secondary,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 fontSize = 10.sp
                             ),
                             modifier = Modifier.graphicsLayer {

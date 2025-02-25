@@ -96,7 +96,6 @@ open class MainScreenModel : ViewModel() {
      */
     fun loadDeals(then: (list: List<String>) -> Unit = {}) {
         val semaphore = Semaphore(10)
-
         AmznScrape().getPopular({ asins ->
             viewModelScope.launch {
                 channelFlow {

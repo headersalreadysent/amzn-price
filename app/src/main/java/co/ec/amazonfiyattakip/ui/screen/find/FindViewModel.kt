@@ -25,6 +25,9 @@ open class FindViewModel : ViewModel() {
     private val searchFlow = MutableSharedFlow<Product>()
     val searchResults: SharedFlow<Product> = searchFlow
 
+    private val dealFlow = MutableSharedFlow<Product>()
+    val deals: SharedFlow<Product> = dealFlow
+
     init {
         viewModelScope.launch {
 
@@ -39,6 +42,33 @@ open class FindViewModel : ViewModel() {
 
 
         }
+    }
+
+
+    /**
+     * load deals from amazon
+     */
+    fun loadDeals(then: (list: List<String>) -> Unit = {}) {
+        val semaphore = Semaphore(10)
+        AmznScrape().getPopular({ asins ->
+            viewModelScope.launch {
+                channelFlow {
+                    asins.forEach { asin ->
+                        launch {
+                            semaphore.withPermit {
+                                runCatching { AmznScrape().suspendScrape(asin) }
+                                    .onSuccess { send(it) }
+                            }
+                        }
+                    }
+                }.collect { result ->
+                    if (result.title.isNotEmpty() && result.price > 0) {
+                        dealFlow.emit(result)
+                    }
+                }
+            }
+            then(asins)
+        })
     }
 
     /**

@@ -1,17 +1,26 @@
 package co.ec.amazonfiyattakip.service
 
+import androidx.core.app.PendingIntentCompat.send
+import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import kotlin.concurrent.thread
 
 class AmznScrape {
 
@@ -41,7 +50,7 @@ class AmznScrape {
     }
 
     suspend fun suspendScrape(url: String): Product = withContext(Dispatchers.IO) {
-        val pageUrl=if(url.startsWith("http")) url else urlFromAsin(url)
+        val pageUrl = if (url.startsWith("http")) url else urlFromAsin(url)
         val response = AmznRequest.suspendRequest(pageUrl)
         extractProductDetails(response)
     }
@@ -210,7 +219,7 @@ class AmznScrape {
                 .first()?.let {
                     return (it.value().toFloat() * 100).toInt()
                 }
-        }catch (e:Throwable){
+        } catch (e: Throwable) {
             return 0
         }
         return 0
@@ -244,4 +253,6 @@ class AmznScrape {
             return@map asin
         }
     }
+
+
 }

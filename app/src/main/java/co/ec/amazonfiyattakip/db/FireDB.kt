@@ -108,6 +108,7 @@ object FireDB {
     }
 
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun syncProduct(product: Product) {
         try {
             GlobalScope.launch {
