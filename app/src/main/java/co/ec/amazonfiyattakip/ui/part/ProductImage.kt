@@ -4,7 +4,11 @@ import android.graphics.drawable.ColorDrawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -97,9 +101,8 @@ fun ProductImage(
                         if(radialGradient){
                             Modifier.drawBehind {
                                 val gradient = Brush.radialGradient(
-
                                     0.0f to Color.Transparent,
-                                    .85F to color.copy(alpha = .1F),
+                                    .85F to color.copy(alpha = .2F),
                                     1.0f to color.copy(alpha = 1F),
                                     center = Offset(size.width, 0f), // Move center to top-end
                                     radius = size.minDimension
@@ -129,13 +132,25 @@ fun ProductImage(
 
 @Composable
 @Preview(showBackground = true)
-fun ProductImagePreview() {
+private fun ProductImagePreview() {
     PreviewProviders {
-        ProductImage(
-            product = Product.fake(),
-            modifier = Modifier
-                .width(40.dp)
-                .aspectRatio(1F)
-        )
+        Column {
+
+            ProductImage(
+                product = Product.fake(),
+                modifier = Modifier
+                    .width(40.dp)
+                    .aspectRatio(1F)
+            )
+            Spacer(modifier = Modifier.fillMaxWidth().height(16.dp))
+
+            ProductImage(
+                product = Product.fake(),
+                modifier = Modifier
+                    .width(40.dp)
+                    .aspectRatio(1F),
+                radialGradient = true
+            )
+        }
     }
 }

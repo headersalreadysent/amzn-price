@@ -57,7 +57,7 @@ fun CutCornerCard(
     cutSize: Dp = 10.dp,
     colors: CardColors = CardDefaults.cardColors(),
     border: BorderStroke? = null,
-    shadow: Dp? = 4.dp,
+    shadow: Dp? = 0.dp,
     click: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {

@@ -378,14 +378,13 @@ fun ProductListScreen(
             modifier = Modifier
                 .fillMaxSize(1F)
         ) {
-            val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
             val navigator = LocalNavigation.current
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
                 state = listState,
-                flingBehavior = flingBehavior,
+
             ) {
                 items(products.size) { index ->
                     MainProductCard(
@@ -524,7 +523,7 @@ fun MainProductCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .padding(bottom = 8.dp)
+            .padding(bottom = 12.dp)
             .then(
                 if (isFirst) Modifier.statusBarsPadding() else Modifier
             )
@@ -536,6 +535,7 @@ fun MainProductCard(
             containerColor = containerColor
         ),
         cutSize = 20.dp,
+        shadow = 8.dp
 
         ) {
         Box(
@@ -564,16 +564,16 @@ fun MainProductCard(
                             fontSize = 11.sp)) {
                             append(productWithPrices.product.asin+" ")
                         }
-                        append(productWithPrices.product.title)
+                        withStyle(SpanStyle(color = contentColor,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp)) {
+                            append(productWithPrices.product.title)
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp)
                         .padding(top = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = contentColor
-                    ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
