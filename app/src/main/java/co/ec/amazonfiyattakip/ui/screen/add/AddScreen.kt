@@ -43,6 +43,7 @@ import co.ec.amazonfiyattakip.composables.IconStat
 import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 
@@ -95,8 +96,7 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
                 .fillMaxWidth()
                 .height(40.dp)
                 .align(Alignment.BottomStart)
-                .shadow(1.dp, cutCorner)
-                .padding(top = 1.dp)
+                .topOuterShadow(shadowAlpha = .2F)
                 .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
         ) {
         }

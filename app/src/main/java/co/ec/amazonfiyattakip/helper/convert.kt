@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip.helper
 
+import androidx.compose.ui.graphics.Color
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.reflect.full.memberProperties
@@ -18,4 +19,20 @@ fun Any.autoToString(): String {
         "${prop.name}=$value"
     }
     return "$className($properties)"
+}
+
+fun Color.toHtml(): String {
+    return String.format("#%02X%02X%02X",
+        (red * 255).toInt(),
+        (green * 255).toInt(),
+        (blue * 255).toInt()
+    )
+}
+fun Color.toHtmlWithAlpha(): String {
+    return String.format("#%02X%02X%02X%02X",
+        (alpha * 255).toInt(),
+        (red * 255).toInt(),
+        (green * 255).toInt(),
+        (blue * 255).toInt()
+    )
 }

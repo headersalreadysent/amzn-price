@@ -71,15 +71,16 @@ fun AppContent(
 ) {
     val uiController = rememberSystemUiController()
 
-    val surface = MaterialTheme.colorScheme.secondaryContainer
+    val container = MaterialTheme.colorScheme.secondaryContainer
+    val surface = MaterialTheme.colorScheme.surfaceContainer
     SideEffect {
         uiController.setNavigationBarColor(
-            color = surface,
-            darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
+            color = container,
+            darkIcons = ColorUtils.calculateLuminance(container.toArgb()) > 0.5
         )
         uiController.setStatusBarColor(
             color = androidx.compose.ui.graphics.Color.Transparent,
-            darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
+            darkIcons =  ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
         )
     }
     val coroutineScope = rememberCoroutineScope()

@@ -73,6 +73,7 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
+import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
@@ -343,14 +344,13 @@ fun DetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .topOuterShadow()
                     .then(
                         if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
                             40.dp
                         )
                     )
                     .align(Alignment.BottomStart)
-                    .shadow(1.dp, cutCorner)
-                    .padding(top = 1.dp)
                     .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
             ) {
                 PricesGraphWithDrag(

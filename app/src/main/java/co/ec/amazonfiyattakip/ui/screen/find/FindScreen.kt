@@ -37,7 +37,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
@@ -52,6 +54,7 @@ import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutInput
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.rememberKeyboardVisibleState
@@ -147,9 +150,8 @@ fun FindScreen(model: FindViewModel = viewModel()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .topOuterShadow(8.dp,30.dp)
                 .align(Alignment.BottomStart)
-                .shadow(1.dp, cutCorner)
-                .padding(top = 1.dp)
                 .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
                 .padding(horizontal = 16.dp)
                 .padding(top = 16.dp, bottom = 16.dp)

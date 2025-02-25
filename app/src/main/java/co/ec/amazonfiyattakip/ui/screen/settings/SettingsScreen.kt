@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.cutShape
+import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
@@ -112,8 +113,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 .fillMaxWidth()
                 .height(80.dp)
                 .align(Alignment.BottomStart)
-                .shadow(1.dp, cutCorner)
-                .padding(top = 1.dp)
+                .topOuterShadow(8.dp,30.dp)
                 .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
         ) {
             Text(

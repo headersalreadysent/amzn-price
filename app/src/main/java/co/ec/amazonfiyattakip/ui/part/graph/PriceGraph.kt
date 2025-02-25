@@ -21,6 +21,7 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.helper.utils.unix
 import kotlin.math.floor
 import kotlin.random.Random
+import kotlin.text.Typography.times
 
 data class PriceGraphPair(var date: Long, var price: Float)
 
@@ -38,7 +39,8 @@ fun PriceGraph(
 
     drawStyle: DrawStyle = Fill,
     closePath: Boolean = true,
-    onDrag: ((pair: PriceGraphPair?) -> Unit)? = null,
+    subRatio: Float = .1F,
+    onDrag: (( pair: PriceGraphPair?) -> Unit)? = null,
 ) {
     var selectedIndex by remember { mutableIntStateOf(-1) }
 
@@ -88,8 +90,8 @@ fun PriceGraph(
                 }
         ) {
             // Drawing the graph
-            val graphArea = size.height * .8F
-            val subArea = size.height * .1F
+            val graphArea = size.height.times((.9F-subRatio))
+            val subArea = size.height * subRatio
             // Draw price points
             val scaleY = graphArea / (maxPrice - minPrice)
 
@@ -125,7 +127,8 @@ fun PriceGraph(
             } else {
                 if (selectedIndex > 0 && selectedIndex < prices.size - 1) {
                     val x = size.width * selectedIndex / (prices.size - 1)
-                    val y = size.height - (prices[selectedIndex].price - minPrice) * scaleY - subArea
+                    val y =
+                        size.height - (prices[selectedIndex].price - minPrice) * scaleY - subArea
                     drawCircle(
                         circleColor.copy(alpha = .5F),
                         radius = bigCircleSize,
