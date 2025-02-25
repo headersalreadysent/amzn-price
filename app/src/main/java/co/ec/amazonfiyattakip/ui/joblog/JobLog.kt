@@ -1,7 +1,9 @@
 package co.ec.amazonfiyattakip.ui.joblog
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,7 +28,9 @@ import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.dateString
+import co.ec.helper.utils.formatTime
 import co.ec.helper.utils.timeString
+import co.ec.helper.utils.unix
 import kotlinx.coroutines.delay
 
 @Composable
@@ -58,9 +62,11 @@ fun JobLogScreen() {
                 .fillMaxWidth()
                 .statusBarsPadding())
         }
+        val now= unix()
         logs?.let { logs ->
 
             items(logs.size) {
+                val next=if(logs.size==it) 0 else logs[it+1].date
                 val log = logs[it]
                 ListItem(
                     colors = ListItemDefaults.colors(
@@ -71,14 +77,20 @@ fun JobLogScreen() {
                         .padding(horizontal = 8.dp)
                         .padding(bottom = 4.dp),
                     headlineContent = {
-                        Text(log.detail)
-                    },
-                    supportingContent = {
-                        Text(log.asin, style = MaterialTheme.typography.bodySmall)
+                        Text(log.detail,
+                            style = MaterialTheme.typography.bodyMedium)
                     },
                     overlineContent = {
-                        Text("${log.date.dateString()} ${log.date.timeString()}")
-                    }
+                        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+
+                            Text("${log.date.dateString()} ${log.date.timeString()}",
+                                style = MaterialTheme.typography.bodyMedium)
+                            val dates="${(log.date-next).formatTime()} - ${(now-log.date).formatTime()}"
+                            Text(dates,
+                                style = MaterialTheme.typography.bodyMedium)
+                        }
+                    },
                 )
             }
         }
