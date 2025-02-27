@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,6 +50,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.SearchBox
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutInput
@@ -146,36 +148,40 @@ fun FindScreen(model: FindViewModel = viewModel()) {
             }
 
         }
-        val keyboard by rememberKeyboardVisibleState()
-        Column(
-            modifier = Modifier
+
+        AppModel.cutCard(
+            Modifier
                 .fillMaxWidth()
-                .topOuterShadow(8.dp,30.dp)
-                .align(Alignment.BottomStart)
-                .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
-                .padding(horizontal = 16.dp)
-                .padding(top = 16.dp, bottom = 16.dp)
-                .padding(bottom = if (keyboard) 16.dp else 0.dp) // Add padding
+                .aspectRatio(4F)
+                .padding(16.dp)
         ) {
-            CutInput(
-                value = searchKeyword,
-                valueChange = { searchKeyword = it },
-                action = "Ara",
-                height = 60.dp,
-                textStyle = MaterialTheme.typography.bodyLarge,
-                click = {
-                    if (searchKeyword.length > 3) {
-                        model.search(searchKeyword)
-                        searchResults = listOf()
-                        searchStarted = true
-                        keyboardController?.hide()
-                    } else {
-                        App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
-                    }
-                },
-                placeholder = "Ürün adı veya ASIN",
-            )
+            val keyboard by rememberKeyboardVisibleState()
+            Column(modifier = Modifier.fillMaxWidth()
+                .padding(bottom = if (keyboard) 16.dp else 0.dp)){
+                CutInput(
+                    value = searchKeyword,
+                    valueChange = { searchKeyword = it },
+                    action = "Ara",
+                    height = 60.dp,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    click = {
+                        if (searchKeyword.length > 3) {
+                            model.search(searchKeyword)
+                            searchResults = listOf()
+                            searchStarted = true
+                            keyboardController?.hide()
+                        } else {
+                            App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
+                        }
+                    },
+                    placeholder = "Ürün adı veya ASIN",
+                )
+            }
+
+
         }
+
+
     }
 
 }
@@ -197,8 +203,12 @@ fun PreSearchScreen(
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title,
-                        modifier = Modifier.statusBarsPadding()) }
+                    text = {
+                        Text(
+                            title,
+                            modifier = Modifier.statusBarsPadding()
+                        )
+                    }
                 )
             }
         }

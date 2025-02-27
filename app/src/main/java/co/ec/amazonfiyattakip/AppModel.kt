@@ -1,7 +1,11 @@
 package co.ec.amazonfiyattakip
 
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -14,6 +18,7 @@ import kotlin.random.Random
 class AppModel : ViewModel() {
 
     var fabAction = MutableLiveData<Pair<ImageVector, () -> Unit>?>(Pair(Icons.Filled.Add, {}))
+    val cutCardContent = MutableLiveData<Pair<(@Composable () -> Unit),Modifier>>(null)
 
     companion object {
         @Volatile
@@ -27,8 +32,12 @@ class AppModel : ViewModel() {
             INSTANCE?.fabAction?.value = null
         }
 
-
+        fun cutCard(modifier:Modifier = Modifier.aspectRatio(3F)
+                    ,content: @Composable () -> Unit) {
+            INSTANCE?.cutCardContent?.value = Pair(content,modifier)
+        }
     }
+
 
     init {
         INSTANCE = this

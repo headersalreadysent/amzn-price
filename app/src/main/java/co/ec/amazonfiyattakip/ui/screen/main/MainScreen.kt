@@ -385,7 +385,7 @@ fun ProductListScreen(
                     .padding(bottom = 80.dp),
                 state = listState,
 
-            ) {
+                ) {
                 items(products.size) { index ->
                     MainProductCard(
                         products[index],
@@ -400,19 +400,11 @@ fun ProductListScreen(
             }
         }
 
-        val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .topOuterShadow(8.dp,30.dp)
-                .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
-                .clip(cutCorner)
-                .aspectRatio(3.5F)
-        ) {
-            var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
 
-            Box(modifier = Modifier.fillMaxSize()) {
+        AppModel.cutCard(Modifier.aspectRatio(3.5F)) {
+            var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
+            Box(modifier = Modifier.fillMaxSize())
+            {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -506,8 +498,8 @@ fun ProductListScreen(
                     }
                 }
             }
-
         }
+
     }
 }
 
@@ -537,7 +529,7 @@ fun MainProductCard(
         cutSize = 20.dp,
         shadow = 8.dp
 
-        ) {
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -560,13 +552,21 @@ fun MainProductCard(
             ) {
                 Text(
                     buildAnnotatedString {
-                        withStyle(SpanStyle(color = contentColor.copy(alpha = .8F),
-                            fontSize = 11.sp)) {
-                            append(productWithPrices.product.asin+" ")
+                        withStyle(
+                            SpanStyle(
+                                color = contentColor.copy(alpha = .8F),
+                                fontSize = 11.sp
+                            )
+                        ) {
+                            append(productWithPrices.product.asin + " ")
                         }
-                        withStyle(SpanStyle(color = contentColor,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp)) {
+                        withStyle(
+                            SpanStyle(
+                                color = contentColor,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
+                            )
+                        ) {
                             append(productWithPrices.product.title)
                         }
                     },
@@ -626,9 +626,10 @@ fun MainProductCard(
                             color = MaterialTheme.colorScheme.secondary.copy(alpha = .4F),
                             subRatio = .2F
                         )
-                        val textColor= contentColorFor(MaterialTheme.colorScheme.secondary.copy(alpha = .8F))
+                        val textColor =
+                            contentColorFor(MaterialTheme.colorScheme.secondary.copy(alpha = .8F))
                         selectedPair?.let {
-                            Row (
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.BottomStart)
@@ -645,7 +646,7 @@ fun MainProductCard(
                                 )
                                 Text(
                                     it.price.toInt().price(),
-                                    modifier = Modifier.padding(end=8.dp),
+                                    modifier = Modifier.padding(end = 8.dp),
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = textColor

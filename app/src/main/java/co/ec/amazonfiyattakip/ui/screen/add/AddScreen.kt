@@ -90,15 +90,9 @@ fun AddScreen(model: AddScreenModel = viewModel()) {
             }
         }
 
-        val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .align(Alignment.BottomStart)
-                .topOuterShadow(shadowAlpha = .2F)
-                .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
-        ) {
+
+        AppModel.cutCard(Modifier.height(35.dp)) {
+
         }
     }
 

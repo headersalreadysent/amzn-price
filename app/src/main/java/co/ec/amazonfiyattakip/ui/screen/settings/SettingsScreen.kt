@@ -1,13 +1,19 @@
 package co.ec.amazonfiyattakip.ui.screen.settings
 
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -39,11 +45,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.ec.amazonfiyattakip.AppModel
+import co.ec.amazonfiyattakip.R
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.helper.topOuterShadow
@@ -51,6 +60,7 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 
+@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 fun SettingsScreen(model: SettingsViewModel = viewModel()) {
     Box(modifier = Modifier.fillMaxSize(1F)) {
@@ -90,7 +100,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                     dynamicTheme = it
                     model.set("dynamicTheme", it)
                 }
-                if(!dynamicTheme){
+                if (!dynamicTheme) {
                     var colorContrast: Int = readValue(settings, "colorContrast", 1) as Int
 
                     SettingsDropdown(
@@ -105,17 +115,10 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
 
             }
 
-        }
-        val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .align(Alignment.BottomStart)
-                .topOuterShadow(8.dp,30.dp)
-                .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
-        ) {
+        }
+
+        AppModel.cutCard(Modifier.aspectRatio(5F)) {
             Text(
                 "Ayarlar",
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -140,6 +143,8 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 )
             }
         }
+
+
     }
 
 }
@@ -237,7 +242,7 @@ fun SettingsDropdown(
     desc: String? = null,
     onConfirm: (Int) -> Unit
 ) {
-    if(values.orEmpty().isEmpty()){
+    if (values.orEmpty().isEmpty()) {
         return
     }
     var showDialog by remember { mutableStateOf(false) }

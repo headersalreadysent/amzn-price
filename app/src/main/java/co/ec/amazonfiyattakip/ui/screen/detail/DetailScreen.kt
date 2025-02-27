@@ -340,23 +340,17 @@ fun DetailScreen(
                     }
                 }
             }
-            val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .topOuterShadow()
-                    .then(
-                        if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
-                            40.dp
-                        )
+            AppModel.cutCard(modifier = Modifier
+                .then(
+                    if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
+                        40.dp
                     )
-                    .align(Alignment.BottomStart)
-                    .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
-            ) {
+                )) {
                 PricesGraphWithDrag(
                     prices = priceListData
                 )
             }
+
         }
     }
 
