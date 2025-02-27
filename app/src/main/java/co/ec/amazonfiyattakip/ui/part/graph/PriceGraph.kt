@@ -44,10 +44,10 @@ fun PriceGraph(
 ) {
     var selectedIndex by remember { mutableIntStateOf(-1) }
 
-    var minPrice by remember {
+    var minPrice by remember(prices) {
         mutableFloatStateOf(prices.minOfOrNull { it.price } ?: 0f)
     }
-    var maxPrice by remember {
+    var maxPrice by remember(prices) {
         mutableFloatStateOf(prices.maxOfOrNull { it.price } ?: 1f)
     }
     if (minPrice == maxPrice) {

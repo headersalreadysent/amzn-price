@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
@@ -33,6 +36,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,6 +45,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
@@ -130,6 +137,11 @@ fun AppContent(
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
                     IconButton(onClick = {
+                        navigator.navigate("list")
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Menu")
+                    }
+                    IconButton(onClick = {
 
                         settingsClick++
                         LogHelper.d("settingsClick $settingsClick")
@@ -166,38 +178,60 @@ fun AppContent(
 
 
     ) { screen ->
-        Box(
-            modifier = Modifier.padding(
-                bottom = (screen.calculateBottomPadding().value - 5).dp
-            )
-        ) {
-            ScreenContent(startDestination = startDestination)
-            val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
-            val content by appModel.cutCardContent.observeAsState(null)
-            Column(
+        var cutCardHeight by remember { mutableIntStateOf(0) }
+        var screenHeight by remember { mutableIntStateOf(0) }
+        with(LocalDensity.current) {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .topOuterShadow(8.dp, 30.dp)
-                    .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
-                    .clip(cutCorner)
+                    .fillMaxSize()
+                    .padding(
+                        bottom = (screen.calculateBottomPadding().value - 5).dp
+                    )
+                    .onSizeChanged {
+                        screenHeight = it.height
+                    }
             ) {
-                Column(
+                LogHelper.d("screen $screenHeight, cutCorner $cutCardHeight")
+
+                ScreenContent(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .animateContentSize()
-                        .then(content?.second ?: Modifier)
+                        .height((screenHeight - cutCardHeight + 8.dp.toPx()).toDp()),
+                    startDestination = startDestination
+                )
+
+                val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
+                val content by appModel.cutCardContent.observeAsState(null)
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .topOuterShadow(8.dp, 30.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
+                        .clip(cutCorner)
                 ) {
-                    Crossfade(
-                        targetState = content,
-                        label = "ContentTransition"
-                    ) { composable ->
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            composable?.first?.invoke()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateContentSize()
+                            .then(content?.second ?: Modifier)
+                            .onSizeChanged {
+                                cutCardHeight = it.height
+                            }
+                    ) {
+                        Crossfade(
+                            targetState = content,
+                            label = "ContentTransition"
+                        ) { composable ->
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                composable?.first?.invoke()
+                            }
                         }
                     }
                 }
+
             }
+
         }
     }
 

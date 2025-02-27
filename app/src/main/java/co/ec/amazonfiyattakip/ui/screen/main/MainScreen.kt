@@ -258,23 +258,11 @@ fun NoProductScreen(
             }
         }
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .shadow(
-                    1.dp,
-                    cutShape(CutCorner.TOPRIGHT, 20.dp)
-                )
-                .padding(top = 1.dp)
-                .background(
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    cutShape(CutCorner.TOPRIGHT, 20.dp)
-                )
-                .statusBarsPadding()
+        AppModel.cutCard(
+            Modifier
                 .aspectRatio(4F)
-
         ) {
+
             Crossfade(
                 targetState = selectedDeals.isEmpty()
             ) {
@@ -361,6 +349,7 @@ fun NoProductScreen(
 
             }
         }
+
     }
 }
 

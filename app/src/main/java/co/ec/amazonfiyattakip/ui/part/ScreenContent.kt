@@ -1,8 +1,10 @@
 package co.ec.amazonfiyattakip.ui.part
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,16 +15,20 @@ import co.ec.amazonfiyattakip.ui.joblog.JobLogScreen
 import co.ec.amazonfiyattakip.ui.screen.add.AddScreen
 import co.ec.amazonfiyattakip.ui.screen.detail.DetailScreen
 import co.ec.amazonfiyattakip.ui.screen.find.FindScreen
+import co.ec.amazonfiyattakip.ui.screen.list.ListScreen
 import co.ec.amazonfiyattakip.ui.screen.main.MainScreen
 import co.ec.amazonfiyattakip.ui.screen.settings.SettingsScreen
 
 
 @Composable
 fun ScreenContent(
+    modifier:Modifier = Modifier,
     startDestination: String = "main"
 ) {
     val navController = LocalNavigation.current
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(
+        modifier = modifier,
+        navController = navController, startDestination = startDestination) {
         composable("main") {
             MainScreen()
             AppModel.setFab(Icons.Filled.Search) {
@@ -41,6 +47,9 @@ fun ScreenContent(
         }
         composable("find") {
             FindScreen()
+        }
+        composable("list") {
+            ListScreen()
         }
         composable("settings") {
             SettingsScreen()
