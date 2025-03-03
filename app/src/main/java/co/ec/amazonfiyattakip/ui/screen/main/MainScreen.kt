@@ -1,10 +1,12 @@
 package co.ec.amazonfiyattakip.ui.screen.main
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,9 +22,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +48,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,18 +57,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -75,21 +73,16 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.ProductStat
 import co.ec.amazonfiyattakip.composables.cutShape
-import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
-import co.ec.amazonfiyattakip.helper.toHtml
-import co.ec.amazonfiyattakip.helper.toHtmlWithAlpha
-import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
@@ -97,7 +90,6 @@ import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
 import co.ec.helper.utils.dateString
-import co.ec.helper.utils.html
 import co.ec.helper.utils.timeString
 import co.ec.helper.utils.unix
 
@@ -111,9 +103,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             if (products.isEmpty()) {
                 NoProductScreen(model)
             } else {
-                val dailyTotals by model.dailyTotals.observeAsState(listOf())
-                val stats by model.stats.observeAsState(mapOf())
-                ProductListScreen(products, dailyTotals, stats)
+                ProductListScreen(model, products)
             }
         }
     }
@@ -353,169 +343,335 @@ fun NoProductScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProductListScreen(
-    products: List<ProductWithPrices>,
-    dailyTotals: List<DailyTotal>,
-    stats: Map<String, Int>
+    model: MainScreenModel,
+    products: List<ProductWithPrices>
 ) {
-    val density = LocalDensity.current
-    Box(modifier = Modifier.fillMaxSize()) {
 
-        val listState = rememberLazyListState()
-        Box(
-            modifier = Modifier
-                .fillMaxSize(1F)
-        ) {
-            val navigator = LocalNavigation.current
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 80.dp),
-                state = listState,
+    val dailyTotals by model.dailyTotals.observeAsState(listOf())
+    val stats by model.stats.observeAsState(mapOf())
+    var dealCount by remember { mutableIntStateOf(0) }
+    val serverProducts by model.serverProducts.observeAsState()
 
-                ) {
-                items(products.size) { index ->
-                    MainProductCard(
-                        products[index],
-                        isFirst = index == 0,
-                        isLast = index == products.size - 1,
-                        onClick = {
-                            navigator.navigate("detail/${products[index].product.id}")
-                        })
-
-                }
-
-            }
+    val navigator = LocalNavigation.current
+    DisposableEffect(Unit) {
+        model.collectServerProducts()
+        model.getPopularCount {
+            dealCount = it
         }
-
-
-        AppModel.cutCard(Modifier.aspectRatio(3.5F)) {
-            var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
-            Box(modifier = Modifier.fillMaxSize())
-            {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(.6F)
-                        .align(Alignment.BottomEnd)
-                ) {
-                    PriceGraph(
-                        modifier = Modifier.blur(.2.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = .8F),
-                        circleColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        prices = dailyTotals.map {
-                            return@map PriceGraphPair(it.date, it.total.toFloat())
-                        },
-                        hasCircles = false,
-                        onDrag = {
-                            totalDragValue = it
-                        },
-                        closePath = false,
-                        drawStyle = Stroke(9F),
-                        subRatio = .2F
+        onDispose { }
+    }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    "Amazon", style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 30.sp
                     )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        "Sepet Toplamı",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    )
-                    AutoText(
-                        if (totalDragValue != null) totalDragValue!!.price.toInt().price()
-                        else if (dailyTotals.isEmpty()) 0.price() else dailyTotals.last().total.toInt()
-                            .price(),
-                        fontSize = 20..35,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    )
-                    totalDragValue?.let {
-                        Text(
-                            it.date.dateString(),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontSize = 10.sp
-                            ),
-                            modifier = Modifier.graphicsLayer {
-                                translationY = with(density) { (-10).dp.toPx() }
-                            }
-                        )
-                    }
-                }
+                )
+                Text("Fiyat Takibi")
+            }
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    "Ucuz ürünler",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
                 Row(
                     modifier = Modifier
                         .wrapContentWidth()
-                        .padding(16.dp)
-                        .align(Alignment.BottomEnd)
+                        .wrapContentHeight(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val titleStyle = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 8.sp,
-                        lineHeight = 8.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    val numberStyle = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 12.sp,
-                        lineHeight = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.End
-                    )
-                    if (stats.containsKey("product")) {
+                    products.forEach {
 
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-
-                            Text((stats["product"] ?: 0).toString(), style = numberStyle)
-                            Text("Ürün", style = titleStyle)
-                        }
+                        ProductImage(
+                            product = it.product,
+                            modifier = Modifier
+                                .height(25.dp)
+                                .aspectRatio(1F)
+                                .clip(CircleShape),
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                    if (stats.containsKey("update")) {
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text((stats["update"] ?: 0).toString(), style = numberStyle)
-                            Text("Fiyat", style = titleStyle)
+
+
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                .padding(8.dp)
+        ) {
+            Text(
+                "Amazondaki fırsatları görerek hızlaca takip et.",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            )
+            Text(
+                "$dealCount adet fırsat var",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
+                )
+            )
+        }
+        AnimatedVisibility(
+            visible = serverProducts !== null,
+            enter = fadeIn() + expandVertically()
+        ) {
+            val shape = cutShape(CutCorner.BOTTOMRIGHT, 5.dp)
+            serverProducts?.let { serverProducts ->
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Hazır Takipli Ürünler",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        )
+                    )
+                    LazyRow(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(serverProducts.size) {
+                            val pair = serverProducts[it]
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxWidth(.45F)
+                                    .height(IntrinsicSize.Max)
+                                    .padding(
+                                        start = if (it == 0) 8.dp else 0.dp,
+                                        end = if (it == serverProducts.size - 1) 8.dp else 0.dp
+                                    )
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
+                                    .clickable {
+                                        navigator.navigate("add/${pair.first.asin}")
+                                    }
+                            ) {
+
+                                PriceGraph(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(shape),
+                                    prices = pair.second.map { it.split("|") }.map {
+                                        PriceGraphPair(it[0].toLong(), it[1].toFloat())
+                                    },
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .1F),
+                                    hasCircles = false
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                ) {
+                                    Text(
+                                        pair.first.title,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    )
+                                    Text(
+                                        pair.first.price(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+
+
                         }
                     }
                 }
             }
         }
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        )
+        Text(
+            "Takip Ürünler",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Bold,
+            )
+        )
+        FlowRow(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1F)
+                .padding(bottom = 80.dp),
+            maxItemsInEachRow = 2
+        ) {
+            products.forEachIndexed { index, item ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(.5F)
+                        .aspectRatio(3F)
+                        .padding(
+                            start = if (index % 2 == 0) 8.dp else 4.dp,
+                            end = if (index % 2 == 1) 8.dp else 4.dp
+                        )
+
+                ) {
+                    MainProductCard(
+                        item,
+                        onClick = {
+                            navigator.navigate("detail/${products[index].product.id}")
+                        })
+                }
+
+
+            }
+
+        }
 
     }
+
+
+    AppModel.cutCard(Modifier.aspectRatio(3.5F)) {
+        var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
+        Box(modifier = Modifier.fillMaxSize())
+        {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(.6F)
+                    .align(Alignment.BottomEnd)
+            ) {
+                PriceGraph(
+                    modifier = Modifier.blur(.2.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = .8F),
+                    circleColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    prices = dailyTotals.map {
+                        return@map PriceGraphPair(it.date, it.total.toFloat())
+                    },
+                    hasCircles = false,
+                    onDrag = {
+                        totalDragValue = it
+                    },
+                    closePath = false,
+                    drawStyle = Stroke(9F),
+                    subRatio = .2F
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    "Sepet Toplamı",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                )
+                AutoText(
+                    if (totalDragValue != null) totalDragValue!!.price.toInt().price()
+                    else if (dailyTotals.isEmpty()) 0.price() else dailyTotals.last().total.toInt()
+                        .price(),
+                    fontSize = 20..35,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        fontWeight = FontWeight.Bold,
+                    )
+                )
+                totalDragValue?.let {
+                    Text(
+                        it.date.dateString(),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 10.sp
+                        ),
+                        modifier = Modifier.graphicsLayer {
+                            translationY = with(density) { (-10).dp.toPx() }
+                        }
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .padding(16.dp)
+                    .align(Alignment.BottomEnd)
+            ) {
+                val titleStyle = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 8.sp,
+                    lineHeight = 8.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                val numberStyle = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.End
+                )
+                if (stats.containsKey("product")) {
+
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+
+                        Text((stats["product"] ?: 0).toString(), style = numberStyle)
+                        Text("Ürün", style = titleStyle)
+                    }
+                }
+                if (stats.containsKey("update")) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text((stats["update"] ?: 0).toString(), style = numberStyle)
+                        Text("Fiyat", style = titleStyle)
+                    }
+                }
+            }
+        }
+    }
+
+
 }
 
 
 @Composable
 fun MainProductCard(
-    productWithPrices: ProductWithPrices, isFirst: Boolean, isLast: Boolean,
+    productWithPrices: ProductWithPrices,
     onClick: () -> Unit = {},
     containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
     contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     CutCornerCard(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .padding(bottom = 12.dp)
-            .then(
-                if (isFirst) Modifier.statusBarsPadding() else Modifier
-            )
-            .then(
-                if (isLast) Modifier.padding(bottom = 45.dp) else Modifier
-            ),
+            .fillMaxWidth(),
         click = { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = containerColor
         ),
-        cutSize = 20.dp,
+        cutSize = 10.dp,
         shadow = 8.dp
 
     ) {
@@ -662,12 +818,7 @@ fun MainProductCard(
                 }
 
             }
-            val contentOver = contentColorFor(contentColor)
-            ProductStat(
-                productWithPrices.product,
-                modifier = Modifier.align(Alignment.BottomCenter),
-                color = contentOver
-            )
+
 
         }
 

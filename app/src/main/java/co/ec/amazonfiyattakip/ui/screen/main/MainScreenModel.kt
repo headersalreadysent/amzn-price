@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
+import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
@@ -37,6 +38,8 @@ open class MainScreenModel : ViewModel() {
     val deals: SharedFlow<Product> = dealFlow
 
 
+    val serverProducts = MutableLiveData<List<Pair<Product, List<String>>>>()
+
     init {
         loadProducts()
         loadDailyTotals()
@@ -45,7 +48,7 @@ open class MainScreenModel : ViewModel() {
     }
 
     private fun calculateStats() {
-       asyncRun({
+        asyncRun({
             return@asyncRun mapOf(
                 "product" to AppDatabase.getDatabase().product().getCount(),
                 "update" to AppDatabase.getDatabase().priceInfo().getCount()
@@ -74,7 +77,8 @@ open class MainScreenModel : ViewModel() {
      */
     private fun loadDailyTotals(format: String = "%Y-%m-%d") {
         asyncRun({
-            return@asyncRun AppDatabase.getDatabase().priceInfo().getDailyTotalPrices(format = format)
+            return@asyncRun AppDatabase.getDatabase().priceInfo()
+                .getDailyTotalPrices(format = format)
         }, {
             dailyTotals.value = it
         })
@@ -89,6 +93,31 @@ open class MainScreenModel : ViewModel() {
         }, {
             products.value = it
         })
+    }
+
+    fun getPopularCount(then: (count: Int) -> Unit = {}) {
+        AmznScrape().getPopular({ asins ->
+            then(asins.size)
+        })
+    }
+
+    /**
+     * get server products
+     */
+    fun collectServerProducts() {
+        viewModelScope.launch {
+
+            val firebase = FireDB.collectWithPriceCount()
+            asyncRun({
+                return@asyncRun AppDatabase.getDatabase().product().getAllAsin()
+            }, { asins ->
+                serverProducts.value = firebase
+                    .filter { !asins.contains(it.first.asin) }
+                    .sortedByDescending { it.first.date }
+            })
+
+
+        }
     }
 
     /**
@@ -172,6 +201,18 @@ open class MainScreenModel : ViewModel() {
         latestUpdates = MutableStateFlow<List<LatestUpdate>>(emptyList())
         viewModelScope.launch {
             (latestUpdates as MutableStateFlow<List<LatestUpdate>>).emit(list)
+        }
+
+
+        serverProducts.value = List(20) {
+            val price = Random.nextInt(50, 100)
+            val priceCount = Random.nextInt(50, 100)
+            val prices = List(priceCount) {
+                (unix() - (priceCount - it) * 86400).toString() + "|" +
+                        (price + Random.nextInt(-5, 5)).toString() +
+                        "|0|0"
+            }
+            Pair(Product.fake(), prices)
         }
     }
 }

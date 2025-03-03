@@ -15,13 +15,12 @@ class AddScreenModel : ViewModel() {
     val product = MutableLiveData<Product?>(null)
 
 
-
-    fun recordFromShareUrl() {
-        val url = SettingsHelper.get().getString("sharedUrl") ?: ""
+    fun recordFromShareUrl(asinCode: String? = "") {
+        val url = asinCode ?: SettingsHelper.get().getString("sharedUrl","") ?: ""
         if (url != "") {
-            var page=url
-            if(!url.startsWith("http")){
-                page=AmznScrape.urlFromAsin(url)
+            var page = url
+            if (!url.startsWith("http")) {
+                page = AmznScrape.urlFromAsin(url)
             }
             AmznScrape().scrapeFromUrl(page, { scraped ->
                 LogHelper.d(scraped.toString())
@@ -38,11 +37,11 @@ class AddScreenModel : ViewModel() {
     /**
      * save to database
      */
-    fun saveProduct(then: (id:Int) -> Unit = {}) {
+    fun saveProduct(then: (id: Int) -> Unit = {}) {
         product.value?.let { record ->
             asyncRun({
-                val id=AppDatabase.getDatabase().product().insert(record)
-                val price=record.toPriceInfo(id.toInt(),record.price)
+                val id = AppDatabase.getDatabase().product().insert(record)
+                val price = record.toPriceInfo(id.toInt(), record.price)
                 AppDatabase.getDatabase().priceInfo().insert(price)
                 return@asyncRun id
             }, { id ->
@@ -50,11 +49,13 @@ class AddScreenModel : ViewModel() {
                     id = id.toInt()
                 )
                 App.snack("${record.title} kaydedildi.")
-                App.event("product_add", mapOf(
-                    "productTitle" to record.title,
-                    "productAsin" to record.asin,
-                    "productPrice" to record.price
-                ))
+                App.event(
+                    "product_add", mapOf(
+                        "productTitle" to record.title,
+                        "productAsin" to record.asin,
+                        "productPrice" to record.price
+                    )
+                )
                 then(id.toInt())
             })
         }

@@ -48,10 +48,13 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 
 @Composable
-fun AddScreen(model: AddScreenModel = viewModel()) {
+fun AddScreen(
+    model: AddScreenModel = viewModel(),
+    asin: String? = null
+) {
 
     DisposableEffect(Unit) {
-        model.recordFromShareUrl()
+        model.recordFromShareUrl(asin)
         AppModel.noFab()
         onDispose {
 
@@ -105,15 +108,15 @@ fun ProductScreen(product: Product) {
             .fillMaxSize()
             .padding(horizontal = 8.dp)
     ) {
-        val limit=300
+        val limit = 300
         if (product.description.isNotEmpty()) {
-            var fullDesc by remember { mutableStateOf(product.description.length<limit) }
+            var fullDesc by remember { mutableStateOf(product.description.length < limit) }
             Card(
                 modifier = Modifier.animateContentSize(),
                 shape = RoundedCornerShape(.5.dp),
                 onClick = {
-                    if(product.description.length>limit){
-                        fullDesc=!fullDesc
+                    if (product.description.length > limit) {
+                        fullDesc = !fullDesc
                     }
                 }
             ) {
@@ -124,15 +127,15 @@ fun ProductScreen(product: Product) {
                     style = MaterialTheme.typography.bodyMedium.copy(
                         textAlign = TextAlign.Justify
                     ),
-                    text = if(fullDesc) product.description else product.shortDesc(limit)
+                    text = if (fullDesc) product.description else product.shortDesc(limit)
                 )
-                if(!fullDesc && product.description.length>limit){
+                if (!fullDesc && product.description.length > limit) {
                     TextButton(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(0.dp),
                         onClick = {
-                        fullDesc=!fullDesc
-                    }) {
+                            fullDesc = !fullDesc
+                        }) {
                         Text("Devamını görüntüle")
                     }
                 }

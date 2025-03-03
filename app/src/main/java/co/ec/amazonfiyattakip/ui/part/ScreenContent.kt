@@ -22,13 +22,14 @@ import co.ec.amazonfiyattakip.ui.screen.settings.SettingsScreen
 
 @Composable
 fun ScreenContent(
-    modifier:Modifier = Modifier,
+    modifier: Modifier = Modifier,
     startDestination: String = "main"
 ) {
     val navController = LocalNavigation.current
     NavHost(
         modifier = modifier,
-        navController = navController, startDestination = startDestination) {
+        navController = navController, startDestination = startDestination
+    ) {
         composable("main") {
             MainScreen()
             AppModel.setFab(Icons.Filled.Search) {
@@ -37,6 +38,13 @@ fun ScreenContent(
         }
         composable("add") {
             AddScreen()
+        }
+        composable(
+            "add/{asin}",
+            arguments = listOf(navArgument("asin") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val asin = backStackEntry.arguments?.getString("asin")
+            AddScreen(asin = asin)
         }
         composable(
             "detail/{id}",

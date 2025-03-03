@@ -165,6 +165,35 @@ object FireDB {
         }
     }
 
+    suspend fun collectWithPriceCount(): List<Pair<Product,List<String>>> {
+
+        //first get product
+        return try {
+            val snapshot = Firebase.firestore.collection("products").get().await()
+            snapshot.documents.mapNotNull { it.toObject(ProductRecord::class.java) }.map {
+                val price = (it.prices?.lastOrNull() ?: "0|0|0|0|").split("|")
+                Pair(Product(
+                    id = 0,
+                    asin = it.asin,
+                    date = it.latestUpdate,
+                    title = it.title,
+                    description = it.description,
+                    price = price[1].toInt(),
+                    star = price[2].toDouble(),
+                    comment = price[3].toInt(),
+                    image = it.image,
+                    extras = it.extras,
+                    nextRunTime = unix(),
+                    timeSpan = 60,
+                    errorCount = 0,
+                    status = ProductStatus.ACTIVE
+                ),it.prices.orEmpty())
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     suspend fun deleteOldRecords() {
         val thirtyDaysAgo = unix() - (30 * 24 * 60 * 60) // 30 days in seconds
         try {
