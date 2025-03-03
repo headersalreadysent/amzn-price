@@ -71,7 +71,6 @@ fun FindScreen(model: FindViewModel = viewModel()) {
     var searchKeyword by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Product>>(listOf()) }
 
-    val recordedProducts by model.recorded.observeAsState(listOf())
     var deals by remember { mutableStateOf<List<Product>>(listOf()) }
     LaunchedEffect(Unit) {
         model.searchResults.collect { result ->
@@ -90,201 +89,145 @@ fun FindScreen(model: FindViewModel = viewModel()) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            if (searchStarted) {
-                if (searchResults.isEmpty()) {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .weight(1F), Alignment.Center
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth(.8F)) {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                            Text(
-                                "$searchKeyword araması yapılıyor.", modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        top = 8.dp
-                                    ), style = MaterialTheme.typography.bodySmall.copy(
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FontWeight.Light,
-                                    fontStyle = FontStyle.Italic
-                                )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        if (searchStarted) {
+            if (searchResults.isEmpty()) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .weight(1F), Alignment.Center
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth(.8F)) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        Text(
+                            "$searchKeyword araması yapılıyor.", modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    top = 8.dp
+                                ), style = MaterialTheme.typography.bodySmall.copy(
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Light,
+                                fontStyle = FontStyle.Italic
                             )
-                        }
-                    }
-
-                } else {
-
-                    FlowRow(
-                        modifier = Modifier
-                            .weight(1F)
-                            .padding(horizontal = 4.dp)
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .statusBarsPadding()
-                        )
-                        searchResults.forEach {
-                            SearchBox(it)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(40.dp)
                         )
                     }
                 }
-            } else {
-                PreSearchScreen(recordedProducts, deals)
-            }
 
+            } else {
+
+                FlowRow(
+                    modifier = Modifier
+                        .weight(1F)
+                        .padding(horizontal = 4.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                    )
+                    searchResults.forEach {
+                        SearchBox(it)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp)
+                    )
+                }
+            }
+        } else {
+            PreSearchScreen(deals)
         }
 
-        AppModel.cutCard(
-            Modifier
+    }
+
+    AppModel.cutCard(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(4F)
+            .padding(16.dp)
+    ) {
+        val keyboard by rememberKeyboardVisibleState()
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(4F)
-                .padding(16.dp)
+                .padding(bottom = if (keyboard) 16.dp else 0.dp)
         ) {
-            val keyboard by rememberKeyboardVisibleState()
-            Column(modifier = Modifier.fillMaxWidth()
-                .padding(bottom = if (keyboard) 16.dp else 0.dp)){
-                CutInput(
-                    value = searchKeyword,
-                    valueChange = { searchKeyword = it },
-                    action = "Ara",
-                    height = 60.dp,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    click = {
-                        if (searchKeyword.length > 3) {
-                            model.search(searchKeyword)
-                            searchResults = listOf()
-                            searchStarted = true
-                            keyboardController?.hide()
-                        } else {
-                            App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
-                        }
-                    },
-                    placeholder = "Ürün adı veya ASIN",
-                )
-            }
-
-
+            CutInput(
+                value = searchKeyword,
+                valueChange = { searchKeyword = it },
+                action = "Ara",
+                height = 60.dp,
+                textStyle = MaterialTheme.typography.bodyLarge,
+                click = {
+                    if (searchKeyword.length > 3) {
+                        model.search(searchKeyword)
+                        searchResults = listOf()
+                        searchStarted = true
+                        keyboardController?.hide()
+                    } else {
+                        App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
+                    }
+                },
+                placeholder = "Ürün adı veya ASIN",
+            )
         }
 
 
     }
+
 
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PreSearchScreen(
-    recordedProducts: List<Product>,
     deals: List<Product>
 ) {
 
-    val tabs = listOf("Hazır Takipler", "Popüler Ürünler")
 
-    var selectedTab by remember { mutableStateOf(0) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        TabRow(selectedTabIndex = selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = {
-                        Text(
-                            title,
-                            modifier = Modifier.statusBarsPadding()
-                        )
-                    }
+        if (deals.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(.8F))
+                Text(
+                    "popüler ürünler yükleniyor", modifier = Modifier
+                        .fillMaxWidth(.8F)
+                        .padding(
+                            top = 8.dp
+                        ), style = MaterialTheme.typography.bodySmall.copy(
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Light,
+                        fontStyle = FontStyle.Italic
+                    )
                 )
             }
-        }
-        if (selectedTab == 0) {
+        } else {
 
-            if (recordedProducts.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(.8F))
-                    Text(
-                        "hazır takipler yükleniyor", modifier = Modifier
-                            .fillMaxWidth(.8F)
-                            .padding(
-                                top = 8.dp
-                            ), style = MaterialTheme.typography.bodySmall.copy(
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Light,
-                            fontStyle = FontStyle.Italic
-                        )
-                    )
-                }
-            } else {
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1F)
-                        .padding(horizontal = 4.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    recordedProducts.forEach {
-                        SearchBox(it)
-                    }
-                }
-            }
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
 
-        }
-        if (selectedTab == 1) {
-            if (deals.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(.8F))
-                    Text(
-                        "popüler ürünler yükleniyor", modifier = Modifier
-                            .fillMaxWidth(.8F)
-                            .padding(
-                                top = 8.dp
-                            ), style = MaterialTheme.typography.bodySmall.copy(
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Light,
-                            fontStyle = FontStyle.Italic
-                        )
-                    )
-                }
-            } else {
-
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1F)
-                        .padding(horizontal = 4.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-
-                    deals.forEach {
-                        SearchBox(it)
-                    }
+                deals.forEach {
+                    SearchBox(it)
                 }
             }
         }
-    }
+
+
 
 
 }

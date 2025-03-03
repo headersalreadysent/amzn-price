@@ -1,13 +1,9 @@
 package co.ec.amazonfiyattakip.ui.screen.find
 
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.ec.amazonfiyattakip.db.AppDatabase
-import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.helper.utils.asyncRun
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,7 +16,6 @@ import kotlin.random.Random
 
 open class FindViewModel : ViewModel() {
 
-    val recorded = MutableLiveData<List<Product>>()
 
     private val searchFlow = MutableSharedFlow<Product>()
     val searchResults: SharedFlow<Product> = searchFlow
@@ -28,21 +23,6 @@ open class FindViewModel : ViewModel() {
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
-    init {
-        viewModelScope.launch {
-
-            val serverProducts=FireDB.collect()
-            asyncRun({
-                return@asyncRun AppDatabase.getDatabase().product().getAllAsin()
-            }, { asins ->
-                recorded.value = serverProducts
-                    .filter { !asins.contains(it.asin) }
-                    .sortedByDescending { it.date }
-            })
-
-
-        }
-    }
 
 
     /**

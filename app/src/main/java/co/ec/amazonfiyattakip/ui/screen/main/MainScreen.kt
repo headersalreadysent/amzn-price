@@ -516,7 +516,7 @@ fun ProductListScreen(
             "Takip Ürünler",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
             )
@@ -532,7 +532,7 @@ fun ProductListScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(.5F)
-                        .aspectRatio(3F)
+                        .aspectRatio(2.5F)
                         .padding(
                             start = if (index % 2 == 0) 8.dp else 4.dp,
                             end = if (index % 2 == 1) 8.dp else 4.dp
@@ -678,7 +678,7 @@ fun MainProductCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(3F)
+                .aspectRatio(2.5F)
         ) {
             ProductImage(
                 productWithPrices.product,
@@ -779,16 +779,9 @@ fun MainProductCard(
                                     .fillMaxWidth()
                                     .align(Alignment.BottomStart)
                                     .padding(8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.End
                             ) {
 
-                                Text(
-                                    "${it.date.dateString()} ${it.date.timeString()}",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                        color = textColor
-                                    )
-                                )
                                 Text(
                                     it.price.toInt().price(),
                                     modifier = Modifier.padding(end = 8.dp),
