@@ -1,4 +1,4 @@
-package co.ec.amazonfiyattakip
+package co.ec.amazonfiyattakip.ui.part
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,58 +14,72 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.ui.LocalNavigation
-import co.ec.amazonfiyattakip.ui.part.ProductImage
-import co.ec.helper.helpers.SettingsHelper
+import co.ec.amazonfiyattakip.ui.PreviewProviders
 
 @Composable
-fun SearchBox(product:Product){
-    val navigation= LocalNavigation.current
+fun LittleProductBox(product:Product,
+                     modifier:Modifier = Modifier,
+                     onClick: (() -> Unit)?=null){
     Box(modifier = Modifier
         .fillMaxWidth(.5F)
         .padding(4.dp)
-        .aspectRatio(2F)
-        .background(MaterialTheme.colorScheme.surfaceContainer)
-        .border(1.dp, MaterialTheme.colorScheme.primaryContainer)
-        .clickable {
-            SettingsHelper.get()
-                .putString("sharedUrl", product.asin)
-            navigation.navigate("add")
-        }) {
+        .aspectRatio(2.5F)
+        .background(MaterialTheme.colorScheme.tertiaryContainer)
+        .border(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = .2F))
+        .clickable(enabled = onClick!=null) {
+            onClick?.let {
+                it()
+            }
+        }
+        .then(modifier)) {
         ProductImage(
             product,
             modifier = Modifier
                 .fillMaxHeight()
-                .aspectRatio(.9F)
+                .aspectRatio(.8F)
                 .align(Alignment.CenterEnd)
-                .alpha(.8F),
-            color = MaterialTheme.colorScheme.surfaceContainer
+                .alpha(.9F),
+            color = MaterialTheme.colorScheme.tertiaryContainer
         )
         Text(
-            product.shortTitle(50),
+            product.title,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
                 .padding(end = 16.dp),
             style = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
                 fontWeight = FontWeight.SemiBold,
-            )
+                shadow = Shadow(MaterialTheme.colorScheme.tertiary, Offset(3F,3F),1F)
+            ),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
         Text(
             product.price(),
             modifier = Modifier
                 .padding(8.dp)
-                .align(Alignment.BottomStart)
-                .padding(end = 16.dp),
+                .align(Alignment.BottomStart),
             style = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
                 fontWeight = FontWeight.Bold,
             )
         )
 
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LittleProductBoxPreview(){
+    PreviewProviders {
+        LittleProductBox(Product.fake())
     }
 }

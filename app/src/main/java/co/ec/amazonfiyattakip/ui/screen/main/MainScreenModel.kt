@@ -198,10 +198,12 @@ open class MainScreenModel : ViewModel() {
             )
         }
 
-        latestUpdates = MutableStateFlow<List<LatestUpdate>>(emptyList())
+        latestUpdates = MutableStateFlow(emptyList())
         viewModelScope.launch {
             (latestUpdates as MutableStateFlow<List<LatestUpdate>>).emit(list)
         }
+
+
 
 
         serverProducts.value = List(20) {

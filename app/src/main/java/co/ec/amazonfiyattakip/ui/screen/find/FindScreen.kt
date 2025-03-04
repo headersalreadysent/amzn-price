@@ -1,47 +1,30 @@
 package co.ec.amazonfiyattakip.ui.screen.find
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -51,14 +34,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
-import co.ec.amazonfiyattakip.SearchBox
-import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutInput
-import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.helper.topOuterShadow
+import co.ec.amazonfiyattakip.ui.LocalNavigation
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
-import co.ec.amazonfiyattakip.ui.part.TitleBar
+import co.ec.amazonfiyattakip.ui.part.LittleProductBox
+import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.rememberKeyboardVisibleState
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -66,6 +48,9 @@ import co.ec.helper.utils.rememberKeyboardVisibleState
 fun FindScreen(model: FindViewModel = viewModel()) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val navigation= LocalNavigation.current
+    val settings = LocalSettings.current
     var searchStarted by remember { mutableStateOf(false) }
 
     var searchKeyword by remember { mutableStateOf("") }
@@ -131,7 +116,10 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                             .statusBarsPadding()
                     )
                     searchResults.forEach {
-                        SearchBox(it)
+                        LittleProductBox(it,onClick = {
+                            settings.putString("sharedUrl", it.asin)
+                            navigation.navigate("add")
+                        })
                     }
                     Box(
                         modifier = Modifier
@@ -190,44 +178,46 @@ fun PreSearchScreen(
     deals: List<Product>
 ) {
 
+    val navigation= LocalNavigation.current
+    val settings = LocalSettings.current
 
-
-        if (deals.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(.8F))
-                Text(
-                    "popüler ürünler yükleniyor", modifier = Modifier
-                        .fillMaxWidth(.8F)
-                        .padding(
-                            top = 8.dp
-                        ), style = MaterialTheme.typography.bodySmall.copy(
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Light,
-                        fontStyle = FontStyle.Italic
-                    )
+    if (deals.isEmpty()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(.8F))
+            Text(
+                "popüler ürünler yükleniyor", modifier = Modifier
+                    .fillMaxWidth(.8F)
+                    .padding(
+                        top = 8.dp
+                    ), style = MaterialTheme.typography.bodySmall.copy(
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Light,
+                    fontStyle = FontStyle.Italic
                 )
-            }
-        } else {
+            )
+        }
+    } else {
 
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .padding(horizontal = 8.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
+        FlowRow(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(horizontal = 8.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
 
-                deals.forEach {
-                    SearchBox(it)
-                }
+            deals.forEach {
+                LittleProductBox(it, onClick = {
+                    settings.putString("sharedUrl", it.asin)
+                    navigation.navigate("add")
+                })
             }
         }
-
-
+    }
 
 
 }

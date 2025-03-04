@@ -16,12 +16,10 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
-import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.helper.utils.unix
 import kotlin.math.floor
 import kotlin.random.Random
-import kotlin.text.Typography.times
 
 data class PriceGraphPair(var date: Long, var price: Float)
 

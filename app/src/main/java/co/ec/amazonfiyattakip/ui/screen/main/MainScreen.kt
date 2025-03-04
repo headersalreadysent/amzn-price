@@ -4,8 +4,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -37,7 +39,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -54,18 +55,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,25 +76,26 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
-import co.ec.amazonfiyattakip.composables.ProductStat
+import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
-import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.LittleProductBox
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
 import co.ec.helper.utils.dateString
-import co.ec.helper.utils.timeString
 import co.ec.helper.utils.unix
+import kotlin.math.absoluteValue
 
 
 @Composable
@@ -133,6 +137,7 @@ fun NoProductScreen(
     val selectedList by remember(deals, selectedDeals) {
         mutableStateOf(deals.filter { selectedDeals.contains(it.asin) })
     }
+
     LaunchedEffect(selectedList) {
         if (selectedList.isEmpty()) {
             AppModel.setFab(Icons.Filled.Search, {
@@ -145,63 +150,94 @@ fun NoProductScreen(
             })
         }
     }
+    val scrollState = rememberScrollState()
+    var isScrolled by remember { mutableStateOf(false) }
+    LaunchedEffect(scrollState.value) {
+        isScrolled = scrollState.value.absoluteValue > 100
+
+    }
+    val titleArea = @Composable {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .statusBarsPadding()
+                .height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Fırsat Ürünleri",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight(1F)
+                    .aspectRatio(1F)
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    deals.count().toString(),
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
+
+        }
+    }
     Box(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = isScrolled,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        0F to MaterialTheme.colorScheme.primaryContainer,
+                        .85F to MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9F),
+                        1F to Color.Transparent
+                    )
+                )
+                .padding(bottom = 10.dp)
+                .zIndex(2F)
+        ) {
+            titleArea()
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding(),
+                .zIndex(1F),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (deals.isEmpty()) {
                 //if no deal
-                Column(modifier = Modifier.fillMaxWidth(.8F)) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    Text(
-                        "Fırsat ürünleri sorgulanıyor", modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                top = 8.dp
-                            ), style = MaterialTheme.typography.bodySmall.copy(
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Light,
-                            fontStyle = FontStyle.Italic
-                        )
-                    )
-                }
+                Progress("Fırsat ürünleri sorgulanıyor")
             } else {
-                Text(
-                    "Fırsat Ürünleri", style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ), modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
                 FlowRow(
                     modifier = Modifier
                         .weight(1F)
                         .padding(horizontal = 4.dp)
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                 ) {
+                    if (!isScrolled) {
+                        titleArea()
+                    }
                     deals.forEach {
-
                         var selected by remember { mutableStateOf(false) }
-                        Box(modifier = Modifier
-                            .fillMaxWidth(.5F)
-                            .padding(4.dp)
-                            .aspectRatio(2F)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .border(1.dp, MaterialTheme.colorScheme.primaryContainer)
-                            .clickable {
-                                selected = !selected
-                                if (selected) {
-                                    selectedDeals = selectedDeals + it.asin
-                                } else {
-                                    selectedDeals = selectedDeals.filter { a -> a != it.asin }
-                                }
-                            }
-                            .drawWithContent {
+
+                        LittleProductBox(it,
+                            modifier = Modifier.drawWithContent {
                                 drawContent()
                                 if (selected) {
                                     drawRect(
@@ -209,48 +245,23 @@ fun NoProductScreen(
                                         blendMode = BlendMode.Multiply
                                     )
                                 }
-                            }) {
-                            ProductImage(
-                                it,
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .aspectRatio(.9F)
-                                    .align(Alignment.CenterEnd)
-                                    .alpha(.8F),
-                                color = MaterialTheme.colorScheme.surfaceContainer
-                            )
-                            Text(
-                                it.shortTitle(50),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp)
-                                    .padding(end = 16.dp),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            )
-                            Text(
-                                it.price(),
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .align(Alignment.BottomStart)
-                                    .padding(end = 16.dp),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            )
+                            },
+                            onClick = {
+                                selected = !selected
+                                if (selected) {
+                                    selectedDeals = selectedDeals + it.asin
+                                } else {
+                                    selectedDeals = selectedDeals.filter { a -> a != it.asin }
+                                }
+                            })
 
-                        }
                     }
                 }
             }
         }
 
         AppModel.cutCard(
-            Modifier
-                .aspectRatio(4F)
+            Modifier.aspectRatio(4F)
         ) {
 
             Crossfade(
@@ -273,12 +284,10 @@ fun NoProductScreen(
                         Button(
                             onClick = {
                                 navigator.navigate("find")
-                            },
-                            colors = ButtonDefaults.buttonColors(
+                            }, colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            modifier = Modifier.padding(top = 8.dp)
+                            ), modifier = Modifier.padding(top = 8.dp)
                         ) {
                             Icon(Icons.Filled.Add, "add product")
                             Text("Kendi Ürünümü Ekleyeyim")
@@ -346,8 +355,7 @@ fun NoProductScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProductListScreen(
-    model: MainScreenModel,
-    products: List<ProductWithPrices>
+    model: MainScreenModel, products: List<ProductWithPrices>
 ) {
 
     val dailyTotals by model.dailyTotals.observeAsState(listOf())
@@ -373,12 +381,21 @@ fun ProductListScreen(
         ) {
             Column {
                 Text(
-                    "Amazon", style = MaterialTheme.typography.titleLarge.copy(
+                    "Amazon",
+                    style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 30.sp
+                        fontSize = 34.sp,
+                        lineHeight = 30.sp
                     )
                 )
-                Text("Fiyat Takibi")
+                Text(
+                    "Fiyat Takibi",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 14.sp,
+                        lineHeight = 12.sp
+                    ),
+                    modifier = Modifier.offset(y = (-3).dp)
+                )
             }
             Column(
                 horizontalAlignment = Alignment.End
@@ -410,103 +427,32 @@ fun ProductListScreen(
                 }
             }
         }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .background(MaterialTheme.colorScheme.tertiaryContainer)
-                .padding(8.dp)
-        ) {
-            Text(
-                "Amazondaki fırsatları görerek hızlaca takip et.",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            )
-            Text(
-                "$dealCount adet fırsat var",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
-                )
-            )
-        }
         AnimatedVisibility(
-            visible = serverProducts !== null,
-            enter = fadeIn() + expandVertically()
+            visible = dealCount != 0, enter = fadeIn() + expandVertically()
         ) {
-            val shape = cutShape(CutCorner.BOTTOMRIGHT, 5.dp)
-            serverProducts?.let { serverProducts ->
-
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        "Hazır Takipli Ürünler",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        )
-                    )
-                    LazyRow(
-                        modifier = Modifier.padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(serverProducts.size) {
-                            val pair = serverProducts[it]
-                            Box(
-                                modifier = Modifier
-                                    .fillParentMaxWidth(.45F)
-                                    .height(IntrinsicSize.Max)
-                                    .padding(
-                                        start = if (it == 0) 8.dp else 0.dp,
-                                        end = if (it == serverProducts.size - 1) 8.dp else 0.dp
-                                    )
-                                    .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
-                                    .clickable {
-                                        navigator.navigate("add/${pair.first.asin}")
-                                    }
-                            ) {
-
-                                PriceGraph(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(shape),
-                                    prices = pair.second.map { it.split("|") }.map {
-                                        PriceGraphPair(it[0].toLong(), it[1].toFloat())
-                                    },
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .1F),
-                                    hasCircles = false
-                                )
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp)
-                                ) {
-                                    Text(
-                                        pair.first.title,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    )
-                                    Text(
-                                        pair.first.price(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                            }
-
-
-                        }
-                    }
+            Column(modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                .clickable {
+                    navigator.navigate("find")
                 }
+                .padding(8.dp)
+            ) {
+                Text(
+                    "Amazondaki fırsatları görerek hızlaca takip et.",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                )
+                Text(
+                    "$dealCount adet fırsat var", style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
+                    )
+                )
             }
         }
+        ServerProducts(serverProducts)
         HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
@@ -539,11 +485,9 @@ fun ProductListScreen(
                         )
 
                 ) {
-                    MainProductCard(
-                        item,
-                        onClick = {
-                            navigator.navigate("detail/${products[index].product.id}")
-                        })
+                    MainProductCard(item, onClick = {
+                        navigator.navigate("detail/${products[index].product.id}")
+                    })
                 }
 
 
@@ -556,8 +500,7 @@ fun ProductListScreen(
 
     AppModel.cutCard(Modifier.aspectRatio(3.5F)) {
         var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
-        Box(modifier = Modifier.fillMaxSize())
-        {
+        Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -587,8 +530,7 @@ fun ProductListScreen(
                     .padding(16.dp)
             ) {
                 Text(
-                    "Sepet Toplamı",
-                    style = MaterialTheme.typography.bodyMedium.copy(
+                    "Sepet Toplamı", style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 )
@@ -603,16 +545,11 @@ fun ProductListScreen(
                     )
                 )
                 totalDragValue?.let {
-                    Text(
-                        it.date.dateString(),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            fontSize = 10.sp
-                        ),
-                        modifier = Modifier.graphicsLayer {
-                            translationY = with(density) { (-10).dp.toPx() }
-                        }
-                    )
+                    Text(it.date.dateString(), style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = 10.sp
+                    ), modifier = Modifier.graphicsLayer {
+                        translationY = with(density) { (-10).dp.toPx() }
+                    })
                 }
             }
             Row(
@@ -624,19 +561,18 @@ fun ProductListScreen(
                 val titleStyle = MaterialTheme.typography.bodySmall.copy(
                     fontSize = 8.sp,
                     lineHeight = 8.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 val numberStyle = MaterialTheme.typography.bodySmall.copy(
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     textAlign = TextAlign.End
                 )
                 if (stats.containsKey("product")) {
 
                     Column(
-                        horizontalAlignment = Alignment.End,
-                        modifier = Modifier.padding(end = 8.dp)
+                        horizontalAlignment = Alignment.End, modifier = Modifier.padding(end = 8.dp)
                     ) {
 
                         Text((stats["product"] ?: 0).toString(), style = numberStyle)
@@ -658,6 +594,85 @@ fun ProductListScreen(
 
 
 @Composable
+fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
+    AnimatedVisibility(
+        visible = serverProducts !== null, enter = fadeIn() + expandVertically()
+    ) {
+        val navigator = LocalNavigation.current
+        val shape = cutShape(CutCorner.BOTTOMRIGHT, 5.dp)
+        serverProducts?.let { serverProducts ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "Hazır Takipli Ürünler",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    )
+                )
+                LazyRow(
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(serverProducts.size) {
+                        val pair = serverProducts[it]
+                        Box(modifier = Modifier
+                            .fillParentMaxWidth(.45F)
+                            .height(IntrinsicSize.Max)
+                            .padding(
+                                start = if (it == 0) 8.dp else 0.dp,
+                                end = if (it == serverProducts.size - 1) 8.dp else 0.dp
+                            )
+                            .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
+                            .clickable {
+                                navigator.navigate("add/${pair.first.asin}")
+                            }) {
+
+                            PriceGraph(modifier = Modifier
+                                .fillMaxSize()
+                                .clip(shape),
+                                prices = pair.second.map { it.split("|") }.map {
+                                    PriceGraphPair(it[0].toLong(), it[1].toFloat())
+                                },
+                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .1F),
+                                hasCircles = false
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
+                            ) {
+                                Text(
+                                    pair.first.title,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                                Text(
+                                    pair.first.price(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
 fun MainProductCard(
     productWithPrices: ProductWithPrices,
     onClick: () -> Unit = {},
@@ -665,15 +680,13 @@ fun MainProductCard(
     contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     CutCornerCard(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         click = { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = containerColor
         ),
         cutSize = 10.dp,
         shadow = 8.dp
-
     ) {
         Box(
             modifier = Modifier
@@ -689,7 +702,6 @@ fun MainProductCard(
                 color = containerColor,
                 radialGradient = true
             )
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -699,8 +711,7 @@ fun MainProductCard(
                     buildAnnotatedString {
                         withStyle(
                             SpanStyle(
-                                color = contentColor.copy(alpha = .8F),
-                                fontSize = 11.sp
+                                color = contentColor.copy(alpha = .8F), fontSize = 11.sp
                             )
                         ) {
                             append(productWithPrices.product.asin + " ")
@@ -709,8 +720,11 @@ fun MainProductCard(
                             SpanStyle(
                                 color = contentColor,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp
+                                fontSize = 16.sp,
+
+                                shadow = Shadow(Color.White, Offset(1F, 1F), 1F)
                             )
+
                         ) {
                             append(productWithPrices.product.title)
                         }
@@ -719,6 +733,9 @@ fun MainProductCard(
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp)
                         .padding(top = 8.dp),
+                    style = TextStyle(
+                        lineHeight = 18.sp
+                    ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -729,145 +746,120 @@ fun MainProductCard(
                         .weight(1F)
                         .padding(horizontal = 8.dp),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
+                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold
                     )
                 )
             }
 
-            Box(
+
+            Crossfade(
+                targetState = productWithPrices.priceInfoList.size > 1,
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(.4F)
                     .align(Alignment.BottomCenter)
             ) {
-                Crossfade(targetState = productWithPrices.priceInfoList.size > 1) {
 
-                    if (it) {
-                        var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
-                        val grouppedPrices by remember {
-                            var group = productWithPrices.priceInfoList
-                                .groupBy { it.date.dateString("yyyyMMdd") }
-                            if (group.size == 1) {
-                                group = productWithPrices.priceInfoList
-                                    .groupBy { it.date.dateString("yyyyMMdd-hhmm") }
-                            }
-
-
-                            mutableStateOf(group.map {
-
-                                val ave = it.value.toList().sumOf { it.price }
-                                    .toFloat() / it.value.size
-                                return@map PriceGraphPair(it.value[0].date, ave)
-                            })
+                if (it) {
+                    var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
+                    val groupedPrices by remember {
+                        var group =
+                            productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd") }
+                        if (group.size == 1) {
+                            group =
+                                productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd-hhmm") }
                         }
-                        PriceGraph(
-                            modifier = Modifier,
-                            prices = grouppedPrices,
-                            onDrag = { pair ->
-                                selectedPair = pair
-                            },
-                            hasCircles = false,
-                            color = MaterialTheme.colorScheme.secondary.copy(alpha = .4F),
-                            subRatio = .2F
-                        )
-                        val textColor =
-                            contentColorFor(MaterialTheme.colorScheme.secondary.copy(alpha = .8F))
-                        selectedPair?.let {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.BottomStart)
-                                    .padding(8.dp),
-                                horizontalArrangement = Arrangement.End
-                            ) {
+                        mutableStateOf(group.map {
 
-                                Text(
-                                    it.price.toInt().price(),
-                                    modifier = Modifier.padding(end = 8.dp),
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = textColor
-                                    )
-                                )
-                            }
-
-                        }
-                    } else {
-                        val alpha by rememberBlink()
-                        Text(
-                            "Fiyat değişimleri bekleniyor.",
+                            val ave =
+                                it.value.toList().sumOf { it.price }.toFloat() / it.value.size
+                            return@map PriceGraphPair(it.value[0].date, ave)
+                        })
+                    }
+                    PriceGraph(
+                        modifier = Modifier,
+                        prices = groupedPrices,
+                        onDrag = { pair ->
+                            selectedPair = pair
+                        },
+                        hasCircles = false,
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = .4F),
+                        subRatio = 0F
+                    )
+                    val textColor =
+                        contentColorFor(MaterialTheme.colorScheme.secondary.copy(alpha = .8F))
+                    selectedPair?.let {
+                        Row(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .alpha(alpha),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                textAlign = TextAlign.Center,
-                                fontStyle = FontStyle.Italic,
-                                fontSize = 11.sp
+                                .fillMaxWidth()
+                                .align(Alignment.BottomStart)
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+
+                            Text(
+                                it.price.toInt().price(),
+                                modifier = Modifier.padding(end = 8.dp),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = textColor
+                                )
                             )
-                        )
+                        }
 
                     }
+
                 }
 
             }
 
 
-        }
 
 
-        if (productWithPrices.priceInfoList.size > 1000) {
-            val predict by remember { mutableStateOf(productWithPrices.predict()) }
+            if (productWithPrices.priceInfoList.size > 1000) {
+                val predict by remember { mutableStateOf(productWithPrices.predict()) }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .height(IntrinsicSize.Max)
-            ) {
-                (0..3).forEach {
-                    Column(
-                        modifier = Modifier
-                            .weight(1F)
-                            .padding(2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        val date = (unix() + 7 * it * 86400).dateString()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .height(IntrinsicSize.Max)
+                ) {
+                    (0..3).forEach {
+                        Column(
+                            modifier = Modifier
+                                .weight(1F)
+                                .padding(2.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val date = (unix() + 7 * it * 86400).dateString()
 
-                        Text(
-                            date.replace(" 202", "\n202"),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Light,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center
+                            Text(
+                                date.replace(" 202", "\n202"),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
                             )
-                        )
-                        AutoText(
-                            predict[it].toInt().price(),
-                            fontSize = 1..16
-                        )
-                    }
-                    if (it < 3) {
-                        VerticalDivider(
-                            modifier = Modifier.padding(2.dp)
-                        )
+                            AutoText(
+                                predict[it].toInt().price(), fontSize = 1..16
+                            )
+                        }
+                        if (it < 3) {
+                            VerticalDivider(
+                                modifier = Modifier.padding(2.dp)
+                            )
+                        }
                     }
                 }
             }
+
+
         }
-
-
     }
 }
 
-@Composable
-@Preview(showBackground = true)
-fun MainScreenPreviewNoProduct(model: MainScreenModel = viewModel()) {
-    model.emulate()
-    PreviewProviders {
-        NoProductScreen(model)
-    }
-}
 
 @Composable
 @Preview(showBackground = true)
