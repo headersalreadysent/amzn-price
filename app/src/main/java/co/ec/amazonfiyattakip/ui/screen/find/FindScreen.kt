@@ -170,9 +170,8 @@ fun DealsListScreen(deals: List<Product>) {
     val settings = LocalSettings.current
 
     if (deals.isEmpty()) {
-        Progress("Popüler ürünler yükleniyor")
+        Progress("Fırsatlar yükleniyor")
     } else {
-
         FlowRow(
             modifier = Modifier
                 .fillMaxSize()

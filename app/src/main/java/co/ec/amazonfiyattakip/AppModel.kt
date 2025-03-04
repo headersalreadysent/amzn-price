@@ -18,7 +18,7 @@ import kotlin.random.Random
 class AppModel : ViewModel() {
 
     var fabAction = MutableLiveData<Pair<ImageVector, () -> Unit>?>(Pair(Icons.Filled.Add, {}))
-    val cutCardContent = MutableLiveData<Pair<(@Composable () -> Unit),Modifier>>(null)
+    val cutCardContent = MutableLiveData<Pair<(@Composable () -> Unit), Modifier>>(null)
 
     companion object {
         @Volatile
@@ -32,9 +32,10 @@ class AppModel : ViewModel() {
             INSTANCE?.fabAction?.value = null
         }
 
-        fun cutCard(modifier:Modifier = Modifier.aspectRatio(3F)
-                    ,content: @Composable () -> Unit) {
-            INSTANCE?.cutCardContent?.value = Pair(content,modifier)
+        fun cutCard(
+            modifier: Modifier = Modifier.aspectRatio(3F), content: @Composable () -> Unit
+        ) {
+            INSTANCE?.cutCardContent?.value = Pair(content, modifier)
         }
     }
 
@@ -44,13 +45,13 @@ class AppModel : ViewModel() {
     }
 
 
-    fun generateFakePrices(){
+    fun generateFakePrices() {
         asyncRun({
-            val products=AppDatabase.getDatabase().product().getAllProducts()
+            val products = AppDatabase.getDatabase().product().getAllProducts()
             (1..20).forEach { no ->
                 products.forEach { it ->
-                    val price=PriceInfo(
-                        id=0,
+                    val price = PriceInfo(
+                        id = 0,
                         productId = it.product.id,
                         asin = it.product.asin,
                         date = unix() - no * 86400,

@@ -1,26 +1,18 @@
 package co.ec.amazonfiyattakip
 
-import android.graphics.Color
+import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
@@ -42,36 +34,42 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
-import co.ec.amazonfiyattakip.composables.CutCorner
-import co.ec.amazonfiyattakip.composables.cutShape
-import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.ui.AppProviders
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.BottomCardContent
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
 import co.ec.helper.helpers.LogHelper
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.JsonNull.content
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
         )
         val destination = intent?.getStringExtra("destination") ?: "main"
         setContent {
@@ -99,7 +97,7 @@ fun AppContent(
             darkIcons = ColorUtils.calculateLuminance(container.toArgb()) > 0.5
         )
         uiController.setStatusBarColor(
-            color = androidx.compose.ui.graphics.Color.Transparent,
+            color = Color.Transparent,
             darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
         )
     }
@@ -139,12 +137,6 @@ fun AppContent(
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
                     IconButton(onClick = {
-                        navigator.navigate("list")
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Menu")
-                    }
-                    IconButton(onClick = {
-
                         settingsClick++
                         LogHelper.d("settingsClick $settingsClick")
                         if (settingsClick == 5) {
@@ -154,7 +146,6 @@ fun AppContent(
                             if (navigator.currentDestination?.route !== "settings") {
                                 navigator.navigate("settings")
                             }
-
                         }
                     }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -182,7 +173,9 @@ fun AppContent(
     ) { screen ->
         var cutCardHeight by remember { mutableIntStateOf(0) }
         var screenHeight by remember { mutableIntStateOf(0) }
-        with(LocalDensity.current) {
+        var size by remember { mutableStateOf(Size.Unspecified) }
+        val density = LocalDensity.current
+        with(density) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -190,48 +183,20 @@ fun AppContent(
                         bottom = (screen.calculateBottomPadding().value - 5).dp
                     )
                     .onSizeChanged {
+                        size = it.toSize()
                         screenHeight = it.height
                     }
             ) {
-
                 ScreenContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height((screenHeight - cutCardHeight + 8.dp.toPx()).toDp()),
                     startDestination = startDestination
                 )
-
-
-                val cutCorner = cutShape(CutCorner.TOPRIGHT, 30.dp)
                 val content by appModel.cutCardContent.observeAsState(null)
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth()
-                        .topOuterShadow(8.dp, 30.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer, cutCorner)
-                        .clip(cutCorner)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .animateContentSize()
-                            .then(content?.second ?: Modifier)
-                            .onSizeChanged {
-                                cutCardHeight = it.height
-                            }
-                    ) {
-                        Crossfade(
-                            targetState = content,
-                            label = "ContentTransition"
-                        ) { composable ->
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                composable?.first?.invoke()
-                            }
-                        }
-                    }
-                }
-
+                BottomCardContent(content, {
+                    cutCardHeight = it
+                })
             }
 
         }

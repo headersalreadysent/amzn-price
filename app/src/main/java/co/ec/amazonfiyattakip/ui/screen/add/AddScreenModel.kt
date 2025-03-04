@@ -15,7 +15,7 @@ class AddScreenModel : ViewModel() {
     val product = MutableLiveData<Product?>(null)
 
 
-    fun recordFromShareUrl(asinCode: String? = "") {
+    fun recordFromShareUrl(asinCode: String? = null) {
         val url = asinCode ?: SettingsHelper.get().getString("sharedUrl","") ?: ""
         if (url != "") {
             var page = url
