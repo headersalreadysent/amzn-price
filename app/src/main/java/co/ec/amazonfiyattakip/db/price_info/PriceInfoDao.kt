@@ -24,7 +24,7 @@ interface PriceInfoDao {
     fun getPricesByProduct(productId: Int): List<PriceInfo>
 
     @Query("SELECT SUM(latest_price) AS total, date FROM (SELECT \n" +
-            "   MAX(price) AS latest_price,\n" +
+            "   price AS latest_price,\n" +
             "   MAX(date) AS date,\n" +
             "   strftime(:format, DATETIME(date, 'unixepoch', 'localtime')) as day\n" +
             "   FROM priceinfo\n" +
