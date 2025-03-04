@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,17 +36,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutInput
+import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.LittleProductBox
-import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.rememberKeyboardVisibleState
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FindScreen(model: FindViewModel = viewModel()) {
+fun FindScreen(model: FindViewModel = viewModel(),
+               keyword:String="") {
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -53,7 +55,7 @@ fun FindScreen(model: FindViewModel = viewModel()) {
     val settings = LocalSettings.current
     var searchStarted by remember { mutableStateOf(false) }
 
-    var searchKeyword by remember { mutableStateOf("") }
+    var searchKeyword by remember { mutableStateOf(keyword) }
     var searchResults by remember { mutableStateOf<List<Product>>(listOf()) }
 
     var deals by remember { mutableStateOf<List<Product>>(listOf()) }
@@ -69,6 +71,10 @@ fun FindScreen(model: FindViewModel = viewModel()) {
     }
     DisposableEffect(Unit) {
         model.loadDeals()
+        if(searchKeyword!=""){
+            model.search(searchKeyword)
+            searchStarted=true
+        }
         onDispose {
 
         }
@@ -80,29 +86,8 @@ fun FindScreen(model: FindViewModel = viewModel()) {
     ) {
         if (searchStarted) {
             if (searchResults.isEmpty()) {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .weight(1F), Alignment.Center
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth(.8F)) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        Text(
-                            "$searchKeyword araması yapılıyor.", modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    top = 8.dp
-                                ), style = MaterialTheme.typography.bodySmall.copy(
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Light,
-                                fontStyle = FontStyle.Italic
-                            )
-                        )
-                    }
-                }
-
+                Progress("$searchKeyword araması yapılıyor")
             } else {
-
                 FlowRow(
                     modifier = Modifier
                         .weight(1F)
@@ -110,9 +95,14 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Box(
+                    Text(
+                        "Arama Sonuçları",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(4.dp)
                             .statusBarsPadding()
                     )
                     searchResults.forEach {
@@ -129,7 +119,7 @@ fun FindScreen(model: FindViewModel = viewModel()) {
                 }
             }
         } else {
-            PreSearchScreen(deals)
+            DealsListScreen(deals)
         }
 
     }
@@ -174,42 +164,32 @@ fun FindScreen(model: FindViewModel = viewModel()) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PreSearchScreen(
-    deals: List<Product>
-) {
+fun DealsListScreen(deals: List<Product>) {
 
     val navigation= LocalNavigation.current
     val settings = LocalSettings.current
 
     if (deals.isEmpty()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(.8F))
-            Text(
-                "popüler ürünler yükleniyor", modifier = Modifier
-                    .fillMaxWidth(.8F)
-                    .padding(
-                        top = 8.dp
-                    ), style = MaterialTheme.typography.bodySmall.copy(
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Light,
-                    fontStyle = FontStyle.Italic
-                )
-            )
-        }
+        Progress("Popüler ürünler yükleniyor")
     } else {
 
         FlowRow(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 4.dp)
                 .verticalScroll(rememberScrollState())
         ) {
 
+            Text(
+                "Fırsatlar",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+                    .statusBarsPadding()
+            )
             deals.forEach {
                 LittleProductBox(it, onClick = {
                     settings.putString("sharedUrl", it.asin)
@@ -221,13 +201,20 @@ fun PreSearchScreen(
 
 
 }
-
+@Preview(showBackground = true)
+@Composable
+private fun DealsScreenPReview() {
+    PreviewProviders {
+        DealsListScreen(List(35) { Product.fake()})
+    }
+}
 @Preview(showBackground = true)
 @Composable
 private fun FindScreenPreview() {
     PreviewProviders {
-        val model = FindViewModel()
+        val isPreview = LocalInspectionMode.current
+        val model = FindViewModel(isPreview=isPreview)
         model.emulate()
-        FindScreen()
+        FindScreen(model, keyword = "android")
     }
 }

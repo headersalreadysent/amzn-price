@@ -1,7 +1,9 @@
 package co.ec.amazonfiyattakip.composables
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LinearProgressIndicator
@@ -25,31 +27,34 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun Progress(text: String,fillRatio:Float=.8F) {
-    Column(modifier = Modifier.fillMaxWidth(fillRatio),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center) {
-        var dots by remember { mutableStateOf("") }
-        LaunchedEffect(Unit) {
-            while(true){
-                dots=if(dots=="...") "." else "$dots."
-                delay(500L)
+    Box(modifier = Modifier.fillMaxSize(),Alignment.Center){
+        Column(modifier = Modifier.fillMaxSize(fillRatio),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center) {
+            var dots by remember { mutableStateOf("") }
+            LaunchedEffect(Unit) {
+                while(true){
+                    dots=if(dots=="...") "." else "$dots."
+                    delay(500L)
+                }
             }
-        }
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        Text(
-            "$text$dots",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    top = 8.dp
-                ),
-            style = MaterialTheme.typography.bodySmall.copy(
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Light,
-                fontStyle = FontStyle.Italic
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Text(
+                dots.replace(".", " ")+"$text$dots",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        top = 8.dp
+                    ),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Light,
+                    fontStyle = FontStyle.Italic
+                )
             )
-        )
+        }
     }
+
 }
 
 @Preview(showBackground = true)
