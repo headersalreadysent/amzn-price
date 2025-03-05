@@ -32,6 +32,7 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.helper.helpers.LogHelper
 
 import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 
 @Composable
@@ -74,7 +75,9 @@ fun ProductImage(
             ColorPainter(MaterialTheme.colorScheme.primary)
         } else {
             rememberAsyncImagePainter(
+
                 model = ImageRequest.Builder(LocalContext.current)
+                    .networkCachePolicy(CachePolicy.ENABLED)
                     .data(image)
                     .crossfade(true)
                     .transformations(CoilTrimTransform())
@@ -135,7 +138,6 @@ fun ProductImage(
 private fun ProductImagePreview() {
     PreviewProviders {
         Column {
-
             ProductImage(
                 product = Product.fake(),
                 modifier = Modifier
@@ -143,7 +145,6 @@ private fun ProductImagePreview() {
                     .aspectRatio(1F)
             )
             Spacer(modifier = Modifier.fillMaxWidth().height(16.dp))
-
             ProductImage(
                 product = Product.fake(),
                 modifier = Modifier

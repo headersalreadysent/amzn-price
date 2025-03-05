@@ -123,12 +123,12 @@ open class MainScreenModel : ViewModel() {
     /**
      * load deals from amazon
      */
-    fun loadDeals(then: (list: List<String>) -> Unit = {}) {
+    fun loadDeals(dealCount: Int? = null) {
         val semaphore = Semaphore(10)
         AmznScrape().getPopular({ asins ->
             viewModelScope.launch {
                 channelFlow {
-                    asins.forEach { asin ->
+                    asins.subList(0, dealCount ?: asins.size).forEach { asin ->
                         launch {
                             semaphore.withPermit {
                                 runCatching { AmznScrape().suspendScrape(asin) }
@@ -142,7 +142,6 @@ open class MainScreenModel : ViewModel() {
                     }
                 }
             }
-            then(asins)
         })
     }
 

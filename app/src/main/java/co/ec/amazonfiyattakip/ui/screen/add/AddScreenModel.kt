@@ -16,8 +16,9 @@ class AddScreenModel : ViewModel() {
 
 
     fun recordFromShareUrl(asinCode: String? = null) {
-        val url = asinCode ?: SettingsHelper.get().getString("sharedUrl","") ?: ""
-        if (url != "") {
+        val url = asinCode ?: SettingsHelper.get().getString("sharedUrl")
+        if (url != null) {
+            //if url not null
             var page = url
             if (!url.startsWith("http")) {
                 page = AmznScrape.urlFromAsin(url)

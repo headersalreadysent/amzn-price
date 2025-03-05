@@ -42,16 +42,19 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.LittleProductBox
+import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.rememberKeyboardVisibleState
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FindScreen(model: FindViewModel = viewModel(),
-               keyword:String="") {
+fun FindScreen(
+    model: FindViewModel = viewModel(),
+    keyword: String = ""
+) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val navigation= LocalNavigation.current
+    val navigation = LocalNavigation.current
     val settings = LocalSettings.current
     var searchStarted by remember { mutableStateOf(false) }
 
@@ -71,9 +74,9 @@ fun FindScreen(model: FindViewModel = viewModel(),
     }
     DisposableEffect(Unit) {
         model.loadDeals()
-        if(searchKeyword!=""){
+        if (searchKeyword != "") {
             model.search(searchKeyword)
-            searchStarted=true
+            searchStarted = true
         }
         onDispose {
 
@@ -95,20 +98,23 @@ fun FindScreen(model: FindViewModel = viewModel(),
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text(
-                        "Arama Sonuçları",
+                    TitleBar(
+                        title = "Arama Sonuçları",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
-                            .statusBarsPadding()
+                            .statusBarsPadding(),
+                        extra = {
+                            Text(deals.size.toString(),
+                                style = MaterialTheme.typography.bodySmall)
+                        }
                     )
                     searchResults.forEach {
-                        LittleProductBox(it,onClick = {
-                            settings.putString("sharedUrl", it.asin)
-                            navigation.navigate("add")
+                        LittleProductBox(it, onClick = {
+                            navigation.navigate("add/${it.asin}")
                         })
                     }
                     Box(
@@ -166,8 +172,7 @@ fun FindScreen(model: FindViewModel = viewModel(),
 @Composable
 fun DealsListScreen(deals: List<Product>) {
 
-    val navigation= LocalNavigation.current
-    val settings = LocalSettings.current
+    val navigation = LocalNavigation.current
 
     if (deals.isEmpty()) {
         Progress("Fırsatlar yükleniyor")
@@ -179,20 +184,23 @@ fun DealsListScreen(deals: List<Product>) {
                 .verticalScroll(rememberScrollState())
         ) {
 
-            Text(
-                "Fırsatlar",
+            TitleBar(
+                title = "Amazon Fırsatlar",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.SemiBold
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp)
-                    .statusBarsPadding()
+                    .statusBarsPadding(),
+                extra = {
+                    Text(deals.size.toString(),
+                        style = MaterialTheme.typography.bodySmall)
+                }
             )
             deals.forEach {
                 LittleProductBox(it, onClick = {
-                    settings.putString("sharedUrl", it.asin)
-                    navigation.navigate("add")
+                    navigation.navigate("add/${it.asin}")
                 })
             }
         }
@@ -200,19 +208,21 @@ fun DealsListScreen(deals: List<Product>) {
 
 
 }
+
 @Preview(showBackground = true)
 @Composable
 private fun DealsScreenPReview() {
     PreviewProviders {
-        DealsListScreen(List(35) { Product.fake()})
+        DealsListScreen(List(35) { Product.fake() })
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 private fun FindScreenPreview() {
     PreviewProviders {
         val isPreview = LocalInspectionMode.current
-        val model = FindViewModel(isPreview=isPreview)
+        val model = FindViewModel(isPreview = isPreview)
         model.emulate()
         FindScreen(model, keyword = "android")
     }

@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -24,16 +25,20 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 
 @Composable
-fun LittleProductBox(product:Product,
-                     modifier:Modifier = Modifier,
-                     onClick: (() -> Unit)?=null){
+fun LittleProductBox(
+    product: Product,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
+    contentColor :Color= MaterialTheme.colorScheme.onTertiaryContainer,
+    onClick: (() -> Unit)? = null
+) {
     Box(modifier = Modifier
         .fillMaxWidth(.5F)
         .padding(4.dp)
         .aspectRatio(2.5F)
-        .background(MaterialTheme.colorScheme.tertiaryContainer)
-        .border(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = .2F))
-        .clickable(enabled = onClick!=null) {
+        .background(containerColor)
+        .border(1.dp, contentColor.copy(alpha = .2F))
+        .clickable(enabled = onClick != null) {
             onClick?.let {
                 it()
             }
@@ -46,7 +51,7 @@ fun LittleProductBox(product:Product,
                 .aspectRatio(.8F)
                 .align(Alignment.CenterEnd)
                 .alpha(.9F),
-            color = MaterialTheme.colorScheme.tertiaryContainer
+            color = containerColor
         )
         Text(
             product.title,
@@ -55,9 +60,9 @@ fun LittleProductBox(product:Product,
                 .padding(8.dp)
                 .padding(end = 16.dp),
             style = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                color = contentColor,
                 fontWeight = FontWeight.SemiBold,
-                shadow = Shadow(MaterialTheme.colorScheme.tertiary, Offset(3F,3F),1F)
+                shadow = Shadow(MaterialTheme.colorScheme.tertiary, Offset(3F, 3F), 1F)
             ),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
@@ -68,7 +73,7 @@ fun LittleProductBox(product:Product,
                 .padding(8.dp)
                 .align(Alignment.BottomStart),
             style = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                color = contentColor,
                 fontWeight = FontWeight.Bold,
             )
         )
@@ -78,7 +83,7 @@ fun LittleProductBox(product:Product,
 
 @Preview(showBackground = true)
 @Composable
-private fun LittleProductBoxPreview(){
+private fun LittleProductBoxPreview() {
     PreviewProviders {
         LittleProductBox(Product.fake())
     }

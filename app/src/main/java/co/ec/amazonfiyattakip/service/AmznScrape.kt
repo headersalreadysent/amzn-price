@@ -2,7 +2,9 @@ package co.ec.amazonfiyattakip.service
 
 import androidx.core.app.PendingIntentCompat.send
 import androidx.lifecycle.viewModelScope
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.helper.SharedCache
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix

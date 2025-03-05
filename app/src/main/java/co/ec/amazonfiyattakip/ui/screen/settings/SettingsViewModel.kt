@@ -27,7 +27,7 @@ class SettingsViewModel : ViewModel() {
 
 
     private var booleanKeys = listOf("dynamicTheme")
-    private var intKeys = listOf("queryTime")
+    private var intKeys = listOf("queryTime","colorContrast")
 
     fun startWatch() {
         val localMap = map.value?.toMutableMap() ?: mutableMapOf()
