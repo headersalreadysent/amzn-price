@@ -136,6 +136,7 @@ fun DateRow(
                         if (item.first == startOfToday) "Bugün" else ""
                     },
                     style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.secondary,
                         fontSize = 10.sp,
                     ),
                     overflow = TextOverflow.Ellipsis,

@@ -14,6 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,17 +30,14 @@ import co.ec.helper.composable.AutoText
 @Composable
 fun ProductBox(
     product: Product,
-    modifier: Modifier = Modifier,
-    type: String = "box"
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .background(MaterialTheme.colorScheme.secondaryContainer)
-            .aspectRatio(if (type == "box") 2F else 3F)
+            .aspectRatio(2F )
             .shadow(1.dp)
-            .then(modifier)
     ) {
         ProductImage(
             product,
@@ -50,18 +50,21 @@ fun ProductBox(
         )
         Column(
             modifier = Modifier
-                .fillMaxWidth(if (type == "box") .8F else 1F)
+                .fillMaxWidth(.8F  )
                 .fillMaxHeight()
                 .padding(horizontal = 16.dp)
-                .then(if (type == "box") Modifier.statusBarsPadding() else Modifier.padding(top = 8.dp))
+                .statusBarsPadding()
         ) {
             Text(
                 text = product.title,
-                style = MaterialTheme.typography.titleMedium.copy(
+                style = MaterialTheme.typography.titleLarge.copy(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    shadow = Shadow(MaterialTheme.colorScheme.onSecondaryContainer.copy(
+                        alpha = .5F
+                    ), Offset(1F,1F),1F)
                 ),
-                maxLines = if (type == "box") 3 else 2,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
@@ -81,12 +84,10 @@ fun ProductBox(
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             )
-            if (type == "box") {
-
                 ProductStat(
                     product, color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-            }
+
         }
 
     }

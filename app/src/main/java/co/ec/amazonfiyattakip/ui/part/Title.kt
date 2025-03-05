@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,11 +31,10 @@ fun TitleBar(
     icon: ImageVector? = null,
     title: String,
     extra: @Composable (() -> Unit)? = null,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = MaterialTheme.colorScheme.secondary,
     style: TextStyle = MaterialTheme.typography.titleSmall.copy(
-        fontWeight = FontWeight.SemiBold,
-
-        )
+        fontWeight = FontWeight.SemiBold
+    )
 ) {
     Row(
         modifier = Modifier
@@ -48,7 +46,8 @@ fun TitleBar(
             val size = style.fontSize
             val iconsSize = with(LocalDensity.current) { size.toDp() }
             Icon(
-                icon, contentDescription = title,
+                icon,
+                contentDescription = title,
                 modifier = Modifier
                     .size(iconsSize)
                     .padding(end = 4.dp),
@@ -58,7 +57,7 @@ fun TitleBar(
         Text(
             text = title,
             style = style.copy(
-                color=color
+                color = color
             )
         )
         Spacer(modifier = Modifier.weight(1F))
@@ -68,7 +67,7 @@ fun TitleBar(
 
 @Preview(showBackground = true)
 @Composable
-fun TitleBarPreview() {
+private fun TitleBarPreview() {
     PreviewProviders {
         Column {
 

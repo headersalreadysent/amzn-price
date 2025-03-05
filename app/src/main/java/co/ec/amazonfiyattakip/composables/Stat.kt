@@ -16,9 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.ui.PreviewProviders
 
 @Composable
 fun ProductStat(
@@ -31,7 +33,7 @@ fun ProductStat(
         modifier = Modifier
             .height(IntrinsicSize.Max)
             .then(modifier),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         val density = LocalDensity.current
         Icon(
@@ -47,7 +49,7 @@ fun ProductStat(
         VerticalDivider(
             modifier = Modifier
                 .padding(horizontal = 4.dp)
-                .fillMaxHeight(.8F)
+                .fillMaxHeight(.5F)
         )
         Icon(
             Icons.Filled.ChatBubble, "",
@@ -59,5 +61,13 @@ fun ProductStat(
             fontSize = 10.sp,
             color = color
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProductStatPreview(){
+    PreviewProviders {
+        ProductStat(product = Product.fake())
     }
 }

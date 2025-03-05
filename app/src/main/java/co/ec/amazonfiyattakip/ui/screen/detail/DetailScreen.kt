@@ -1,12 +1,14 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
 import androidx.compose.material.icons.outlined.TrendingFlat
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,9 +56,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,6 +90,7 @@ import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
+import com.google.common.io.Files.append
 
 @Composable
 fun DetailScreen(
@@ -139,6 +148,40 @@ fun DetailScreen(
                     .padding(bottom = 80.dp)
             ) {
                 ProductBox(product)
+                if (product.status == ProductStatus.ERRORSTOP) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .background(
+                                MaterialTheme.colorScheme.errorContainer,
+                                RoundedCornerShape(5.dp)
+                            )
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            "Bu ürün bir çok hatalı sorgulama sebebiyle pasifleştirildi. " +
+                                    "Amazon üzerinde ürüne ulaşılamıyor olabilir.",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        )
+                        OutlinedButton (
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                model.activate(product)
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.onErrorContainer,
+                                contentColor = MaterialTheme.colorScheme.errorContainer
+                            ),
+                            shape = RoundedCornerShape(5.dp)
+                        , contentPadding = PaddingValues(vertical = 1.dp)
+                        ) {
+                            Text("Aktifleştir")
+                        }
+                    }
+                }
 
 
                 if (prices == null) {
@@ -181,7 +224,7 @@ fun DetailScreen(
                                     text = if (showOnlyChanges) "(Değişimler)" else "(Tüm)",
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = MaterialTheme.colorScheme.secondary,
                                         fontStyle = FontStyle.Italic
                                     )
                                 )
@@ -189,12 +232,11 @@ fun DetailScreen(
                                     if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
                                     contentDescription = "filter",
                                     modifier = Modifier.scale(.7F),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.secondary
                                 )
                             })
                         var showPrice by remember { mutableStateOf(true) }
                         priceListData.reversed().let { list ->
-
                             Column(modifier = Modifier
                                 .padding(8.dp)
                                 .clickable(
@@ -258,22 +300,39 @@ fun DetailScreen(
                                     }
                                 }
                             }
-
                         }
-
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
 
-
+                val canExtend = product.description.length > 300
+                var showFull by remember { mutableStateOf(canExtend) }
                 CutCornerCard(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .animateContentSize()
+                        .clickable(enabled = canExtend) {
+                            showFull = !showFull
+                        }
                         .padding(horizontal = 8.dp)
                 ) {
                     Text(
-                        text = product.description,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = if (canExtend && showFull) buildAnnotatedString {
+                            append(product.shortDesc(300))
+                            withStyle(
+                                style = SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 10.sp,
+                                )
+                            ) {
+                                append(" Devamını oku »")
+                            }
+                        } else buildAnnotatedString {
+                            append(product.description)
+                        },
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.Justify
+                        ),
                         modifier = Modifier.padding(8.dp)
                     )
                 }
@@ -282,8 +341,12 @@ fun DetailScreen(
                     product = product,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
-                Row(modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     if (product.status == ProductStatus.ACTIVE) {
                         OutlinedButton(
                             onClick = {
@@ -340,12 +403,14 @@ fun DetailScreen(
                     }
                 }
             }
-            AppModel.cutCard(modifier = Modifier
-                .then(
-                    if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
-                        40.dp
+            AppModel.cutCard(
+                modifier = Modifier
+                    .then(
+                        if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
+                            40.dp
+                        )
                     )
-                )) {
+            ) {
                 PricesGraphWithDrag(
                     prices = priceListData
                 )
@@ -394,15 +459,18 @@ fun TreePriceRow(
                 text = min.price(), modifier = Modifier.fillMaxWidth(), style = valueStyle
             )
         }
-        Column(modifier = columnModifier) {
-            Text(
-                text = "Ortalama", modifier = Modifier.fillMaxWidth(), style = titleStyle
-            )
-            Text(
-                text = ((min + max) / 2F).toInt().price(),
-                modifier = Modifier.fillMaxWidth(),
-                style = valueStyle
-            )
+        if (max != min) {
+
+            Column(modifier = columnModifier) {
+                Text(
+                    text = "Ortalama", modifier = Modifier.fillMaxWidth(), style = titleStyle
+                )
+                Text(
+                    text = ((min + max) / 2F).toInt().price(),
+                    modifier = Modifier.fillMaxWidth(),
+                    style = valueStyle
+                )
+            }
         }
         Column(modifier = columnModifier) {
             Text(

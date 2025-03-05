@@ -92,6 +92,16 @@ open class DetailViewModel : ViewModel() {
     }
 
 
+    fun activate(product: Product) {
+        asyncRun({
+            product.status=ProductStatus.ACTIVE
+            return@asyncRun AppDatabase.getDatabase().product().update(product)
+        },{
+            loadProduct(product.id)
+        })
+    }
+
+
     fun emulate() {
         //generate fake products
         product.value = Product.fake()
@@ -106,5 +116,6 @@ open class DetailViewModel : ViewModel() {
             )
         }
     }
+
 
 }
