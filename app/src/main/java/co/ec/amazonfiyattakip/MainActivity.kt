@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
@@ -53,11 +53,11 @@ import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.ui.AppProviders
 import co.ec.amazonfiyattakip.ui.LocalNavigation
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.BottomCardContent
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
-import co.ec.helper.helpers.LogHelper
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.delay
@@ -116,6 +116,7 @@ fun AppContent(
         }
     }
     var settingsClick by remember { mutableIntStateOf(0) }
+    val settings= LocalSettings.current
     LaunchedEffect(Unit) {
         while (true) {
             settingsClick = 0
@@ -138,17 +139,22 @@ fun AppContent(
                     }
                     IconButton(onClick = {
                         settingsClick++
-                        LogHelper.d("settingsClick $settingsClick")
                         if (settingsClick == 5) {
-                            settingsClick = 0
-                            navigator.navigate("joblog")
-                        } else {
-                            if (navigator.currentDestination?.route !== "settings") {
-                                navigator.navigate("settings")
-                            }
+                            settings.putBoolean("developerActive",true)
+                        }
+                        if (navigator.currentDestination?.route !== "settings") {
+                            navigator.navigate("settings")
                         }
                     }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+
+                    if(settings.getBoolean("developerActive",false)){
+                        IconButton(onClick = {
+                            navigator.navigate("joblog")
+                        }) {
+                            Icon(Icons.Default.DeviceThermostat, contentDescription = "Menu")
+                        }
                     }
                     Spacer(Modifier.weight(1f, true))
                 },

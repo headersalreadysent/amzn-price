@@ -20,7 +20,7 @@ interface PriceInfoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(prices: List<PriceInfo>): List<Long>
 
-    @Query("SELECT * FROM priceinfo WHERE productId=:productId ORDER BY date ASC")
+    @Query("SELECT * FROM priceinfo WHERE productId=:productId and price>0 ORDER BY date ASC")
     fun getPricesByProduct(productId: Int): List<PriceInfo>
 
     @Query("SELECT SUM(latest_price) AS total, date FROM (SELECT \n" +

@@ -66,7 +66,7 @@ object FireDB {
                     )
                 }
             //generate local list
-            val localPriceList = localPrices.map {
+            val localPriceList = localPrices.filter { it.price>0 }.map {
                 listOf(
                     it.date.toString(),
                     it.price.toString(),

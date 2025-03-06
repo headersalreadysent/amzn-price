@@ -48,7 +48,6 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             list.addListener(
                 {
                     val workInfos = list.get()
-                    LogHelper.d("$JOBTAG is $workInfos", "Job")
                     if (workInfos != null && workInfos.isEmpty()) {
                         startJob()
                         return@addListener
@@ -149,33 +148,37 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             val scraper = AmznScrape()
             //collect one asin
             scraper.scrapeFromAsin(product.asin, { update ->
-
-                //insert into database
-                thread {
-                    val product = update.copy(
-                        id = product.id
-                    )
-                    PriceInfoDao.insertNewUpdate(product)
-                    //add next run time
-                    productDao.updateProductInfoAndNextRun(
-                        product.id,
-                        product.price,
-                        product.star,
-                        product.comment
-                    )
-
-                    LogHelper.d("$JOBTAG ${product.price} : ${product.title}", "Job")
-
-                    App.event(
-                        "price_update", mapOf(
-                            "productAsin" to product.asin,
-                            "productTitle" to product.title,
-                            "productPrice" to product.price,
-                            "productStar" to product.star.toString(),
-                            "productComment" to product.comment.toString()
+                if(update.price==0){
+                    LogHelper.d("product ${product.asin} price is 0")
+                } else {
+                    //insert into database
+                    thread {
+                        val product = update.copy(
+                            id = product.id
                         )
-                    )
+                        PriceInfoDao.insertNewUpdate(product)
+                        //add next run time
+                        productDao.updateProductInfoAndNextRun(
+                            product.id,
+                            product.price,
+                            product.star,
+                            product.comment
+                        )
+
+                        LogHelper.d("$JOBTAG ${product.price} : ${product.title}", "Job")
+
+                        App.event(
+                            "price_update", mapOf(
+                                "productAsin" to product.asin,
+                                "productTitle" to product.title,
+                                "productPrice" to product.price,
+                                "productStar" to product.star.toString(),
+                                "productComment" to product.comment.toString()
+                            )
+                        )
+                    }
                 }
+
                 //complete defer with correct price
                 deferred.complete(Pair(product.asin, update.price))
             }, {
