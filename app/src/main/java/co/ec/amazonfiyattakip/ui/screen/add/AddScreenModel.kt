@@ -34,6 +34,15 @@ class AddScreenModel : ViewModel() {
         }
     }
 
+    /**
+     * update time span
+     */
+    fun updateTimeSpan(it: Int) {
+        product.value = product.value?.copy(
+            timeSpan = it * 60
+        )
+    }
+
 
     /**
      * save to database
@@ -66,6 +75,8 @@ class AddScreenModel : ViewModel() {
     fun emulate() {
         product.value = Product.fake()
     }
+
+
 
 
 }

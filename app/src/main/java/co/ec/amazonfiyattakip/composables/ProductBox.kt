@@ -64,7 +64,7 @@ fun ProductBox(
                         alpha = .5F
                     ), Offset(1F,1F),1F)
                 ),
-                maxLines = 3,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(

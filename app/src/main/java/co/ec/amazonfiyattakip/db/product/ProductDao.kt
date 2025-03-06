@@ -4,8 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
-import co.ec.amazonfiyattakip.db.AsinId
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.helper.utils.unix
 
@@ -69,6 +69,7 @@ interface ProductDao {
         filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
     ): List<String>
 
+    @Transaction
     @Query("SELECT * FROM product WHERE status NOT IN (:filteredStatus) ORDER BY date ASC LIMIT :limit  ")
     fun getLatestProducts(
         limit: Int = 20,
