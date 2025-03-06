@@ -107,7 +107,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
     val dailyTotals by model.dailyTotals.observeAsState(listOf())
     val stats by model.stats.observeAsState(mapOf())
     val navigation = LocalNavigation.current
-    val productList by model.products.observeAsState()
+    val productList by model.products.observeAsState(null)
     Column(modifier = Modifier.fillMaxSize()) {
         var deals by remember { mutableStateOf<List<Product>>(listOf()) }
         LaunchedEffect(productList) {
@@ -179,7 +179,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1F)
-                        .padding(bottom = 80.dp),
+                        .verticalScroll(rememberScrollState()),
                     maxItemsInEachRow = 2
                 ) {
                     products.forEachIndexed { index, item ->
@@ -203,7 +203,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
                 }
             }
-            if (deals.isNotEmpty()) {
+            if (products.isEmpty() && deals.isNotEmpty()) {
                 TitleBar(
                     title = "Amazon Fırsatlar",
                     modifier = Modifier
