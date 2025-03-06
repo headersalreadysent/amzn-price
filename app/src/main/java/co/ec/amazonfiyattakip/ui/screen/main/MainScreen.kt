@@ -645,49 +645,6 @@ fun MainProductCard(
 
             }
 
-
-
-
-            if (productWithPrices.priceInfoList.size > 1000) {
-                val predict by remember { mutableStateOf(productWithPrices.predict()) }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .height(IntrinsicSize.Max)
-                ) {
-                    (0..3).forEach {
-                        Column(
-                            modifier = Modifier
-                                .weight(1F)
-                                .padding(2.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            val date = (unix() + 7 * it * 86400).dateString()
-
-                            Text(
-                                date.replace(" 202", "\n202"),
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Light,
-                                    fontSize = 12.sp,
-                                    textAlign = TextAlign.Center
-                                )
-                            )
-                            AutoText(
-                                predict[it].toInt().price(), fontSize = 1..16
-                            )
-                        }
-                        if (it < 3) {
-                            VerticalDivider(
-                                modifier = Modifier.padding(2.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-
         }
     }
 }

@@ -57,6 +57,7 @@ interface ProductDao {
         errorStatus: ProductStatus = ProductStatus.ERRORSTOP
     )
 
+    @Transaction
     @Query("SELECT * FROM product WHERE status NOT IN (:filteredStatus) ORDER BY date ASC LIMIT :limit  OFFSET (:page -1) * :limit")
     fun getAllProducts(
         page: Int = 1,

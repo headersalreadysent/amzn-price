@@ -100,6 +100,23 @@ open class DetailViewModel : ViewModel() {
             loadProduct(product.id)
         })
     }
+    /**
+     * update time span
+     */
+    fun updateTimeSpan(minute: Int) {
+        asyncRun({
+            product.value?.let {
+                val newProduct = it.copy(
+                    timeSpan = minute * 60
+                )
+                AppDatabase.getDatabase().product().update(newProduct)
+                product.value=newProduct
+            }
+            return@asyncRun product.value
+        },{
+            loadProduct(it?.id ?: 0)
+        })
+    }
 
 
     fun emulate() {

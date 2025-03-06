@@ -76,9 +76,11 @@ import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.ProductBox
+import co.ec.amazonfiyattakip.composables.TimeSpan
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.helper.predictNextPrices
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.helper.topOuterShadow
@@ -88,8 +90,11 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
+import co.ec.helper.composable.AutoText
+import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
+import co.ec.helper.utils.unix
 import com.google.common.io.Files.append
 
 @Composable
@@ -166,7 +171,7 @@ fun DetailScreen(
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         )
-                        OutlinedButton (
+                        OutlinedButton(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
                                 model.activate(product)
@@ -175,8 +180,8 @@ fun DetailScreen(
                                 containerColor = MaterialTheme.colorScheme.onErrorContainer,
                                 contentColor = MaterialTheme.colorScheme.errorContainer
                             ),
-                            shape = RoundedCornerShape(5.dp)
-                        , contentPadding = PaddingValues(vertical = 1.dp)
+                            shape = RoundedCornerShape(5.dp),
+                            contentPadding = PaddingValues(vertical = 1.dp)
                         ) {
                             Text("Aktifleştir")
                         }
@@ -209,6 +214,7 @@ fun DetailScreen(
                                 .padding(vertical = 8.dp)
                         )
                         CalendarPriceData(it)
+                        PricePrediction(it)
                         TitleBar(
                             title = "Fiyat Değişimi",
                             modifier = Modifier
@@ -341,6 +347,10 @@ fun DetailScreen(
                     product = product,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
+                TimeSpan(product.timeSpan / 60, {
+                    model.updateTimeSpan(it)
+                })
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -519,14 +529,14 @@ fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
                         text = it.date.dateString() + " " + it.date.timeString(),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     )
                     Text(
                         text = (it.price * 100).toInt().price(),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     )
                 }
@@ -597,6 +607,77 @@ fun CalendarPriceData(prices: List<PriceInfo>) {
                 "${
                     it.first.toLong().dateString()
                 } ortalama fiyat ${it.second.price()}"
+            )
+        }
+    }
+}
+
+@Composable
+fun PricePrediction(prices: List<PriceInfo>) {
+    if (prices.size > 10) {
+        val predict by remember {
+            mutableStateOf(predictNextPrices(prices))
+        }
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(8.dp)) {
+
+            TitleBar(
+                title = "Fiyat Tahmini",
+                modifier = Modifier
+                    .fillMaxWidth(),
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .height(IntrinsicSize.Max)
+            ) {
+                predict.first.forEachIndexed { index, it ->
+                    Column(
+                        modifier = Modifier
+                            .weight(1F)
+                            .padding(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        val date = it.first.dateString()
+
+                        Text(
+                            date.replace(" 202", "\n202"),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Light,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 13.sp
+                            ),
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                        AutoText(
+                            it.second.toInt().price(),
+                            fontSize = 1..16,
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    if (index < predict.first.size - 1) {
+                        VerticalDivider(
+                            modifier = Modifier.padding(2.dp)
+                        )
+                    }
+                }
+            }
+
+            Text(
+                "Fiyat tahmini bilgisi sınırlı bir tahmin olup öneri değeri taşımamaktadır.\n"+predict.second,
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 9.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 11.sp
+                )
             )
         }
     }

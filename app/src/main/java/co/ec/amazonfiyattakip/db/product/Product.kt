@@ -31,7 +31,7 @@ data class Product(
     var image: String = "",
     var extras: String = "",
     var nextRunTime: Long = unix(),
-    var timeSpan: Int = 60,
+    var timeSpan: Int = 3600,
     var errorCount: Int = 0,
     var status: ProductStatus = ProductStatus.ACTIVE
 ) {

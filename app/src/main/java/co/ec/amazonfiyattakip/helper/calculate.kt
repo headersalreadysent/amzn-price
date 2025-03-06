@@ -1,11 +1,17 @@
 package co.ec.amazonfiyattakip.helper
 
+import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import kotlin.math.pow
 
-fun predictNextPrices(prices: List<Double>, days: List<Int> = listOf(7,14,21,28)): List<Double> {
-    val n = prices.size
-    val x = (1..n).map { it.toDouble() }
-    val y = prices
+fun predictNextPrices(
+    prices: List<PriceInfo>,
+    days: List<Int> = listOf(7, 14, 21, 28)
+): Pair<List<Pair<Long, Double>>,String> {
+
+    val firstQuery = prices.minOf { it.date }
+    val x = prices.map { it.date - firstQuery }
+    val y = prices.map { it.price.toDouble() }
+    val lastDay = x.maxOf { it }
 
     // Ortalama hesapla
     val xMean = x.average()
@@ -17,6 +23,13 @@ fun predictNextPrices(prices: List<Double>, days: List<Int> = listOf(7,14,21,28)
     val beta1 = numerator / denominator
     val beta0 = yMean - beta1 * xMean
 
-    // Sonraki günleri tahmin et
-    return days.map { day -> beta0 + beta1 * (n + day) }
+    val function="$beta0 + $beta1 * (${lastDay + firstQuery} + day * 86400)"
+
+    // return
+    return Pair(days
+        .map { day -> beta0 + beta1 * (lastDay + day * 86400) }
+        .mapIndexed { index, it ->
+            Pair(lastDay + firstQuery + days[index] * 86400, it)
+        },function)
+
 }
