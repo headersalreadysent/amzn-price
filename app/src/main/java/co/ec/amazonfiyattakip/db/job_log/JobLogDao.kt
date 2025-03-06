@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import co.ec.amazonfiyattakip.ui.part.graph.MinuteSpanData
 
 @Dao
 interface JobLogDao {
@@ -24,6 +25,12 @@ interface JobLogDao {
 
     @Query("SELECT * FROM joblog ORDER BY id DESC")
     fun getAll() : List<JobLog>
+
+    @Query("SELECT (j.date - s.date) / 60 AS minuteSpan, " +
+            "COUNT(*) AS count " +
+            "FROM joblog j LEFT JOIN joblog s ON s.id = j.id-1 WHERE s.date IS NOT NULL " +
+            "GROUP BY minuteSpan ORDER BY minuteSpan")
+    fun getStat() : List<MinuteSpanData>
 
 
 }

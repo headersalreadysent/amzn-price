@@ -1,10 +1,12 @@
 package co.ec.amazonfiyattakip.ui.joblog
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +22,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -35,6 +38,8 @@ import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.graph.BarChart
+import co.ec.amazonfiyattakip.ui.part.graph.MinuteSpanData
 import co.ec.helper.helpers.ExceptionHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.dateString
@@ -46,7 +51,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun JobLogScreen() {
 
+    var selected by remember { mutableIntStateOf(0) }
     var logs by remember { mutableStateOf<List<JobLog>?>(null) }
+    var minuteSpanData by remember { mutableStateOf<List<MinuteSpanData>?>(null) }
     var textLog by remember { mutableStateOf<List<String>>(listOf()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -55,17 +62,23 @@ fun JobLogScreen() {
             }, {
                 logs = it
             })
+
             delay(5000)
         }
     }
-
     LaunchedEffect(Unit) {
         while (true) {
             textLog = ExceptionHelper.readLogs()
             delay(5000)
         }
     }
-    var selected by remember { mutableIntStateOf(0) }
+    LaunchedEffect(selected) {
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().jobLog().getStat()
+        }, {
+            minuteSpanData = it
+        })
+    }
     AppModel.cutCard(Modifier.height(5.dp)) { }
     Column(
         modifier = Modifier
@@ -105,6 +118,19 @@ fun JobLogScreen() {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize()
                     ) {
+                        item {
+                            minuteSpanData?.let {
+
+                                BarChart(
+                                    it,
+                                    modifier = Modifier
+                                        .padding(vertical = 8.dp)
+                                        .aspectRatio(3F)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                )
+                            }
+                        }
+
                         val now = unix()
                         logs?.let { logs ->
 
