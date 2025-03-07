@@ -163,7 +163,7 @@ open class MainScreenModel : ViewModel() {
     fun emulate() {
         //generate fake products
         val fake = Product.fake()
-        products.value = (1..5).map {
+        products.value = (1..36).map {
             return@map ProductWithPrices(product = fake, priceInfoList = (0..10).map {
                 var price = Random.nextFloat() * 200 + 2500
                 PriceInfo(

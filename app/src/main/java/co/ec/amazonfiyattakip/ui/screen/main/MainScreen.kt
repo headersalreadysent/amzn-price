@@ -29,11 +29,13 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -59,7 +61,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -88,6 +93,7 @@ import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.LocalNavigation
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.LittleProductBox
 import co.ec.amazonfiyattakip.ui.part.ProductImage
@@ -104,9 +110,10 @@ import kotlin.math.absoluteValue
 @Composable
 fun MainScreen(model: MainScreenModel = viewModel()) {
 
+    val navigation = LocalNavigation.current
+    val settings = LocalSettings.current
     val dailyTotals by model.dailyTotals.observeAsState(listOf())
     val stats by model.stats.observeAsState(mapOf())
-    val navigation = LocalNavigation.current
     val productList by model.products.observeAsState(null)
     Column(modifier = Modifier.fillMaxSize()) {
         var deals by remember { mutableStateOf<List<Product>>(listOf()) }
@@ -121,7 +128,6 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         var dealCount by remember { mutableIntStateOf(0) }
         val serverProducts by model.serverProducts.observeAsState()
 
-        val navigator = LocalNavigation.current
         DisposableEffect(Unit) {
             model.collectServerProducts()
             model.getPopularCount {
@@ -140,7 +146,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.tertiaryContainer)
                 .clickable {
-                    navigator.navigate("find")
+                    navigation.navigate("find")
                 }
                 .padding(8.dp)
             ) {
@@ -152,7 +158,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 )
                 Text(
                     "$dealCount adet fırsat var",
-                    style = MaterialTheme.typography.bodySmall.copy(
+                    style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
                     )
                 )
@@ -162,82 +168,135 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(top = 8.dp)
+                .shadow(5.dp)
         )
-        productList?.let { products ->
-            if (products.isNotEmpty()) {
-                TitleBar(
-                    title = "Takip Ürünler",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1F)
+                .verticalScroll(rememberScrollState())
+                .padding(top = 8.dp)
+        ) {
+
+            productList?.let { products ->
+                val sort = listOf("Tarih", "Fiyat", "Son Güncelleme")
+                var activeSort by remember {
+                    mutableStateOf(
+                        settings.getString("mainActiveSort") ?: "Tarih"
                     )
-                )
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1F)
-                        .verticalScroll(rememberScrollState()),
-                    maxItemsInEachRow = 2
-                ) {
-                    products.forEachIndexed { index, item ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(.5F)
-                                .aspectRatio(2.5F)
-                                .padding(
-                                    start = if (index % 2 == 0) 8.dp else 4.dp,
-                                    end = if (index % 2 == 1) 8.dp else 4.dp
+                }
+                var sortDirection by remember {
+                    mutableIntStateOf(
+                        settings.getInt("mainActiveSortDirection",1)
+                    )
+                }
+                if (products.isNotEmpty()) {
+                    TitleBar(
+                        title = "Takip Ürünler",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        extra = {
+                            Row(verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clickable {
+                                        if (sortDirection == 1) {
+                                            sortDirection = -1
+                                        } else {
+                                            sortDirection = 1
+                                            val index = sort.indexOf(activeSort)
+                                            activeSort = sort.getOrNull(index + 1) ?: sort[0]
+                                            settings.putString("mainActiveSort",activeSort)
+                                        }
+                                        settings.putInt("mainActiveSortDirection",sortDirection)
+                                    }
+                                    .padding(horizontal = 3.dp)
+                                    .clip(RoundedCornerShape(3.dp))) {
+                                Text(
+                                    activeSort,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                 )
-
-                        ) {
-                            MainProductCard(item, onClick = {
-                                navigator.navigate("detail/${productList!![index].product.id}")
-                            })
+                                Icon(
+                                    Icons.Outlined.Sort, "sort",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .scale(scaleY = .8F, scaleX = .5F)
+                                        .graphicsLayer(scaleY = -1 * sortDirection.toFloat())
+                                )
+                            }
                         }
-
-
-                    }
-
-                }
-            }
-            if (products.isEmpty() && deals.isNotEmpty()) {
-                TitleBar(
-                    title = "Amazon Fırsatlar",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold
                     )
-                )
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 4.dp)
-                ) {
-                    deals.forEach {
-                        LittleProductBox(it,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = {
-                                navigation.navigate("add/${it.asin}")
-                            })
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        maxItemsInEachRow = 2
+                    ) {
+                        products.let {
+                            when (activeSort) {
+                                "Tarih" -> it.sortedBy { it.product.date }
+                                "Fiyat" -> it.sortedBy { it.product.price }
+                                "Son Güncelleme" -> it.sortedBy { it.priceInfoList.lastOrNull()?.date }
+                                else -> it
+                            }
+                        }.let {
+                            if (sortDirection == -1) it.reversed() else it
+                        }.forEachIndexed { index, item ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(.5F)
+                                    .aspectRatio(2.5F)
+                                    .padding(
+                                        start = if (index % 2 == 0) 8.dp else 4.dp,
+                                        end = if (index % 2 == 1) 8.dp else 4.dp
+                                    )
+
+                            ) {
+                                MainProductCard(item, onClick = {
+                                    navigation.navigate("detail/${productList!![index].product.id}")
+                                })
+                            }
+
+
+                        }
+
                     }
-                    if (deals.count() < dealCount) {
-                        OutlinedButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                navigation.navigate("find")
-                            }) {
-                            Text("Tüm Fırsatları Görüntüle")
+                }
+                if (products.isEmpty() && deals.isNotEmpty()) {
+                    TitleBar(
+                        title = "Amazon Fırsatlar",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                    )
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        deals.forEach {
+                            LittleProductBox(it,
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                onClick = {
+                                    navigation.navigate("add/${it.asin}")
+                                })
+                        }
+                        if (deals.count() < dealCount) {
+                            OutlinedButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    navigation.navigate("find")
+                                }) {
+                                Text("Tüm Fırsatları Görüntüle")
+                            }
                         }
                     }
                 }
-            }
 
+            }
         }
     }
 
@@ -245,7 +304,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
     AppModel.cutCard(Modifier.aspectRatio(3.5F)) {
         productList?.let { products ->
-            if(products.isNotEmpty()){
+            if (products.isNotEmpty()) {
                 var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
 
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -293,11 +352,14 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             )
                         )
                         totalDragValue?.let {
-                            Text(it.date.dateString(), style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = 10.sp
-                            ), modifier = Modifier.graphicsLayer {
-                                translationY = with(density) { (-10).dp.toPx() }
-                            })
+                            Text(it.date.dateString(),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontSize = 10.sp
+                                ),
+                                modifier = Modifier.graphicsLayer {
+                                    translationY = with(density) { (-10).dp.toPx() }
+                                })
                         }
                     }
                     Row(
@@ -320,7 +382,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                         if (stats.containsKey("product")) {
 
                             Column(
-                                horizontalAlignment = Alignment.End, modifier = Modifier.padding(end = 8.dp)
+                                horizontalAlignment = Alignment.End,
+                                modifier = Modifier.padding(end = 8.dp)
                             ) {
 
                                 Text((stats["product"] ?: 0).toString(), style = numberStyle)
@@ -434,14 +497,11 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
         val shape = cutShape(CutCorner.BOTTOMRIGHT, 5.dp)
         serverProducts?.let { serverProducts ->
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Hazır Takipli Ürünler",
+                TitleBar(
+                    title = "Hazır Takipli Ürünler",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                    )
                 )
                 LazyRow(
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -450,7 +510,7 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                     items(serverProducts.size) {
                         val pair = serverProducts[it]
                         Box(modifier = Modifier
-                            .fillParentMaxWidth(.45F)
+                            .fillParentMaxWidth(.55F)
                             .height(IntrinsicSize.Max)
                             .padding(
                                 start = if (it == 0) 8.dp else 0.dp,
@@ -459,15 +519,17 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                             .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
                             .clickable {
                                 navigator.navigate("add/${pair.first.asin}")
-                            }) {
+                            }
+                            .clip(shape)) {
 
                             PriceGraph(modifier = Modifier
-                                .fillMaxSize()
-                                .clip(shape),
+                                .fillMaxWidth()
+                                .fillMaxHeight(.8F)
+                                .align(Alignment.BottomCenter),
                                 prices = pair.second.map { it.split("|") }.map {
                                     PriceGraphPair(it[0].toLong(), it[1].toFloat())
                                 },
-                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .1F),
+                                color = MaterialTheme.colorScheme.tertiary.copy(alpha = .5F),
                                 hasCircles = false
                             )
                             Column(
@@ -477,7 +539,7 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                             ) {
                                 Text(
                                     pair.first.title,
-                                    maxLines = 1,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -486,12 +548,14 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                                 )
                                 Text(
                                     pair.first.price(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 5.dp),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.bodySmall.copy(
+                                    style = MaterialTheme.typography.bodyMedium.copy(
                                         color = MaterialTheme.colorScheme.onTertiaryContainer,
-
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.Medium
                                     )
                                 )
                             }
@@ -509,7 +573,6 @@ fun MainProductCard(
     productWithPrices: ProductWithPrices,
     onClick: () -> Unit = {},
     containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
-    contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     CutCornerCard(
         modifier = Modifier.fillMaxWidth(),
@@ -540,37 +603,19 @@ fun MainProductCard(
                     .fillMaxHeight(.8F)
             ) {
                 Text(
-                    buildAnnotatedString {
-                        withStyle(
-                            SpanStyle(
-                                color = contentColor.copy(alpha = .8F), fontSize = 11.sp
-                            )
-                        ) {
-                            append(productWithPrices.product.asin + " ")
-                        }
-                        withStyle(
-                            SpanStyle(
-                                color = contentColor,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp,
-
-                                shadow = Shadow(Color.White, Offset(1F, 1F), 1F)
-                            )
-
-                        ) {
-                            append(productWithPrices.product.title)
-                        }
-                    },
+                    productWithPrices.product.title + "\n",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp)
                         .padding(top = 8.dp),
                     style = TextStyle(
-                        lineHeight = 18.sp
+                        lineHeight = 18.sp,
+                        shadow = Shadow(MaterialTheme.colorScheme.primary, Offset(1F, 1F), 1F)
                     ),
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    overflow = TextOverflow.Ellipsis,
+
+                    )
                 AutoText(
                     text = productWithPrices.product.price(),
                     modifier = Modifier

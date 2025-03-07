@@ -32,7 +32,7 @@ fun TitleBar(
     title: String,
     extra: @Composable (() -> Unit)? = null,
     color: Color = MaterialTheme.colorScheme.secondary,
-    style: TextStyle = MaterialTheme.typography.titleSmall.copy(
+    style: TextStyle = MaterialTheme.typography.titleMedium.copy(
         fontWeight = FontWeight.SemiBold
     )
 ) {
