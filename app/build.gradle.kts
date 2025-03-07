@@ -2,9 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    kotlin("plugin.serialization") version "2.1.10"
     id("com.google.devtools.ksp")
     id("com.google.gms.google-services")
-    kotlin("plugin.serialization") version "2.1.10"
+    id("com.google.firebase.crashlytics")
+
 }
 
 android {
@@ -87,12 +89,12 @@ dependencies {
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json.v180)
-
     implementation(libs.ksoup.okio)
 
 
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.runtime.livedata)
+
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.runtime.ktx)
 
@@ -103,8 +105,9 @@ dependencies {
     implementation(libs.accompanist.systemuicontroller)
 
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
     implementation(libs.firebase.database.ktx)
-    implementation(libs.google.firebase.analytics)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+
 
 }

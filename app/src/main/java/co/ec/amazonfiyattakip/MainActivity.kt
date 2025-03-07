@@ -147,6 +147,7 @@ fun AppContent(
                         }
                     }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
+
                     }
 
                     if(settings.getBoolean("developerActive",false)){

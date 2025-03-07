@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
@@ -221,7 +222,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                     )
                                 )
                                 Icon(
-                                    Icons.Outlined.Sort, "sort",
+                                    Icons.AutoMirrored.Outlined.Sort, "sort",
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier
                                         .scale(scaleY = .8F, scaleX = .5F)
