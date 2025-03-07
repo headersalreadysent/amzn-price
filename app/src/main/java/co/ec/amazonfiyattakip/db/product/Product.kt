@@ -1,13 +1,12 @@
 package co.ec.amazonfiyattakip.db.product
 
+import android.util.Log
 import androidx.room.Entity
-import androidx.room.Index
 import androidx.room.PrimaryKey
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.helper.utils.unix
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -18,6 +17,7 @@ enum class ProductStatus {
     ERRORSTOP;
 }
 
+@Serializable
 @Entity
 data class Product(
     @PrimaryKey(autoGenerate = true) var id: Int,
@@ -113,6 +113,21 @@ data class Product(
                 image = "",
                 extras = "{}"
             )
+        }
+
+        fun decode(string: String): Product {
+            return Json.decodeFromString<Product>(string)
+        }
+
+
+    }
+
+    fun encode(): String {
+        return try {
+            Json.encodeToString(this)
+        } catch (e: Exception) {
+            Log.e("SerializationError", "Error serializing Product: ${e.message}", e)
+            ""
         }
     }
 }

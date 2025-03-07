@@ -101,6 +101,7 @@ import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
+import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.unix
 import kotlin.math.absoluteValue
@@ -538,7 +539,7 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                                     .padding(8.dp)
                             ) {
                                 Text(
-                                    pair.first.title,
+                                    pair.first.title+"\n",
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.bodyMedium.copy(

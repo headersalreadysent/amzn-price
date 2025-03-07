@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.random.Random
 
 object AmznRequest {
 
@@ -52,6 +53,7 @@ object AmznRequest {
         }
         return cookieString.toString()
     }
+
 
     private fun recordCookies(cookies: List<String>) {
         val yearLater = unix() + 86400 * 365
@@ -146,13 +148,15 @@ object AmznRequest {
     private fun generateHeaders(
         req: Request.Builder,
     ): Request.Builder {
+        val memory=(Random.nextInt(2,4)*4).toString()
+        var dpr=(0.9F+Random.nextFloat()/10)
         val request = req.header(
             "accept",
             "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
         )
             .header("accept-language", "tr-TR,en-US,en;q=0.9,de;q=0.8,tr;q=0.7")
             .header("cache-control", "no-cache")
-            .header("device-memory", "8")
+            .header("device-memory", memory)
             .header("downlink", "4.1")
             .header("dpr", "0.90625")
             .header("ect", "4g")
@@ -160,8 +164,8 @@ object AmznRequest {
             .header("priority", "u=0,i")
             .header("referer", "https://www.google.com/")
             .header("rtt", "50")
-            .header("sec-ch-device-memory", "8")
-            .header("sec-ch-dpr", "0.90625")
+            .header("sec-ch-device-memory", memory)
+            .header("sec-ch-dpr", dpr.toString())
             .header("cookie", getCookies())
             .header(
                 "sec-ch-ua",

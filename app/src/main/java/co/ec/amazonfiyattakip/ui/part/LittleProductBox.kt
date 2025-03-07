@@ -62,7 +62,7 @@ fun LittleProductBox(
             style = MaterialTheme.typography.bodyMedium.copy(
                 color = contentColor,
                 fontWeight = FontWeight.SemiBold,
-                shadow = Shadow(MaterialTheme.colorScheme.tertiary, Offset(3F, 3F), 1F)
+                shadow = Shadow(contentColor.copy(alpha = .3F), Offset(3F, 3F), 1F)
             ),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis

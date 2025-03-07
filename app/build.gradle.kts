@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     id("com.google.devtools.ksp")
     id("com.google.gms.google-services")
+    kotlin("plugin.serialization") version "2.1.10"
 }
 
 android {
@@ -85,7 +86,8 @@ dependencies {
 
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
-    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.json.v180)
+
     implementation(libs.ksoup.okio)
 
 

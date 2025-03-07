@@ -73,7 +73,11 @@ fun FindScreen(
         }
     }
     DisposableEffect(Unit) {
-        model.loadDeals()
+        model.startAction { results, keyword ->
+            searchStarted = true
+            searchResults = results
+            searchKeyword = keyword
+        }
         if (searchKeyword != "") {
             model.search(searchKeyword)
             searchStarted = true
@@ -108,8 +112,10 @@ fun FindScreen(
                             .padding(4.dp)
                             .statusBarsPadding(),
                         extra = {
-                            Text(deals.size.toString(),
-                                style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                deals.size.toString(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     )
                     searchResults.forEach {
@@ -194,8 +200,10 @@ fun DealsListScreen(deals: List<Product>) {
                     .padding(4.dp)
                     .statusBarsPadding(),
                 extra = {
-                    Text(deals.size.toString(),
-                        style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        deals.size.toString(),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             )
             deals.forEach {

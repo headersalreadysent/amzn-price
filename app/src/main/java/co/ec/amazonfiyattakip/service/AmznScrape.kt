@@ -1,28 +1,21 @@
 package co.ec.amazonfiyattakip.service
 
-import androidx.core.app.PendingIntentCompat.send
-import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.SharedCache
+import co.ec.helper.CnsynApp
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okio.ByteString.Companion.encode
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import kotlin.concurrent.thread
 
 class AmznScrape {
 
@@ -34,6 +27,10 @@ class AmznScrape {
         fun urlFromAsin(asin: String, title: String? = null): String {
             return DETAIL_PAGE_URL.replace("_asin_", asin).replace("_title_", title ?: asin)
         }
+
+
+        val cache: SharedCache? =
+            if (CnsynApp.contextCheck() != null) SharedCache(App.context(), "asin") else null
     }
 
     /**
@@ -51,10 +48,29 @@ class AmznScrape {
 
     }
 
-    suspend fun suspendScrape(url: String): Product = withContext(Dispatchers.IO) {
-        val pageUrl = if (url.startsWith("http")) url else urlFromAsin(url)
-        val response = AmznRequest.suspendRequest(pageUrl)
-        extractProductDetails(response)
+    /**
+     * scrape data in back thread
+     */
+    suspend fun suspendScrape(url: String, cacheActive: Boolean = true): Product {
+        return withContext(Dispatchers.IO) {
+            val pageUrl = if (url.startsWith("http")) url else urlFromAsin(url)
+            // Check cache first
+            if (cacheActive) {
+                cache?.get(pageUrl)?.let { cachedData ->
+                    return@withContext Product.decode(cachedData)
+                }
+            }
+            // Make request and cache the result
+            val response = AmznRequest.suspendRequest(pageUrl)
+            val product = extractProductDetails(response)
+
+            if (cacheActive) {
+                // Cache the new product data
+                cache?.put(pageUrl, product.encode(), 60 * 60)
+            }
+
+            return@withContext product
+        }
     }
 
 
