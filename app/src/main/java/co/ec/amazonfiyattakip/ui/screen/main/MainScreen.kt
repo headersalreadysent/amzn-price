@@ -256,7 +256,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
                             ) {
                                 MainProductCard(item, onClick = {
-                                    navigation.navigate("detail/${productList!![index].product.id}")
+                                    navigation.navigate("detail/${item.product.id}")
                                 })
                             }
 

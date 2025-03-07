@@ -46,6 +46,7 @@ fun TimeSpan(
         Pair(360, "6 Saat"), Pair(540, "9 Saat"), Pair(720, "12 Saat"),
         Pair(1440, "24 Saat")
     ),
+    latest: Long? = null
 ) {
     var selectedTime by remember {
         mutableIntStateOf(
@@ -132,8 +133,8 @@ fun TimeSpan(
                             fontWeight = FontWeight.SemiBold
                         )
                     ) {
-                        val time = (unix() + selectedTime * 60)
-                        append("Sonraki Sorgulama: ${time.dateString()} ${time.timeString()}")
+                        val nextTime = ((latest?:unix()) + selectedTime * 60)
+                        append("Sonraki Sorgulama: ${nextTime.dateString()} ${nextTime.timeString()}")
 
                     }
                 },

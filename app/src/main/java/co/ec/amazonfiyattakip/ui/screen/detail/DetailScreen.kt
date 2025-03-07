@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,22 +22,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingFlat
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
-import androidx.compose.material.icons.outlined.TrendingFlat
-import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -57,12 +55,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,20 +66,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
-import co.ec.amazonfiyattakip.composables.CalendarScreen
-import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.TimeSpan
-import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.predictNextPrices
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
-import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
@@ -91,11 +83,8 @@ import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
-import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
-import co.ec.helper.utils.unix
-import com.google.common.io.Files.append
 
 @Composable
 fun DetailScreen(
@@ -328,10 +317,10 @@ fun DetailScreen(
                             withStyle(
                                 style = SpanStyle(
                                     color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 10.sp,
+                                    fontSize = 14.sp,
                                 )
                             ) {
-                                append(" Devamını oku »")
+                                append("    Devamını oku »")
                             }
                         } else buildAnnotatedString {
                             append(product.description)
@@ -350,7 +339,7 @@ fun DetailScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
                 TimeSpan(product.timeSpan / 60, {
                     model.updateTimeSpan(it)
-                })
+                }, latest = prices?.sortedBy { it.date }?.lastOrNull()?.date )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -614,20 +603,67 @@ fun CalendarPriceData(prices: List<PriceInfo>) {
 
 @Composable
 fun PricePrediction(prices: List<PriceInfo>) {
-    if (prices.size > 10) {
+    if (prices.size > 20) {
         val predict by remember {
             mutableStateOf(predictNextPrices(prices))
         }
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(8.dp)) {
+        var showDialog by remember { mutableStateOf(false) }
+        if (showDialog) {
+            AlertDialog(
+                text = {
+                    Column {
+                        Text(
+                            text = "Fiyat tahmini bilgisi sınırlı bir tahmin olup, regresyon hesaplaması ile bulunmaktadır.",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                textAlign = TextAlign.Justify
+                            )
+                        )
+                        Text("Tahmin Fonksiyonu:\n${predict.second}",
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                textAlign = TextAlign.Start
+                            )
+                        )
+                    }
+                },
+                onDismissRequest = {
+                    showDialog = false
+                },
+                confirmButton = {
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showDialog = false
+                        }
+                    ) {
+                        Text("Kapat")
+                    }
+                }
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(8.dp)
+        ) {
 
             TitleBar(
                 title = "Fiyat Tahmini",
                 modifier = Modifier
                     .fillMaxWidth(),
+                extra = {
+                    Icon(Icons.Filled.Info, "",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .scale(.8F)
+                            .clickable {
+                                showDialog = true
+                            })
+                }
             )
 
             Row(
@@ -669,16 +705,6 @@ fun PricePrediction(prices: List<PriceInfo>) {
                     }
                 }
             }
-
-            Text(
-                "Fiyat tahmini bilgisi sınırlı bir tahmin olup öneri değeri taşımamaktadır.\n"+predict.second,
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 9.sp,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 11.sp
-                )
-            )
         }
     }
 }

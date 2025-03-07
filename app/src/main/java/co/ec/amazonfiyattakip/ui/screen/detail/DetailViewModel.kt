@@ -55,7 +55,6 @@ open class DetailViewModel : ViewModel() {
     }
 
     fun stopFollow() {
-
         asyncRun({
             val copy = product.value!!.copy(
                 status = ProductStatus.PASSIVE
