@@ -618,8 +618,14 @@ fun PricePrediction(prices: List<PriceInfo>) {
                                 textAlign = TextAlign.Justify
                             )
                         )
-                        Text("Tahmin Fonksiyonu:\n${predict.second}",
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        Text("Tahmin Fonksiyonu",
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                textAlign = TextAlign.Start
+                            )
+                        )
+                        Text(predict.second,
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 textAlign = TextAlign.Start
                             )

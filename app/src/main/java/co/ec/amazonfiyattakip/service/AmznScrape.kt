@@ -1,5 +1,7 @@
 package co.ec.amazonfiyattakip.service
 
+import android.os.Bundle
+import android.os.SystemClock
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.SharedCache
@@ -60,14 +62,20 @@ class AmznScrape {
                     return@withContext Product.decode(cachedData)
                 }
             }
+
+            val startTime = SystemClock.elapsedRealtime()
             // Make request and cache the result
             val response = AmznRequest.suspendRequest(pageUrl)
             val product = extractProductDetails(response)
-
             if (cacheActive) {
                 // Cache the new product data
                 cache?.put(pageUrl, product.encode(), 60 * 60)
             }
+            val duration = SystemClock.elapsedRealtime() - startTime
+            App.event("product_scrape", mapOf(
+                "duration" to duration,
+                "asin" to product.asin
+            ))
 
             return@withContext product
         }
