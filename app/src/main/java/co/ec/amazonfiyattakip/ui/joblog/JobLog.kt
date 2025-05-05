@@ -133,6 +133,7 @@ fun JobLogScreen() {
 
                         val now = unix()
                         logs?.let { logs ->
+                            if(logs.size>1){
 
                             items(logs.size) {
                                 val next = if (logs.size == it) 0 else logs[it + 1].date
@@ -177,6 +178,8 @@ fun JobLogScreen() {
                                         }
                                     },
                                 )
+                            }
+
                             }
                         }
                     }

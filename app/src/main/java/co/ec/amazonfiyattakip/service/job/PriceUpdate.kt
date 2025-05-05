@@ -24,7 +24,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
@@ -101,12 +100,17 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
         }
 
-        private suspend fun collectPrices(): Result {
+        suspend fun collectPrices(override:Boolean=false): Result {
             val productDao = AppDatabase.getDatabase().product()
             val jobLog = AppDatabase.getDatabase().jobLog()
+            val now = unix()
             return try {
                 coroutineScope {
-                    val asinList = productDao.getScrapeWaitingAsinCodes()
+                    //get suitable products
+                    val asinList = productDao.getScrapeWaitingAsinCodes(
+                        //if override setted add one day
+                        if(override) now+86400 else now
+                    )
                     val outputData = Data.Builder()
                     if (asinList.isNotEmpty()) {
                         LogHelper.d("$JOBTAG products: $asinList", "Job")
@@ -118,7 +122,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                         jobLog.insert(
                             JobLog(
                                 asin = asinList.map { it.asin }.joinToString(", "),
-                                date = unix(),
+                                date = now,
                                 detail = responseList.map {
                                     "${it.first} => ${it.second.price()}"
                                 }.joinToString("\n")
@@ -148,7 +152,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             val scraper = AmznScrape()
             //collect one asin
             scraper.scrapeFromAsin(product.asin, { update ->
-                if(update.price==0){
+                if (update.price == 0) {
                     LogHelper.d("product ${product.asin} price is 0")
                 } else {
                     //insert into database
@@ -193,6 +197,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
 
         }
+
     }
 
     override suspend fun doWork(): Result {

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.amazonfiyattakip.ui.AppProviders
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
@@ -60,7 +62,10 @@ import co.ec.amazonfiyattakip.ui.part.BottomCardContent
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -155,6 +160,15 @@ fun AppContent(
                             navigator.navigate("joblog")
                         }) {
                             Icon(Icons.Default.DeviceThermostat, contentDescription = "Menu")
+                        }
+
+                        IconButton(onClick = {
+                            coroutineScope.launch  {
+                                PriceUpdate.collectPrices(true)
+                            }
+                        }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Settings")
+
                         }
                     }
                     Spacer(Modifier.weight(1f, true))
