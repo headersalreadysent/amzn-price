@@ -50,7 +50,7 @@ class DeleteOldProducts(appContext: Context, workerParams: WorkerParameters) :
                     .build()
             manager.enqueue(oneTimeWorkRequest)
 
-            LogHelper.d("$JOBTAG is started", "Job")
+            LogHelper.d("Deleting old products", JOBTAG)
 
         }
 

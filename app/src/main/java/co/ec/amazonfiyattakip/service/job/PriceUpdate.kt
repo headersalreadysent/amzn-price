@@ -118,7 +118,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                             JobLog(
                                 asin = asinList.map { it.asin }.joinToString(", "),
                                 date = unix(),
-                                detail = responseList.map {
+                                detail = responseList.filter { it.second!=0 }.map {
                                     "${it.first} => ${it.second.price()}"
                                 }.joinToString("\n")
                             )
