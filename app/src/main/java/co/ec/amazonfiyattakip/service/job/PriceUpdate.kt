@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -35,6 +34,10 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     companion object {
 
         const val JOBTAG = "PriceUpdateJob"
+
+        /**
+         * setup job on phone
+         */
         fun setupJob() {
 
             val manager = WorkManager.getInstance(App.context())
@@ -73,56 +76,48 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             )
         }
 
+        /**
+         * start job
+         */
         private fun startJob() {
             val queryTime = SettingsHelper.get().getInt("queryTime", 15)
             val manager = WorkManager.getInstance(App.context())
 
-
             //clear all jobs
             manager.cancelAllWorkByTag(JOBTAG)
             manager.pruneWork()
-
-
+            //add with time diff
             manager.enqueue(
                 PeriodicWorkRequestBuilder<PriceUpdate>(queryTime.toLong(), TimeUnit.MINUTES)
                     .addTag(JOBTAG)
                     .build()
             )
-
-
-            manager.enqueue(
-                OneTimeWorkRequestBuilder<PriceUpdate>()
-                    .addTag(JOBTAG)
-                    .build()
-            )
-
-            LogHelper.d("$JOBTAG is started", "Job")
+            LogHelper.d("Job is started", JOBTAG)
 
         }
 
-        suspend fun collectPrices(override:Boolean=false): Result {
+        suspend fun run(override: Boolean = false): Result {
             val productDao = AppDatabase.getDatabase().product()
             val jobLog = AppDatabase.getDatabase().jobLog()
-            val now = unix()
             return try {
                 coroutineScope {
                     //get suitable products
                     val asinList = productDao.getScrapeWaitingAsinCodes(
                         //if override setted add one day
-                        if(override) now+86400 else now
+                        if (override) unix() + 86400 else unix()
                     )
                     val outputData = Data.Builder()
                     if (asinList.isNotEmpty()) {
-                        LogHelper.d("$JOBTAG products: $asinList", "Job")
+                        LogHelper.d("Updating products: ${asinList.map { it.asin }}", JOBTAG)
                         val responseList = asinList.map {
-                            return@map async { collectDayInfo(it) }
+                            return@map async { collectPriceInfo(it) }
                         }.awaitAll()
                         outputData.putString("output", "$responseList")
                         //insert job log
                         jobLog.insert(
                             JobLog(
                                 asin = asinList.map { it.asin }.joinToString(", "),
-                                date = now,
+                                date = unix(),
                                 detail = responseList.map {
                                     "${it.first} => ${it.second.price()}"
                                 }.joinToString("\n")
@@ -134,7 +129,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     Result.success(outputData.build())
                 }
             } catch (e: Exception) {
-                LogHelper.e("$JOBTAG ${e.localizedMessage}", e, "Job")
+                e.localizedMessage?.let { LogHelper.e(it, e, JOBTAG) }
                 Result.failure()
             }
         }
@@ -143,17 +138,16 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         /**
          * collect price and save to database
          */
-        private suspend fun collectDayInfo(product: Product): Pair<String, Int> {
+        private suspend fun collectPriceInfo(product: Product): Pair<String, Int> {
 
             val productDao = AppDatabase.getDatabase().product()
-            LogHelper.d("$JOBTAG product ${product.asin}", "Job")
             val deferred = CompletableDeferred<Pair<String, Int>>()
 
             val scraper = AmznScrape()
             //collect one asin
             scraper.scrapeFromAsin(product.asin, { update ->
                 if (update.price == 0) {
-                    LogHelper.d("product ${product.asin} price is 0")
+                    LogHelper.d("Product ${product.asin} price error", JOBTAG)
                 } else {
                     //insert into database
                     thread {
@@ -168,9 +162,11 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                             product.star,
                             product.comment
                         )
-
-                        LogHelper.d("$JOBTAG ${product.price} : ${product.title}", "Job")
-
+                        LogHelper.d(
+                            "${product.asin} (${product.shortTitle()}) : ${product.price()}",
+                            JOBTAG
+                        )
+                        //send to analytics for stats
                         App.event(
                             "price_update", mapOf(
                                 "productAsin" to product.asin,
@@ -201,7 +197,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     }
 
     override suspend fun doWork(): Result {
-        return collectPrices()
+        return run()
     }
 
 }

@@ -91,13 +91,15 @@ fun JobLogScreen() {
                 .fillMaxWidth(),
             selectedTabIndex = selected,
         ) {
-            Tab(selected = selected == 0,
+            Tab(
+                selected = selected == 0,
                 onClick = {
                     selected = 0
                 }) {
                 Text("JOB LOG", modifier = Modifier.padding(8.dp))
             }
-            Tab(selected = selected == 1,
+            Tab(
+                selected = selected == 1,
                 onClick = {
                     selected = 1
                 }) {
@@ -133,52 +135,52 @@ fun JobLogScreen() {
 
                         val now = unix()
                         logs?.let { logs ->
-                            if(logs.size>1){
+                            if (logs.size > 1) {
 
-                            items(logs.size) {
-                                val next = if (logs.size == it) 0 else logs[it + 1].date
-                                val log = logs[it]
-                                ListItem(
-                                    colors = ListItemDefaults.colors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp)
-                                        .padding(bottom = 4.dp),
-                                    headlineContent = {
-                                        Text(
-                                            log.detail,
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                                            )
-                                        )
-                                    },
-                                    overlineContent = {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(bottom = 4.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
+                                items(logs.size) {
+                                    val next = if (logs.size == it+1) 0 else logs[it + 1].date
+                                    val log = logs[it]
+                                    ListItem(
+                                        colors = ListItemDefaults.colors(
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp)
+                                            .padding(bottom = 4.dp),
+                                        headlineContent = {
                                             Text(
-                                                "${log.date.dateString()} ${log.date.timeString()}",
+                                                log.detail,
                                                 style = MaterialTheme.typography.bodyMedium.copy(
                                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                                 )
                                             )
-                                            val dates =
-                                                "${(log.date - next).formatTime()} - ${(now - log.date).formatTime()}"
-                                            Text(
-                                                dates,
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        },
+                                        overlineContent = {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(bottom = 4.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    "${log.date.dateString()} ${log.date.timeString()}",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                    )
                                                 )
-                                            )
-                                        }
-                                    },
-                                )
-                            }
+                                                val dates =
+                                                    "${(log.date - next).formatTime()} - ${(now - log.date).formatTime()}"
+                                                Text(
+                                                    dates,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                    )
+                                                )
+                                            }
+                                        },
+                                    )
+                                }
 
                             }
                         }

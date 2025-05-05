@@ -163,8 +163,8 @@ fun AppContent(
                         }
 
                         IconButton(onClick = {
-                            coroutineScope.launch  {
-                                PriceUpdate.collectPrices(true)
+                            GlobalScope.launch  {
+                                PriceUpdate.run(true)
                             }
                         }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Settings")

@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -9,10 +10,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.launch
+import kotlin.concurrent.thread
 import kotlin.random.Random
 
 class AppModel : ViewModel() {

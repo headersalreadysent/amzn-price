@@ -1,8 +1,10 @@
 package co.ec.amazonfiyattakip.ui.screen.main
 
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.FireDB
@@ -48,10 +50,12 @@ open class MainScreenModel : ViewModel() {
     }
 
     private fun calculateStats() {
+
         asyncRun({
             return@asyncRun mapOf(
                 "product" to AppDatabase.getDatabase().product().getCount(),
-                "update" to AppDatabase.getDatabase().priceInfo().getCount()
+                "update" to AppDatabase.getDatabase().priceInfo().getCount(),
+                "querySpan" to AppDatabase.getDatabase().jobLog().calculateAverageDiff().toInt()
             )
         }, {
             stats.value = it
