@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +20,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,7 +43,10 @@ import co.ec.helper.utils.dateString
 import co.ec.helper.utils.formatTime
 import co.ec.helper.utils.timeString
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun JobLogScreen() {
@@ -68,7 +68,13 @@ fun JobLogScreen() {
     }
     LaunchedEffect(Unit) {
         while (true) {
-            textLog = ExceptionHelper.readLogs()
+            launch(Dispatchers.IO) {
+                val text= ExceptionHelper.readLogs()
+                withContext(Dispatchers.Main) {
+                    // update UI
+                    textLog=text
+                }
+            }
             delay(5000)
         }
     }
