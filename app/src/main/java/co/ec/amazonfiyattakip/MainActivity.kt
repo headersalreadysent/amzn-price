@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip
 
-import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -36,18 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.ColorUtils
@@ -62,10 +55,10 @@ import co.ec.amazonfiyattakip.ui.part.BottomCardContent
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.concurrent.thread
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,7 +114,7 @@ fun AppContent(
         }
     }
     var settingsClick by remember { mutableIntStateOf(0) }
-    val settings= LocalSettings.current
+    val settings = LocalSettings.current
     LaunchedEffect(Unit) {
         while (true) {
             settingsClick = 0
@@ -145,26 +138,26 @@ fun AppContent(
                     IconButton(onClick = {
                         settingsClick++
                         if (settingsClick == 5) {
-                            settings.putBoolean("developerActive",true)
+                            settings.putBoolean("developerActive", true)
                         }
                         if (navigator.currentDestination?.route !== "settings") {
                             navigator.navigate("settings")
                         }
                     }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
-
                     }
-
-                    if(settings.getBoolean("developerActive",false)){
+                    if (settings.getBoolean("developerActive", false)) {
                         IconButton(onClick = {
                             navigator.navigate("joblog")
                         }) {
                             Icon(Icons.Default.DeviceThermostat, contentDescription = "Menu")
                         }
-
                         IconButton(onClick = {
-                            GlobalScope.launch  {
-                                PriceUpdate.run(true)
+                            coroutineScope.launch {
+                                withContext(Dispatchers.IO) {
+                                    PriceUpdate.run(true)
+                                    App.snack("Fiyatlar Güncelleniyor")
+                                }
                             }
                         }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Settings")
@@ -211,7 +204,7 @@ fun AppContent(
                 ScreenContent(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height((screenHeight - cutCardHeight + 8.dp.toPx()).toDp()),
+                        .height((screenHeight - cutCardHeight + 30.dp.toPx()).toDp()),
                     startDestination = startDestination
                 )
                 val content by appModel.cutCardContent.observeAsState(null)
