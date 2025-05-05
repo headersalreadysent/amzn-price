@@ -70,6 +70,7 @@ import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.ProductBox
+import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.composables.TimeSpan
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.ProductStatus
@@ -94,6 +95,19 @@ fun DetailScreen(
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
 
+
+    DisposableEffect(Unit) {
+        productId?.let {
+            model.loadProduct(productId)
+            AppModel.setFab(Icons.Filled.ShoppingCart) {
+                urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
+            }
+        }
+        onDispose {
+
+        }
+    }
+    //graph and lists show only changes
     var showOnlyChanges by remember { mutableStateOf(true) }
     val priceListData by remember(showOnlyChanges, prices) {
         var lastPrice = -1
@@ -110,31 +124,15 @@ fun DetailScreen(
         })
     }
 
-    DisposableEffect(Unit) {
-        productId?.let {
-            model.loadProduct(productId)
-            AppModel.setFab(Icons.Filled.ShoppingCart) {
-                urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
-            }
-        }
-        onDispose {
-
-        }
-    }
 
     if (product == null) {
-        Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(.8F)
-            )
-        }
+        //loader screen
+        Progress("Yükleniyor")
     }
-    val scrollState = rememberScrollState()
 
     product?.let { product ->
-
+        val scrollState = rememberScrollState()
         Box(modifier = Modifier.fillMaxSize()) {
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -163,7 +161,7 @@ fun DetailScreen(
                         OutlinedButton(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
-                                model.activate(product)
+                                model.changeStatus(ProductStatus.ACTIVE)
                             },
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -349,7 +347,7 @@ fun DetailScreen(
                     if (product.status == ProductStatus.ACTIVE) {
                         OutlinedButton(
                             onClick = {
-                                model.stopFollow()
+                                model.changeStatus(ProductStatus.PASSIVE)
                             },
                             modifier = Modifier
                                 .weight(1F)
@@ -366,7 +364,7 @@ fun DetailScreen(
                     if (product.status == ProductStatus.PASSIVE) {
                         OutlinedButton(
                             onClick = {
-                                model.startFollow()
+                                model.changeStatus(ProductStatus.ACTIVE)
                             },
                             modifier = Modifier
                                 .weight(1F)

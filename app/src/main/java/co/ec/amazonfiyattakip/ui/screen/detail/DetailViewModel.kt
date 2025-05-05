@@ -13,7 +13,9 @@ import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.helper.helpers.EventBus
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 open class DetailViewModel : ViewModel() {
@@ -22,83 +24,63 @@ open class DetailViewModel : ViewModel() {
     val prices = MutableLiveData<List<PriceInfo>>()
 
     init {
-
         viewModelScope.launch {
             EventBus.subscribe<ProductSync> { update ->
                 product.value?.let {
-                    if(it.asin==update.asin){
-                        loadProduct(it.id,false)
+                    if (product.value?.asin == update.asin) {
+                        loadProduct(it.id, false)
                     }
                 }
             }
         }
     }
 
+    //load product
+    fun loadProduct(productId: Int, refresh: Boolean = true) {
+        viewModelScope.launch {
+            val productData = withContext(Dispatchers.IO) {
+                Pair(
+                    AppDatabase.getDatabase().product().getProduct(productId),
+                    AppDatabase.getDatabase().priceInfo().getPricesByProduct(productId)
+                )
+            }
+            product.value = productData.first
+            prices.value = productData.second
 
-    fun loadProduct(productId: Int,refresh:Boolean=true) {
-        asyncRun({
-            return@asyncRun Pair(
-                AppDatabase.getDatabase().product().getProduct(productId),
-                AppDatabase.getDatabase().priceInfo().getPricesByProduct(productId)
-            )
-        }, {
-            product.value = it.first
-            //if more than two point
-            prices.value =  it.second
-            if(refresh){
-                //refreshes value
-                viewModelScope.launch {
-                    FireDB.syncProduct(it.first)
+            if (refresh) {
+                withContext(Dispatchers.IO) {
+                    FireDB.syncProduct(productData.first)
                 }
             }
-        })
+        }
     }
 
-    fun stopFollow() {
+
+    fun changeStatus(status: ProductStatus) {
         asyncRun({
             val copy = product.value!!.copy(
-                status = ProductStatus.PASSIVE
+                status = status
             )
             AppDatabase.getDatabase().product().update(copy)
             return@asyncRun copy
         }, {
             product.value = it
         })
+
     }
 
-    fun startFollow() {
-        asyncRun({
-            val copy = product.value!!.copy(
-                status = ProductStatus.ACTIVE
-            )
-            AppDatabase.getDatabase().product().update(copy)
-            return@asyncRun copy
-        }, {
-            product.value = it
-        })
-    }
-
-    fun deleteProduct(then: () -> Unit = {}){
+    fun deleteProduct(then: () -> Unit = {}) {
         asyncRun({
             product.value?.let {
                 AppDatabase.getDatabase().priceInfo().delete(it.id)
                 AppDatabase.getDatabase().product().delete(it.id)
             }
             return@asyncRun
-        },{
+        }, {
             then()
         })
     }
 
-
-    fun activate(product: Product) {
-        asyncRun({
-            product.status=ProductStatus.ACTIVE
-            return@asyncRun AppDatabase.getDatabase().product().update(product)
-        },{
-            loadProduct(product.id)
-        })
-    }
     /**
      * update time span
      */
@@ -109,10 +91,10 @@ open class DetailViewModel : ViewModel() {
                     timeSpan = minute * 60
                 )
                 AppDatabase.getDatabase().product().update(newProduct)
-                product.value=newProduct
+                product.value = newProduct
             }
             return@asyncRun product.value
-        },{
+        }, {
             loadProduct(it?.id ?: 0)
         })
     }
