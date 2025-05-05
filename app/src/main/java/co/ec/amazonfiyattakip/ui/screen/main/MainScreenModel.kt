@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip.ui.screen.main
 
-import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,20 +8,19 @@ import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.LatestUpdate
+import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.helper.SharedCache
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.helper.CnsynApp
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -32,25 +30,63 @@ open class MainScreenModel : ViewModel() {
 
     val products = MutableLiveData<List<ProductWithPrices>>()
     var dailyTotals = MutableLiveData<List<DailyTotal>>()
-    var latestUpdates: StateFlow<List<LatestUpdate>>? = null
+    var lowPriced = MutableLiveData<List<LowPriced>>()
+    val serverProducts = MutableLiveData<List<Pair<Product, List<String>>>>()
 
     var stats = MutableLiveData<Map<String, Int>>()
 
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
+    val statCache: SharedCache? =
+        if (CnsynApp.contextCheck() != null) SharedCache(App.context(), "stat") else null
 
-    val serverProducts = MutableLiveData<List<Pair<Product, List<String>>>>()
 
-    init {
-        loadProducts()
-        loadDailyTotals()
-        loadLatestUpdates()
-        calculateStats()
+
+
+    /**
+     * load products from database
+     */
+    fun loadProducts() {
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().product().getAllProducts()
+        }, {
+            products.value = it
+            if (it.isNotEmpty()) {
+                //if exists
+                loadDailyTotals()
+                loadLowPriced()
+                calculateStats()
+            }
+        })
     }
 
-    private fun calculateStats() {
+    /**
+     * load daily stats
+     */
+    private fun loadDailyTotals() {
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().priceInfo()
+                .getDailyTotalPrices(format = "%Y-%m-%d")
+        }, {
+            dailyTotals.value = it
+        })
+    }
 
+
+    /**
+     * load products from database
+     */
+    private fun loadLowPriced() {
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().priceInfo().lowPricedProducts()
+        }, {
+            lowPriced.value = it
+        })
+    }
+
+
+    private fun calculateStats() {
         asyncRun({
             return@asyncRun mapOf(
                 "product" to AppDatabase.getDatabase().product().getCount(),
@@ -64,44 +100,15 @@ open class MainScreenModel : ViewModel() {
 
 
     /**
-     * load daily updates
+     * load populer count and cache it then
      */
-    private fun loadLatestUpdates() {
-        try {
-            latestUpdates = AppDatabase.getDatabase().priceInfo().getLatestUpdates()
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-        } catch (_: Throwable) {
-
-        }
-
-    }
-
-    /**
-     * load daily stats
-     */
-    private fun loadDailyTotals(format: String = "%Y-%m-%d") {
-        asyncRun({
-            return@asyncRun AppDatabase.getDatabase().priceInfo()
-                .getDailyTotalPrices(format = format)
-        }, {
-            dailyTotals.value = it
-        })
-    }
-
-    /**
-     * load products from database
-     */
-    private fun loadProducts() {
-        asyncRun({
-            return@asyncRun AppDatabase.getDatabase().product().getAllProducts()
-        }, {
-            products.value = it
-        })
-    }
-
     fun getPopularCount(then: (count: Int) -> Unit = {}) {
+        statCache?.get("popularCount")?.let {
+            then(it.toInt())
+        }
         AmznScrape().getPopular({ asins ->
             then(asins.size)
+            statCache?.put("popularCount", asins.size.toString())
         })
     }
 
@@ -110,7 +117,6 @@ open class MainScreenModel : ViewModel() {
      */
     fun collectServerProducts() {
         viewModelScope.launch {
-
             val firebase = FireDB.collectWithPriceCount()
             asyncRun({
                 return@asyncRun AppDatabase.getDatabase().product().getAllAsin()
@@ -119,8 +125,6 @@ open class MainScreenModel : ViewModel() {
                     .filter { !asins.contains(it.first.asin) }
                     .sortedByDescending { it.first.date }
             })
-
-
         }
     }
 
@@ -146,17 +150,6 @@ open class MainScreenModel : ViewModel() {
                     }
                 }
             }
-        })
-    }
-
-    /**
-     * add product list
-     */
-    fun addProductList(list: List<Product>) {
-        asyncRun({
-            return@asyncRun AppDatabase.getDatabase().product().insertAll(list)
-        }, {
-            loadProducts()
         })
     }
 
@@ -199,11 +192,6 @@ open class MainScreenModel : ViewModel() {
                 title = fake.title,
                 image = fake.image
             )
-        }
-
-        latestUpdates = MutableStateFlow(emptyList())
-        viewModelScope.launch {
-            (latestUpdates as MutableStateFlow<List<LatestUpdate>>).emit(list)
         }
 
 

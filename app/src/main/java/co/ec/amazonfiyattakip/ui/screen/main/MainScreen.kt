@@ -90,6 +90,7 @@ import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.composables.cutShape
+import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
@@ -114,11 +115,22 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
     val navigation = LocalNavigation.current
     val settings = LocalSettings.current
-    val dailyTotals by model.dailyTotals.observeAsState(listOf())
-    val stats by model.stats.observeAsState(mapOf())
     val productList by model.products.observeAsState(null)
     Column(modifier = Modifier.fillMaxSize()) {
         var deals by remember { mutableStateOf<List<Product>>(listOf()) }
+        var dealCount by remember { mutableIntStateOf(0) }
+        val lowPricedProducts by model.lowPriced.observeAsState(listOf())
+
+        DisposableEffect(Unit) {
+            //load start datas
+            model.loadProducts()
+            model.collectServerProducts()
+            //set dealcount
+            model.getPopularCount {
+                dealCount = it
+            }
+            onDispose { }
+        }
         LaunchedEffect(productList) {
             if (productList != null && productList!!.isEmpty()) {
                 model.loadDeals(6)
@@ -127,30 +139,20 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 deals = deals + deal
             }
         }
-        var dealCount by remember { mutableIntStateOf(0) }
         val serverProducts by model.serverProducts.observeAsState()
-
-        DisposableEffect(Unit) {
-            model.collectServerProducts()
-            model.getPopularCount {
-                dealCount = it
-            }
-            onDispose { }
-        }
-
-
-        TopArea(productList)
+        TopArea(lowPricedProducts)
         AnimatedVisibility(
             visible = dealCount != 0, enter = fadeIn() + expandVertically()
         ) {
-            Column(modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.tertiaryContainer)
-                .clickable {
-                    navigation.navigate("find")
-                }
-                .padding(8.dp)
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .clickable {
+                        navigation.navigate("find")
+                    }
+                    .padding(8.dp)
             ) {
                 Text(
                     "Amazondaki fırsatları görerek hızlaca takip et.",
@@ -190,7 +192,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 }
                 var sortDirection by remember {
                     mutableIntStateOf(
-                        settings.getInt("mainActiveSortDirection",1)
+                        settings.getInt("mainActiveSortDirection", 1)
                     )
                 }
                 if (products.isNotEmpty()) {
@@ -200,7 +202,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             .fillMaxWidth()
                             .padding(8.dp),
                         extra = {
-                            Row(verticalAlignment = Alignment.CenterVertically,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .clickable {
                                         if (sortDirection == 1) {
@@ -209,9 +212,9 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                             sortDirection = 1
                                             val index = sort.indexOf(activeSort)
                                             activeSort = sort.getOrNull(index + 1) ?: sort[0]
-                                            settings.putString("mainActiveSort",activeSort)
+                                            settings.putString("mainActiveSort", activeSort)
                                         }
-                                        settings.putInt("mainActiveSortDirection",sortDirection)
+                                        settings.putInt("mainActiveSortDirection", sortDirection)
                                     }
                                     .padding(horizontal = 3.dp)
                                     .clip(RoundedCornerShape(3.dp))) {
@@ -233,7 +236,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                     )
                     FlowRow(
                         modifier = Modifier
-                            .fillMaxSize(),
+                            .fillMaxSize()
+                            .padding(bottom = 30.dp),
                         maxItemsInEachRow = 2
                     ) {
                         products.let {
@@ -267,6 +271,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                     }
                 }
                 if (products.isEmpty() && deals.isNotEmpty()) {
+                    //no product but deal
                     TitleBar(
                         title = "Amazon Fırsatlar",
                         modifier = Modifier
@@ -279,7 +284,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             .padding(horizontal = 4.dp)
                     ) {
                         deals.forEach {
-                            LittleProductBox(it,
+                            LittleProductBox(
+                                it,
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 onClick = {
@@ -309,6 +315,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             if (products.isNotEmpty()) {
                 var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
 
+                val dailyTotals by model.dailyTotals.observeAsState(listOf())
                 Box(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
@@ -354,7 +361,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             )
                         )
                         totalDragValue?.let {
-                            Text(it.date.dateString(),
+                            Text(
+                                it.date.dateString(),
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     fontSize = 10.sp
@@ -370,6 +378,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             .padding(16.dp)
                             .align(Alignment.BottomEnd)
                     ) {
+
+                        val stats by model.stats.observeAsState(mapOf())
                         val titleStyle = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 8.sp,
                             lineHeight = 8.sp,
@@ -382,12 +392,10 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             textAlign = TextAlign.End
                         )
                         if (stats.containsKey("product")) {
-
                             Column(
                                 horizontalAlignment = Alignment.End,
                                 modifier = Modifier.padding(end = 8.dp)
                             ) {
-
                                 Text((stats["product"] ?: 0).toString(), style = numberStyle)
                                 Text("Ürün", style = titleStyle)
                             }
@@ -432,7 +440,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 }
 
 @Composable
-fun TopArea(productList: List<ProductWithPrices>?) {
+fun TopArea(lowPricedProducts: List<LowPriced>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -472,12 +480,16 @@ fun TopArea(productList: List<ProductWithPrices>?) {
                     .wrapContentHeight(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                productList?.forEach {
-
+                val navigator= LocalNavigation.current
+                lowPricedProducts.forEach {
                     ProductImage(
-                        product = it.product,
+                        title = it.title,
+                        image = it.image,
                         modifier = Modifier
                             .height(25.dp)
+                            .clickable(indication = null, interactionSource = null) {
+                                navigator.navigate("detail/${it.id}")
+                            }
                             .aspectRatio(1F)
                             .clip(CircleShape),
                         color = MaterialTheme.colorScheme.primary
@@ -511,23 +523,25 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                 ) {
                     items(serverProducts.size) {
                         val pair = serverProducts[it]
-                        Box(modifier = Modifier
-                            .fillParentMaxWidth(.55F)
-                            .height(IntrinsicSize.Max)
-                            .padding(
-                                start = if (it == 0) 8.dp else 0.dp,
-                                end = if (it == serverProducts.size - 1) 8.dp else 0.dp
-                            )
-                            .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
-                            .clickable {
-                                navigator.navigate("add/${pair.first.asin}")
-                            }
-                            .clip(shape)) {
+                        Box(
+                            modifier = Modifier
+                                .fillParentMaxWidth(.55F)
+                                .height(IntrinsicSize.Max)
+                                .padding(
+                                    start = if (it == 0) 8.dp else 0.dp,
+                                    end = if (it == serverProducts.size - 1) 8.dp else 0.dp
+                                )
+                                .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
+                                .clickable {
+                                    navigator.navigate("add/${pair.first.asin}")
+                                }
+                                .clip(shape)) {
 
-                            PriceGraph(modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(.8F)
-                                .align(Alignment.BottomCenter),
+                            PriceGraph(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(.8F)
+                                    .align(Alignment.BottomCenter),
                                 prices = pair.second.map { it.split("|") }.map {
                                     PriceGraphPair(it[0].toLong(), it[1].toFloat())
                                 },
@@ -540,7 +554,7 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                                     .padding(8.dp)
                             ) {
                                 Text(
-                                    pair.first.title+"\n",
+                                    pair.first.title + "\n",
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.bodyMedium.copy(

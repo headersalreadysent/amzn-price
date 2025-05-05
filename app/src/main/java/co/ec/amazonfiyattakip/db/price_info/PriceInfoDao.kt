@@ -7,6 +7,7 @@ import androidx.room.Query
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.LatestUpdate
+import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import kotlinx.coroutines.flow.Flow
@@ -35,12 +36,20 @@ interface PriceInfoDao {
             "LEFT JOIN product ON productId=product.id ORDER BY priceinfo.id DESC")
     fun getLatestUpdates() : Flow<List<LatestUpdate>>
 
-
     @Query("SELECT * FROM priceinfo WHERE productId=:productId ORDER BY date DESC LIMIT 1")
     fun getLatestPrice(productId: Int): PriceInfo?
 
     @Query("SELECT count(id) as items FROM priceinfo")
     fun getCount(): Int
+
+    @Query("DELETE FROM priceinfo WHERE productId=:productId")
+    fun delete(productId:Int): Int
+
+    @Query("SELECT p.id,p.title,p.image, p.price,avg.avg FROM (SELECT productId,CAST(AVG(price) AS INT) AS avg FROM priceinfo GROUP BY productId) avg " +
+            "LEFT JOIN product p on productId=p.id " +
+            "WHERE price < avg")
+    fun lowPricedProducts() : List<LowPriced>
+
 
     companion object {
 
@@ -50,11 +59,9 @@ interface PriceInfoDao {
             //set latest price
             val priceInfo = product.toPriceInfo(product.id, latestPrice?.price ?: 0)
             return dao.insert(priceInfo)
-
         }
     }
 
-    @Query("DELETE FROM priceinfo WHERE productId=:productId")
-    fun delete(productId:Int): Int
+
 }
 
