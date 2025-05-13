@@ -229,16 +229,21 @@ fun DetailScreen(
                                 )
                             })
                         var showPrice by remember { mutableStateOf(true) }
+                        var showAllList by remember { mutableStateOf(false) }
                         priceListData.reversed().let { list ->
-                            Column(modifier = Modifier
-                                .padding(8.dp)
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = null
-                                ) {
-                                    showPrice = !showPrice
-                                }) {
-                                list.forEachIndexed { index, it ->
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = null
+                                    ) {
+                                        showPrice = !showPrice
+                                    }) {
+                                list.let {
+                                    if (it.size > 10 && !showAllList) it.slice(0..10)
+                                    else it
+                                }.forEachIndexed { index, it ->
                                     val prevPrice = if (list.size > index + 1) {
                                         list[index + 1].price
                                     } else 0
@@ -294,6 +299,17 @@ fun DetailScreen(
                                 }
                             }
                         }
+                        if (showAllList == false) {
+                            OutlinedButton(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                onClick = {
+                                    showAllList = true
+                                }) {
+                                Text("Tüm Listeyi Göster")
+                            }
+                        }
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
@@ -337,7 +353,7 @@ fun DetailScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
                 TimeSpan(product.timeSpan / 60, {
                     model.updateTimeSpan(it)
-                }, latest = prices?.sortedBy { it.date }?.lastOrNull()?.date )
+                }, latest = prices?.sortedBy { it.date }?.lastOrNull()?.date)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -616,14 +632,20 @@ fun PricePrediction(prices: List<PriceInfo>) {
                                 textAlign = TextAlign.Justify
                             )
                         )
-                        Text("Tahmin Fonksiyonu",
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        Text(
+                            "Tahmin Fonksiyonu",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 textAlign = TextAlign.Start
                             )
                         )
-                        Text(predict.second,
-                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        Text(
+                            predict.second,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 textAlign = TextAlign.Start
                             )
@@ -660,7 +682,8 @@ fun PricePrediction(prices: List<PriceInfo>) {
                 modifier = Modifier
                     .fillMaxWidth(),
                 extra = {
-                    Icon(Icons.Filled.Info, "",
+                    Icon(
+                        Icons.Filled.Info, "",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .scale(.8F)

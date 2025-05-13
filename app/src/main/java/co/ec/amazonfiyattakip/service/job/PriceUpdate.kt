@@ -116,11 +116,11 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                         //insert job log
                         jobLog.insert(
                             JobLog(
-                                asin = asinList.map { it.asin }.joinToString(", "),
+                                asin = asinList.joinToString(", ") { it.asin },
                                 date = unix(),
-                                detail = responseList.map {
+                                detail = responseList.joinToString("\n") {
                                     "${it.first} => ${it.second.price()}"
-                                }.joinToString("\n")
+                                }
                             )
                         )
                         //mark error stop if access to limit

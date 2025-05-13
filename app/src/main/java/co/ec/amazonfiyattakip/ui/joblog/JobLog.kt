@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,9 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -34,6 +38,7 @@ import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.job_log.JobLog
+import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.graph.BarChart
 import co.ec.amazonfiyattakip.ui.part.graph.MinuteSpanData
@@ -89,7 +94,6 @@ fun JobLogScreen() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding()
     ) {
 
         TabRow(
@@ -102,14 +106,16 @@ fun JobLogScreen() {
                 onClick = {
                     selected = 0
                 }) {
-                Text("JOB LOG", modifier = Modifier.padding(8.dp))
+                Text("JOB LOG", modifier = Modifier.padding(8.dp)
+                    .statusBarsPadding())
             }
             Tab(
                 selected = selected == 1,
                 onClick = {
                     selected = 1
                 }) {
-                Text("APP LOG", modifier = Modifier.padding(8.dp))
+                Text("APP LOG", modifier = Modifier.padding(8.dp)
+                    .statusBarsPadding())
             }
         }
         Crossfade(
@@ -132,7 +138,7 @@ fun JobLogScreen() {
                                 BarChart(
                                     it,
                                     modifier = Modifier
-                                        .padding(vertical = 8.dp)
+                                        .padding(8.dp)
                                         .aspectRatio(3F)
                                         .background(MaterialTheme.colorScheme.surfaceVariant)
                                 )
@@ -197,11 +203,30 @@ fun JobLogScreen() {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
+
                     if (textLog.isEmpty()) {
                         item {
                             Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
                                 Text("hiç log bulunmuyor.")
                             }
+                        }
+                    } else {
+                        item {
+                            OutlinedButton(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                                onClick = {
+                                    ExceptionHelper.clearLogs()
+                                },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.onErrorContainer,
+                                    contentColor = MaterialTheme.colorScheme.errorContainer
+                                ),
+                                shape = RoundedCornerShape(5.dp),
+                                contentPadding = PaddingValues(vertical = 1.dp)
+                            ) {
+                                Text("Temizle")
+                            }
+
                         }
                     }
 
