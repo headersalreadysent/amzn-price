@@ -83,6 +83,7 @@ import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.FakeDetailScreen
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
@@ -131,7 +132,7 @@ fun DetailScreen(
 
     if (product == null) {
         //loader screen
-        Progress("Yükleniyor")
+        FakeDetailScreen()
     }
 
     product?.let { product ->

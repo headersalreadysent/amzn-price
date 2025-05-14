@@ -63,6 +63,7 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.topOuterShadow
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.FakeAddScreen
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
@@ -108,7 +109,8 @@ fun AddScreen(
             }
         }
     } else {
-        Progress("Ürün bilgisi yükleniyor")
+        //Progress("Ürün bilgisi yükleniyor")
+        FakeAddScreen()
     }
 
 

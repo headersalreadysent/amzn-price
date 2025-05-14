@@ -41,6 +41,7 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.FakeFindScreen
 import co.ec.amazonfiyattakip.ui.part.LittleProductBox
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.rememberKeyboardVisibleState
@@ -181,7 +182,7 @@ fun DealsListScreen(deals: List<Product>) {
     val navigation = LocalNavigation.current
 
     if (deals.isEmpty()) {
-        Progress("Fırsatlar yükleniyor")
+        FakeFindScreen()
     } else {
         FlowRow(
             modifier = Modifier
