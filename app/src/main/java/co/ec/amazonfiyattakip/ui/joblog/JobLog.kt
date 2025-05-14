@@ -59,7 +59,7 @@ fun JobLogScreen() {
     var selected by remember { mutableIntStateOf(0) }
     var logs by remember { mutableStateOf<List<JobLog>?>(null) }
     var minuteSpanData by remember { mutableStateOf<List<MinuteSpanData>?>(null) }
-    var textLog by remember { mutableStateOf<List<String>>(listOf()) }
+    var textLog by remember { mutableStateOf<List<ExceptionHelper.LogItem>>(listOf()) }
     LaunchedEffect(Unit) {
         while (true) {
             asyncRun({
@@ -231,7 +231,7 @@ fun JobLogScreen() {
                     }
 
                     items(textLog.size) {
-                        val log = textLog[it].split("#")
+                        val log = textLog[it]
                         ListItem(
                             colors = ListItemDefaults.colors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -242,7 +242,7 @@ fun JobLogScreen() {
                                 .padding(bottom = 4.dp),
                             headlineContent = {
                                 Text(
-                                    log[2],
+                                    log.message,
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -256,13 +256,13 @@ fun JobLogScreen() {
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        log[1],
+                                        log.date.toLong().dateString(),
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             color = MaterialTheme.colorScheme.onSecondaryContainer
                                         )
                                     )
                                     Text(
-                                        log[0],
+                                        log.tag,
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             color = MaterialTheme.colorScheme.onSecondaryContainer
                                         )

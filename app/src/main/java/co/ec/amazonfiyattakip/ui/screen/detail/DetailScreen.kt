@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -38,6 +39,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -83,10 +85,11 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
-import co.ec.helper.composable.AutoText
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
+import co.ec.helper.composable.AutoText
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     productId: Int? = null, model: DetailViewModel = viewModel()
@@ -131,8 +134,22 @@ fun DetailScreen(
     }
 
     product?.let { product ->
-        val scrollState = rememberScrollState()
-        Box(modifier = Modifier.fillMaxSize()) {
+        var refreshing by remember { mutableStateOf(false) }
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = {
+                refreshing = true
+                model.refreshProduct({
+                    App.snack(product.title + " güncellendi.")
+                    refreshing = false
+                }) {
+                    refreshing = false
+                    App.snack(product.title + " güncellenemedi.")
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -200,8 +217,8 @@ fun DetailScreen(
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp)
                         )
-                        CalendarPriceData(it)
-                        PricePrediction(it)
+                        CalendarPriceDataArea(it)
+                        PricePredictionArea(it)
                         TitleBar(
                             title = "Fiyat Değişimi",
                             modifier = Modifier
@@ -228,88 +245,7 @@ fun DetailScreen(
                                     tint = MaterialTheme.colorScheme.secondary
                                 )
                             })
-                        var showPrice by remember { mutableStateOf(true) }
-                        var showAllList by remember { mutableStateOf(false) }
-                        priceListData.reversed().let { list ->
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .clickable(
-                                        indication = null,
-                                        interactionSource = null
-                                    ) {
-                                        showPrice = !showPrice
-                                    }) {
-                                list.let {
-                                    if (it.size > 10 && !showAllList) it.slice(0..10)
-                                    else it
-                                }.forEachIndexed { index, it ->
-                                    val prevPrice = if (list.size > index + 1) {
-                                        list[index + 1].price
-                                    } else 0
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(bottom = 4.dp)
-                                            .background(MaterialTheme.colorScheme.tertiaryContainer)
-                                            .height(40.dp)
-                                            .shadow(.5.dp)
-                                            .padding(8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            it.date.dateString() + " " + it.date.timeString(),
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                                            )
-                                        )
-                                        if (showPrice) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    it.price(),
-                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                                    ),
-                                                )
-                                                Icon(
-                                                    if (prevPrice == it.price) {
-                                                        Icons.AutoMirrored.Outlined.TrendingFlat
-                                                    } else if (prevPrice < it.price) {
-                                                        Icons.AutoMirrored.Outlined.TrendingUp
-                                                    } else {
-                                                        Icons.AutoMirrored.Outlined.TrendingDown
-                                                    },
-                                                    contentDescription = "trend",
-                                                    modifier = Modifier
-                                                        .padding(start = 4.dp)
-                                                        .scale(.6F),
-                                                    tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
-                                                        alpha = .8F
-                                                    )
-                                                )
-
-                                            }
-
-                                        } else {
-                                            PriceStat(it)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (showAllList == false) {
-                            OutlinedButton(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp),
-                                onClick = {
-                                    showAllList = true
-                                }) {
-                                Text("Tüm Listeyi Göster")
-                            }
-                        }
+                        PriceListArea(priceListData)
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
@@ -353,7 +289,7 @@ fun DetailScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
                 TimeSpan(product.timeSpan / 60, {
                     model.updateTimeSpan(it)
-                }, latest = prices?.sortedBy { it.date }?.lastOrNull()?.date)
+                }, latest = prices?.maxByOrNull { it.date }?.date)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -430,6 +366,7 @@ fun DetailScreen(
             }
 
         }
+
     }
 
 
@@ -549,52 +486,9 @@ fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
 
 }
 
-@Composable
-fun PriceStat(
-    price: PriceInfo,
-    color: Color = MaterialTheme.colorScheme.onTertiaryContainer
-) {
-    Row(
-        modifier = Modifier
-            .height(IntrinsicSize.Max),
-        verticalAlignment = Alignment.CenterVertically,
-
-        ) {
-        val density = LocalDensity.current
-        Icon(
-            Icons.Filled.Star, "",
-            modifier = Modifier
-                .height(with(density) { 13.sp.toDp() })
-                .padding(end = 4.dp),
-            tint = color.copy(alpha = .8F)
-        )
-        Text(
-            price.star.toString(),
-            color = color,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        VerticalDivider(
-            modifier = Modifier
-                .padding(horizontal = 4.dp)
-                .fillMaxHeight(.8F)
-        )
-        Icon(
-            Icons.Filled.ChatBubble, "",
-            modifier = Modifier
-                .height(with(density) { 13.sp.toDp() })
-                .padding(end = 4.dp),
-            tint = color.copy(alpha = .8F)
-        )
-        Text(
-            price.comment.toString(),
-            color = color,
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
 
 @Composable
-fun CalendarPriceData(prices: List<PriceInfo>) {
+fun CalendarPriceDataArea(prices: List<PriceInfo>) {
     TitleBar(
         title = "Günlük Fiyatlar",
         modifier = Modifier
@@ -603,7 +497,7 @@ fun CalendarPriceData(prices: List<PriceInfo>) {
     )
 
     DateRow(
-        priceList = prices.map { Pair(it.date.toInt(), it.price) }.toMap(),
+        priceList = prices.associate { Pair(it.date.toInt(), it.price) },
     ) {
         if (it.second != 0) {
             App.snack(
@@ -616,7 +510,7 @@ fun CalendarPriceData(prices: List<PriceInfo>) {
 }
 
 @Composable
-fun PricePrediction(prices: List<PriceInfo>) {
+fun PricePredictionArea(prices: List<PriceInfo>) {
     if (prices.size > 20) {
         val predict by remember {
             mutableStateOf(predictNextPrices(prices))
@@ -733,6 +627,136 @@ fun PricePrediction(prices: List<PriceInfo>) {
                 }
             }
         }
+    }
+}
+
+/**
+ * prices list area
+ */
+@Composable
+fun PriceListArea(priceListData: List<PriceInfo>) {
+    var showPrice by remember { mutableStateOf(true) }
+    var showAllList by remember { mutableStateOf(false) }
+    priceListData.reversed().let { list ->
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .clickable(indication = null, interactionSource = null) {
+                    showPrice = !showPrice
+                }) {
+            list.let {
+                if (it.size > 10 && !showAllList) it.slice(0..10)
+                else it
+            }.forEachIndexed { index, it ->
+                val prevPrice = if (list.size > index + 1) {
+                    list[index + 1].price
+                } else 0
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer)
+                        .height(40.dp)
+                        .shadow(.5.dp)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        it.date.dateString() + " " + it.date.timeString(),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    )
+                    if (showPrice) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                it.price(),
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                ),
+                            )
+                            Icon(
+                                if (prevPrice == it.price) {
+                                    Icons.AutoMirrored.Outlined.TrendingFlat
+                                } else if (prevPrice < it.price) {
+                                    Icons.AutoMirrored.Outlined.TrendingUp
+                                } else {
+                                    Icons.AutoMirrored.Outlined.TrendingDown
+                                },
+                                contentDescription = "trend",
+                                modifier = Modifier
+                                    .padding(start = 4.dp)
+                                    .scale(.6F),
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
+                                    alpha = .8F
+                                )
+                            )
+
+                        }
+
+                    } else {
+                        PriceStat(it)
+                    }
+                }
+            }
+        }
+    }
+    if (showAllList == false) {
+        OutlinedButton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            onClick = {
+                showAllList = true
+            }) {
+            Text("Tüm Listeyi Göster")
+        }
+    }
+}
+
+@Composable
+fun PriceStat(
+    price: PriceInfo,
+    color: Color = MaterialTheme.colorScheme.onTertiaryContainer
+) {
+    Row(
+        modifier = Modifier
+            .height(IntrinsicSize.Max),
+        verticalAlignment = Alignment.CenterVertically,
+
+        ) {
+        val density = LocalDensity.current
+        Icon(
+            Icons.Filled.Star, "",
+            modifier = Modifier
+                .height(with(density) { 13.sp.toDp() })
+                .padding(end = 4.dp),
+            tint = color.copy(alpha = .8F)
+        )
+        Text(
+            price.star.toString(),
+            color = color,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        VerticalDivider(
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .fillMaxHeight(.8F)
+        )
+        Icon(
+            Icons.Filled.ChatBubble, "",
+            modifier = Modifier
+                .height(with(density) { 13.sp.toDp() })
+                .padding(end = 4.dp),
+            tint = color.copy(alpha = .8F)
+        )
+        Text(
+            price.comment.toString(),
+            color = color,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 

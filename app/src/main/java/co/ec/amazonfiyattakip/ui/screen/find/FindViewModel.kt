@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.helper.SharedCache
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -31,7 +31,7 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
-    val cache: SharedCache? = if (!isPreview) SharedCache(App.context()) else null
+    val cache: CacheHelper? = if (!isPreview) CacheHelper(App.context()) else null
 
     init {
         LogHelper.d("search model init ${searchFlow}")

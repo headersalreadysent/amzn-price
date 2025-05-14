@@ -12,9 +12,9 @@ import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.helper.SharedCache
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.CnsynApp
+import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.delay
@@ -38,8 +38,8 @@ open class MainScreenModel : ViewModel() {
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
-    val statCache: SharedCache? =
-        if (CnsynApp.contextCheck() != null) SharedCache(App.context(), "stat") else null
+    val statCache: CacheHelper? =
+        if (CnsynApp.contextCheck() != null) CacheHelper(App.context(), "stat") else null
 
 
 

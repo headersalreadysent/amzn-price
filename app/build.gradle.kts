@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "co.ec.amazonfiyattakip"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "co.ec.amazonfiyattakip"
@@ -76,7 +76,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(libs.cnsyn.android.helper)
+    implementation(libs.cnsyn.android.helper) {
+        isChanging = true
+    }
 
 
     implementation(libs.androidx.navigation.compose)

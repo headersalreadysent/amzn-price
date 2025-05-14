@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
+import androidx.compose.ui.Modifier.Companion.then
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -19,6 +20,7 @@ import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.unix
+import com.google.firebase.components.Dependency.deferred
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -192,6 +194,56 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             return deferred.await()
 
 
+        }
+
+        /**
+         * collect price and save to database
+         */
+        fun collectOne(product: Product,then: () -> Unit = {}, err: (e:Throwable) -> Unit = {}){
+            val productDao = AppDatabase.getDatabase().product()
+            val scraper = AmznScrape()
+            //collect one asin
+            scraper.scrapeFromAsin(product.asin, { update ->
+                if (update.price == 0) {
+                    LogHelper.d("Product ${product.asin} price error", JOBTAG)
+                } else {
+                    //insert into database
+                    thread {
+                        val product = update.copy(
+                            id = product.id
+                        )
+                        PriceInfoDao.insertNewUpdate(product)
+                        //add next run time
+                        productDao.updateProductInfoAndNextRun(
+                            product.id,
+                            product.price,
+                            product.star,
+                            product.comment
+                        )
+                        LogHelper.d(
+                            "${product.asin} (${product.shortTitle()}) : ${product.price()}",
+                            JOBTAG
+                        )
+                        //send to analytics for stats
+                        App.event(
+                            "price_update", mapOf(
+                                "productAsin" to product.asin,
+                                "productTitle" to product.title,
+                                "productPrice" to product.price,
+                                "productStar" to product.star.toString(),
+                                "productComment" to product.comment.toString()
+                            )
+                        )
+                    }
+                }
+                then()
+            }, {
+                LogHelper.e(it.localizedMessage ?: it.message ?: "", it)
+                //complete defer with correct -1 because of error
+                thread { productDao.addErrorCount(product.id) }
+                FireDB.syncProduct(product)
+                err(it)
+            })
         }
 
     }

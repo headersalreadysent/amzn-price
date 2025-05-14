@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
 
+import androidx.compose.ui.Modifier.Companion.then
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import co.ec.amazonfiyattakip.db.FireDB.ProductSync
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.helpers.EventBus
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
@@ -97,6 +99,15 @@ open class DetailViewModel : ViewModel() {
         }, {
             loadProduct(it?.id ?: 0)
         })
+    }
+
+    fun refreshProduct(then: () -> Unit = {}, err: (e:Throwable) -> Unit = {}){
+        product.value?.let { product ->
+            PriceUpdate.collectOne(product,{
+                loadProduct(product.id)
+                then()
+            },err)
+        }
     }
 
 

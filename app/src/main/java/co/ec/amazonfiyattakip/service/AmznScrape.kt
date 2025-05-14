@@ -1,11 +1,10 @@
 package co.ec.amazonfiyattakip.service
 
-import android.os.Bundle
 import android.os.SystemClock
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.helper.SharedCache
 import co.ec.helper.CnsynApp
+import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
@@ -13,9 +12,7 @@ import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okio.ByteString.Companion.encode
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -31,8 +28,8 @@ class AmznScrape {
         }
 
 
-        val cache: SharedCache? =
-            if (CnsynApp.contextCheck() != null) SharedCache(App.context(), "asin") else null
+        val cache: CacheHelper? =
+            if (CnsynApp.contextCheck() != null) CacheHelper(App.context(), "asin") else null
     }
 
     /**
