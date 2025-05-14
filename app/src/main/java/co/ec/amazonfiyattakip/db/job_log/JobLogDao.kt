@@ -33,17 +33,10 @@ interface JobLogDao {
     fun getStat() : List<MinuteSpanData>
 
 
-    @Query("SELECT date FROM joblog GROUP BY date ORDER BY date DESC")
-    fun getUpdateDateList() : List<Long>
+    @Query("SELECT avg(j.date - s.date) as avg " +
+            " FROM joblog j LEFT JOIN joblog s ON s.id = j.id-1 WHERE s.date IS NOT NULL ")
+    fun getQuerySpan() : Float
 
 
-    fun calculateAverageDiff(): Double {
-        val list=getUpdateDateList()
-        return list.mapIndexed { i,date->
-            if(list.getOrNull(i+1) !=null){
-                return@mapIndexed date- list[i+1]
-            }
-            return@mapIndexed null
-        }.filterNotNull().average()
-    }
+
 }

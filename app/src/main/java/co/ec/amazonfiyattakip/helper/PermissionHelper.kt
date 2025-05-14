@@ -20,6 +20,7 @@ object PermissionHelper {
         if (!isIgnoringBattery()) {
             val context = App.context()
             val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 data = "package:${context.packageName}".toUri()
             }
             // launch intent above

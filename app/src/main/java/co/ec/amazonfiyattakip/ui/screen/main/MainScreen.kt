@@ -30,15 +30,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -73,6 +78,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -93,6 +100,9 @@ import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.helper.PermissionHelper
+import co.ec.amazonfiyattakip.helper.format
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
@@ -117,6 +127,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
     val navigation = LocalNavigation.current
     val settings = LocalSettings.current
     val productList by model.products.observeAsState(null)
+    val stats by model.stats.observeAsState(null)
     Column(modifier = Modifier.fillMaxSize()) {
         var deals by remember { mutableStateOf<List<Product>>(listOf()) }
         var dealCount by remember { mutableIntStateOf(0) }
@@ -142,6 +153,10 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         }
         val serverProducts by model.serverProducts.observeAsState()
         TopArea(lowPricedProducts)
+        stats?.let { stat ->
+            SlowQuery(stat)
+
+        }
         AnimatedVisibility(
             visible = dealCount != 0, enter = fadeIn() + expandVertically()
         ) {
@@ -379,8 +394,6 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             .padding(16.dp)
                             .align(Alignment.BottomEnd)
                     ) {
-
-                        val stats by model.stats.observeAsState(mapOf())
                         val titleStyle = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 8.sp,
                             lineHeight = 8.sp,
@@ -392,21 +405,24 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             textAlign = TextAlign.End
                         )
-                        if (stats.containsKey("product")) {
-                            Column(
-                                horizontalAlignment = Alignment.End,
-                                modifier = Modifier.padding(end = 8.dp)
-                            ) {
-                                Text((stats["product"] ?: 0).toString(), style = numberStyle)
-                                Text("Ürün", style = titleStyle)
+                        stats?.let { stat ->
+                            if (stat.containsKey("product")) {
+                                Column(
+                                    horizontalAlignment = Alignment.End,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    Text((stat["product"] ?: 0).toString(), style = numberStyle)
+                                    Text("Ürün", style = titleStyle)
+                                }
+                            }
+                            if (stat.containsKey("update")) {
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text((stat["update"] ?: 0).toString(), style = numberStyle)
+                                    Text("Fiyat", style = titleStyle)
+                                }
                             }
                         }
-                        if (stats.containsKey("update")) {
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text((stats["update"] ?: 0).toString(), style = numberStyle)
-                                Text("Fiyat", style = titleStyle)
-                            }
-                        }
+
                     }
                 }
             } else {
@@ -481,7 +497,7 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
                     .wrapContentHeight(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val navigator= LocalNavigation.current
+                val navigator = LocalNavigation.current
                 lowPricedProducts.forEach {
                     ProductImage(
                         title = it.title,
@@ -584,6 +600,68 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
     }
 }
 
+/**
+ * show slow query alert
+ */
+@Composable
+fun SlowQuery(stat: Map<String, Int>) {
+    if (PermissionHelper.isIgnoringBattery()) {
+        return
+    }
+    if (stat.containsKey("querySpan")) {
+        var span = stat["querySpan"]
+        var targetTime = LocalSettings.current.getInt("queryTime", 15) * 60
+        if (span != null) {
+            var visible by remember { mutableStateOf(true) }
+            if (span > targetTime * 1.1F && visible) {
+                LogHelper.i("querySpan $span $targetTime")
+                CutCornerCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .clickable {
+                            visible=false
+                            PermissionHelper.batteryPermission()
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    val text = buildAnnotatedString {
+                        appendInlineContent("battery", " ")
+                        append(
+                            "Fiyat sorgulaması hedeflenen zamandan yavaş çalışıyor." +
+                                    " Bu durum batarya optimizasyonundan kaynaklanıyor olabilir." +
+                                    " Uygulamayı kısıtlanmamış ayarlayarak daha iyi sorgulama elde edebilirsiniz."
+                        )
+                    }
+                    Text(
+                        text,
+                        inlineContent = mapOf(
+                            "battery" to InlineTextContent(
+                                Placeholder(11.sp, 11.sp, PlaceholderVerticalAlign.Center)
+                            ) {
+                                Icon(
+                                    Icons.Default.BatteryAlert,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                            },
+                        ),
+                        modifier = Modifier.padding(8.dp),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            textAlign = TextAlign.Justify,
+                            fontSize = 11.sp
+                        )
+                    )
+
+                }
+            }
+        }
+
+    }
+}
 
 @Composable
 @Preview(showBackground = true)

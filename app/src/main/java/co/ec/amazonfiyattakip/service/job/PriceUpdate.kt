@@ -127,7 +127,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                                 date = unix(),
                                 detail = responseList.joinToString("\n") {
                                     "${it.first} => ${it.second.price()}"
-                                }
+                                },
                             )
                         )
                         //mark error stop if access to limit
@@ -258,7 +258,6 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 )
                 //complete defer with correct -1 because of error
                 thread { productDao.addErrorCount(product.id) }
-                FireDB.syncProduct(product)
                 err(it)
             })
         }

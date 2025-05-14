@@ -36,3 +36,5 @@ fun Color.toHtmlWithAlpha(): String {
         (blue * 255).toInt()
     )
 }
+
+fun Float.format(digits: Int) = "%.${digits}f".format(this)

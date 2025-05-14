@@ -101,7 +101,7 @@ open class MainScreenModel : ViewModel() {
             return@asyncRun mapOf(
                 "product" to AppDatabase.getDatabase().product().getCount(),
                 "update" to AppDatabase.getDatabase().priceInfo().getCount(),
-                "querySpan" to AppDatabase.getDatabase().jobLog().calculateAverageDiff().toInt()
+                "querySpan" to AppDatabase.getDatabase().jobLog().getQuerySpan().toInt()
             )
         }, {
             stats.value = it
