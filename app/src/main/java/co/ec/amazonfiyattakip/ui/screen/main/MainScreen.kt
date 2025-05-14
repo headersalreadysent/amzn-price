@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -132,10 +133,13 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         var deals by remember { mutableStateOf<List<Product>>(listOf()) }
         var dealCount by remember { mutableIntStateOf(0) }
         val lowPricedProducts by model.lowPriced.observeAsState(listOf())
-
+        val showServerProducts = settings.getBoolean("showServerProducts")
+        LogHelper.d("showServerProducts $showServerProducts")
         DisposableEffect(Unit) {
             //load start datas
-            model.collectServerProducts()
+            if(showServerProducts){
+                model.collectServerProducts()
+            }
             model.loadProducts()
             //set dealcount
             model.getPopularCount {
@@ -184,7 +188,9 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 )
             }
         }
-        ServerProducts(serverProducts)
+        if (showServerProducts) {
+            ServerProducts(serverProducts)
+        }
         HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
@@ -324,105 +330,74 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         }
     }
 
+    var showTotal = settings.getBoolean("showBasketTotal", false)
 
-
-    AppModel.cutCard(Modifier.aspectRatio(3.5F)) {
+    AppModel.cutCard(if (showTotal) Modifier.aspectRatio(3.5F) else Modifier.height(30.dp)) {
         productList?.let { products ->
             if (products.isNotEmpty()) {
-                var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
-
-                val dailyTotals by model.dailyTotals.observeAsState(listOf())
                 Box(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(.6F)
-                            .align(Alignment.BottomEnd)
-                    ) {
-                        PriceGraph(
-                            modifier = Modifier.blur(.2.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = .8F),
-                            circleColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            prices = dailyTotals.map {
-                                return@map PriceGraphPair(it.date, it.total.toFloat())
-                            },
-                            hasCircles = false,
-                            onDrag = {
-                                totalDragValue = it
-                            },
-                            closePath = false,
-                            drawStyle = Stroke(9F),
-                            subRatio = .2F
-                        )
-                    }
+                    if (showTotal) {
+                        var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
+                        val dailyTotals by model.dailyTotals.observeAsState(listOf())
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(.6F)
+                                .align(Alignment.BottomEnd)
+                        ) {
+                            PriceGraph(
+                                modifier = Modifier.blur(.2.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = .8F),
+                                circleColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                prices = dailyTotals.map {
+                                    return@map PriceGraphPair(it.date, it.total.toFloat())
+                                },
+                                hasCircles = false,
+                                onDrag = {
+                                    totalDragValue = it
+                                },
+                                closePath = false,
+                                drawStyle = Stroke(9F),
+                                subRatio = .2F
+                            )
+                        }
 
-                    Column(
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            "Sepet Toplamı", style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        )
-                        AutoText(
-                            if (totalDragValue != null) totalDragValue!!.price.toInt().price()
-                            else if (dailyTotals.isEmpty()) 0.price() else dailyTotals.last().total.toInt()
-                                .price(),
-                            fontSize = 20..35,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        )
-                        totalDragValue?.let {
+                        Column(
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .padding(16.dp)
+                        ) {
                             Text(
-                                it.date.dateString(),
-                                style = MaterialTheme.typography.bodySmall.copy(
+                                "Sepet Toplamı", style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            )
+                            AutoText(
+                                if (totalDragValue != null) totalDragValue!!.price.toInt().price()
+                                else if (dailyTotals.isEmpty()) 0.price() else dailyTotals.last().total.toInt()
+                                    .price(),
+                                fontSize = 20..35,
+                                style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontSize = 10.sp
-                                ),
-                                modifier = Modifier.graphicsLayer {
-                                    translationY = with(density) { (-10).dp.toPx() }
-                                })
-                        }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .padding(16.dp)
-                            .align(Alignment.BottomEnd)
-                    ) {
-                        val titleStyle = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 8.sp,
-                            lineHeight = 8.sp,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        val numberStyle = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            textAlign = TextAlign.End
-                        )
-                        stats?.let { stat ->
-                            if (stat.containsKey("product")) {
-                                Column(
-                                    horizontalAlignment = Alignment.End,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text((stat["product"] ?: 0).toString(), style = numberStyle)
-                                    Text("Ürün", style = titleStyle)
-                                }
-                            }
-                            if (stat.containsKey("update")) {
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text((stat["update"] ?: 0).toString(), style = numberStyle)
-                                    Text("Fiyat", style = titleStyle)
-                                }
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            )
+                            totalDragValue?.let {
+                                Text(
+                                    it.date.dateString(),
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontSize = 10.sp
+                                    ),
+                                    modifier = Modifier.graphicsLayer {
+                                        translationY = with(density) { (-10).dp.toPx() }
+                                    })
                             }
                         }
 
+                        stats?.let {
+                            StatArea(it)
+                        }
                     }
                 }
             } else {
@@ -483,39 +458,42 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
                 modifier = Modifier.offset(y = (-3).dp)
             )
         }
-        Column(
-            horizontalAlignment = Alignment.End
-        ) {
-            Text(
-                "Ucuz ürünler",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-            Row(
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .wrapContentHeight(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+        if (lowPricedProducts.isNotEmpty()) {
+            Column(
+                horizontalAlignment = Alignment.End
             ) {
-                val navigator = LocalNavigation.current
-                lowPricedProducts.forEach {
-                    ProductImage(
-                        title = it.title,
-                        image = it.image,
-                        modifier = Modifier
-                            .height(25.dp)
-                            .clickable(indication = null, interactionSource = null) {
-                                navigator.navigate("detail/${it.id}")
-                            }
-                            .aspectRatio(1F)
-                            .clip(CircleShape),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                Text(
+                    "Ucuz ürünler",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val navigator = LocalNavigation.current
+                    lowPricedProducts.forEach {
+                        ProductImage(
+                            title = it.title,
+                            image = it.image,
+                            modifier = Modifier
+                                .height(25.dp)
+                                .clickable(indication = null, interactionSource = null) {
+                                    navigator.navigate("detail/${it.id}")
+                                }
+                                .aspectRatio(1F)
+                                .clip(CircleShape),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+
                 }
-
-
             }
         }
+
     }
 }
 
@@ -620,7 +598,7 @@ fun SlowQuery(stat: Map<String, Int>) {
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp)
                         .clickable {
-                            visible=false
+                            visible = false
                             PermissionHelper.batteryPermission()
                         },
                     colors = CardDefaults.cardColors(
@@ -659,6 +637,45 @@ fun SlowQuery(stat: Map<String, Int>) {
                 }
             }
         }
+
+    }
+}
+
+@Composable
+fun BoxScope.StatArea(stat: Map<String, Int>) {
+    Row(
+        modifier = Modifier
+            .wrapContentWidth()
+            .padding(16.dp)
+            .align(Alignment.BottomEnd)
+    ) {
+        val titleStyle = MaterialTheme.typography.bodySmall.copy(
+            fontSize = 8.sp,
+            lineHeight = 8.sp,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        val numberStyle = MaterialTheme.typography.bodySmall.copy(
+            fontSize = 12.sp,
+            lineHeight = 12.sp,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            textAlign = TextAlign.End
+        )
+        if (stat.containsKey("product")) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text((stat["product"] ?: 0).toString(), style = numberStyle)
+                Text("Ürün", style = titleStyle)
+            }
+        }
+        if (stat.containsKey("update")) {
+            Column(horizontalAlignment = Alignment.End) {
+                Text((stat["update"] ?: 0).toString(), style = numberStyle)
+                Text("Fiyat", style = titleStyle)
+            }
+        }
+
 
     }
 }

@@ -101,6 +101,8 @@ class App : CnsynApp() {
             putInt("queryTime", getInt("queryTime", 15))
             putBoolean("dynamicTheme", getBoolean("dynamicTheme", false))
             putInt("colorContrast", getInt("colorContrast", 1))
+            /*putBoolean("showBasketTotal", getBoolean("showBasketTotal", false))
+            putBoolean("showServerProducts",getBoolean("showServerProducts",true))*/
         }
 
     }

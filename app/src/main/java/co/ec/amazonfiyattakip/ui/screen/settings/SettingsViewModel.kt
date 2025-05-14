@@ -26,7 +26,7 @@ class SettingsViewModel : ViewModel() {
     }
 
 
-    private var booleanKeys = listOf("dynamicTheme")
+    private var booleanKeys = listOf("dynamicTheme","showBasketTotal","showServerProducts")
     private var intKeys = listOf("queryTime","colorContrast")
 
     fun startWatch() {
@@ -58,6 +58,8 @@ class SettingsViewModel : ViewModel() {
 
 
     }
+
+
 
 
     fun collectJobRuns() {

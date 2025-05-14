@@ -15,6 +15,7 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
+import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.delay
@@ -33,6 +34,7 @@ open class MainScreenModel : ViewModel() {
     var dailyTotals = MutableLiveData<List<DailyTotal>>()
     var lowPriced = MutableLiveData<List<LowPriced>>()
     val serverProducts = MutableLiveData<List<Pair<Product, List<String>>>>()
+    val settings = MutableLiveData<Map<String, Any>>(mapOf<String, Any>())
 
     var stats = MutableLiveData<Map<String, Int>>()
 
@@ -69,6 +71,16 @@ open class MainScreenModel : ViewModel() {
                 calculateStats()
             }
         })
+    }
+
+    fun getSettings() {
+        var helper = SettingsHelper.get()
+
+        settings.value = mapOf(
+            "showServerProducts" to helper.getBoolean("showServerProducts", true),
+            "show" to helper.getBoolean("showServerProducts", true)
+        )
+
     }
 
     /**
@@ -137,7 +149,7 @@ open class MainScreenModel : ViewModel() {
                 serverProducts.value = firebase
                     .filter { !asins.contains(it.first.asin) }
                     .sortedByDescending { it.first.date }
-                cache?.put("serverProducts",Json.encodeToString(serverProducts.value),60*60)
+                cache?.put("serverProducts", Json.encodeToString(serverProducts.value), 60 * 60)
             })
         }
     }

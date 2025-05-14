@@ -42,6 +42,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -100,16 +101,20 @@ fun DetailScreen(
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
 
-
     DisposableEffect(Unit) {
         productId?.let {
             model.loadProduct(productId)
-            AppModel.setFab(Icons.Filled.ShoppingCart) {
-                urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
-            }
         }
         onDispose {
 
+        }
+    }
+    LaunchedEffect(product) {
+        product?.let {
+            //on product change set fab to add
+            AppModel.setFab(Icons.Filled.ShoppingCart) {
+                urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
+            }
         }
     }
     //graph and lists show only changes
@@ -156,7 +161,7 @@ fun DetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(scrollState)
-                    .padding(bottom = 80.dp)
+                    .padding(bottom = 35.dp)
             ) {
                 ProductBox(product)
 
@@ -711,7 +716,7 @@ fun PriceListArea(priceListData: List<PriceInfo>) {
             }
         }
     }
-    if (showAllList == false) {
+    if (showAllList == false && priceListData.size > 10) {
         OutlinedButton(
             modifier = Modifier
                 .fillMaxWidth()

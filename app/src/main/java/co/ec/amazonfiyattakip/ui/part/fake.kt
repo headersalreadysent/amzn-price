@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -134,8 +135,7 @@ fun FakeFindScreen() {
         )
     )
     var color = MaterialTheme.colorScheme.secondaryContainer
-    Column(modifier = Modifier.fillMaxSize()) {
-
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         Box(
             modifier = Modifier
                 .padding(8.dp)
@@ -143,7 +143,6 @@ fun FakeFindScreen() {
                 .height(40.dp)
                 .background(color.copy(alpha))
         )
-
 
         FlowRow(modifier = Modifier.padding(horizontal = 4.dp)) {
             (1..20).forEach {

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +41,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
+import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 
@@ -53,9 +57,21 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 .verticalScroll(rememberScrollState())
                 .statusBarsPadding()
         ) {
+            TitleBar(
+                title = "Ayarlar",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .statusBarsPadding()
+
+            )
             DisposableEffect(Unit) {
                 model.startWatch()
                 model.collectJobRuns()
+                AppModel.noFab()
                 onDispose {
 
                 }
@@ -74,6 +90,15 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                     queryTime = it.toInt()
                     model.set("queryTime", it.toInt())
                 }
+                TitleBar(
+                    title = "Görünüm",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                )
                 var dynamicTheme: Boolean = readValue(settings, "dynamicTheme", false) as Boolean
                 SettingsToggle(
                     initialValue = dynamicTheme,
@@ -93,6 +118,36 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                         colorContrast = it
                         model.set("colorContrast", it)
                     }
+                }
+
+
+                TitleBar(
+                    title = "Gösterimler",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                )
+                var showServerProducts: Boolean =
+                    readValue(settings, "showServerProducts", true) as Boolean
+                SettingsToggle(
+                    initialValue = showServerProducts,
+                    title = "Hazır takipli ürünleri göster.",
+                ) {
+                    showServerProducts = it
+                    model.set("showServerProducts", it)
+                }
+
+                var showBasketTotal: Boolean =
+                    readValue(settings, "showBasketTotal", false) as Boolean
+                SettingsToggle(
+                    initialValue = showBasketTotal,
+                    title = "Takip listesi toplamını göster.",
+                ) {
+                    showBasketTotal = it
+                    model.set("showBasketTotal", it)
                 }
 
             }

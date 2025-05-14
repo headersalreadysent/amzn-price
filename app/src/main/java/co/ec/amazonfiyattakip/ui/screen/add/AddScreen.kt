@@ -75,7 +75,6 @@ fun AddScreen(
     model: AddScreenModel = viewModel(),
     asin: String? = null
 ) {
-
     DisposableEffect(Unit) {
         model.recordFromShareUrl(asin)
         AppModel.noFab()
@@ -99,6 +98,7 @@ fun AddScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(bottom = 35.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             product?.let {
@@ -109,7 +109,6 @@ fun AddScreen(
             }
         }
     } else {
-        //Progress("Ürün bilgisi yükleniyor")
         FakeAddScreen()
     }
 
@@ -135,7 +134,6 @@ fun ProductScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
         ) {
-
             if (product.description.isNotEmpty()) {
                 val canExtend = product.description.length > 300
                 var showFull by remember { mutableStateOf(canExtend) }
@@ -171,7 +169,6 @@ fun ProductScreen(
             ExtrasArea(product = product)
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
-
         TimeSpan(product.timeSpan/60,{
             updateTimeSpan(it)
         })
