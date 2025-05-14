@@ -75,6 +75,7 @@ import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.composables.TimeSpan
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
+import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.predictNextPrices
 import co.ec.amazonfiyattakip.helper.price
@@ -140,11 +141,11 @@ fun DetailScreen(
             onRefresh = {
                 refreshing = true
                 model.refreshProduct({
-                    App.snack(product.title + " güncellendi.")
+                    App.snack("Ürün güncellendi.")
                     refreshing = false
                 }) {
                     refreshing = false
-                    App.snack(product.title + " güncellenemedi.")
+                    App.snack("Güncelleme sırasında bir sorun oluştu.")
                 }
             },
             modifier = Modifier.fillMaxSize()
@@ -157,40 +158,6 @@ fun DetailScreen(
                     .padding(bottom = 80.dp)
             ) {
                 ProductBox(product)
-                if (product.status == ProductStatus.ERRORSTOP) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .background(
-                                MaterialTheme.colorScheme.errorContainer,
-                                RoundedCornerShape(5.dp)
-                            )
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            "Bu ürün bir çok hatalı sorgulama sebebiyle pasifleştirildi. " +
-                                    "Amazon üzerinde ürüne ulaşılamıyor olabilir.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        )
-                        OutlinedButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                model.changeStatus(ProductStatus.ACTIVE)
-                            },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.onErrorContainer,
-                                contentColor = MaterialTheme.colorScheme.errorContainer
-                            ),
-                            shape = RoundedCornerShape(5.dp),
-                            contentPadding = PaddingValues(vertical = 1.dp)
-                        ) {
-                            Text("Aktifleştir")
-                        }
-                    }
-                }
 
 
                 if (prices == null) {
@@ -211,6 +178,9 @@ fun DetailScreen(
                 } else {
 
                     prices?.let {
+                        ErrorStop(product) {
+                            model.changeStatus(ProductStatus.ACTIVE)
+                        }
                         TreePriceRow(it)
                         HorizontalDivider(
                             modifier = Modifier
@@ -372,6 +342,45 @@ fun DetailScreen(
 
 }
 
+@Composable
+fun ErrorStop(product: Product, activate: () -> Unit = {}) {
+    if (product.status == ProductStatus.ERRORSTOP) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(
+                    MaterialTheme.colorScheme.errorContainer,
+                    RoundedCornerShape(5.dp)
+                )
+                .padding(8.dp)
+        ) {
+            Text(
+                "Bu ürün bir çok hatalı sorgulama sebebiyle pasifleştirildi. " +
+                        "Amazon üzerinde ürüne ulaşılamıyor olabilir.",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            )
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    activate()
+                },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.onErrorContainer,
+                    contentColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                shape = RoundedCornerShape(5.dp),
+                contentPadding = PaddingValues(vertical = 1.dp)
+            ) {
+                Text("Aktifleştir")
+            }
+        }
+    }
+
+}
+
 /**
  * show three price info
  */
@@ -495,7 +504,6 @@ fun CalendarPriceDataArea(prices: List<PriceInfo>) {
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
     )
-
     DateRow(
         priceList = prices.associate { Pair(it.date.toInt(), it.price) },
     ) {
@@ -601,7 +609,6 @@ fun PricePredictionArea(prices: List<PriceInfo>) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val date = it.first.dateString()
-
                         Text(
                             date.replace(" 202", "\n202"),
                             style = MaterialTheme.typography.bodySmall.copy(
@@ -725,8 +732,7 @@ fun PriceStat(
         modifier = Modifier
             .height(IntrinsicSize.Max),
         verticalAlignment = Alignment.CenterVertically,
-
-        ) {
+    ) {
         val density = LocalDensity.current
         Icon(
             Icons.Filled.Star, "",
@@ -768,4 +774,5 @@ fun DetailScreenPreview(model: DetailViewModel = viewModel()) {
         DetailScreen(0, model)
     }
 }
+
 

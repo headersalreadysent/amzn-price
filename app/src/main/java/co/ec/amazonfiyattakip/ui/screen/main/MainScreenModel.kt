@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip.ui.screen.main
 
+import androidx.compose.ui.Modifier.Companion.then
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -38,7 +39,7 @@ open class MainScreenModel : ViewModel() {
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
-    val cache:CacheHelper? = CacheHelper.get()
+    val cache: CacheHelper? = CacheHelper.get()
 
     init {
         cache?.get("allProducts")?.let {
@@ -60,7 +61,7 @@ open class MainScreenModel : ViewModel() {
             return@asyncRun AppDatabase.getDatabase().product().getAllProducts()
         }, {
             products.value = it
-            cache?.put("allProducts",Json.encodeToString(it),43200)
+            cache?.put("allProducts", Json.encodeToString(it), 43200)
             if (it.isNotEmpty()) {
                 //if exists
                 loadDailyTotals()
@@ -125,6 +126,9 @@ open class MainScreenModel : ViewModel() {
      * get server products
      */
     fun collectServerProducts() {
+        cache?.get("serverProducts")?.let {
+            serverProducts.value = Json.decodeFromString<List<Pair<Product, List<String>>>>(it)
+        }
         viewModelScope.launch {
             val firebase = FireDB.collectWithPriceCount()
             asyncRun({
@@ -133,6 +137,7 @@ open class MainScreenModel : ViewModel() {
                 serverProducts.value = firebase
                     .filter { !asins.contains(it.first.asin) }
                     .sortedByDescending { it.first.date }
+                cache?.put("serverProducts",Json.encodeToString(serverProducts.value),60*60)
             })
         }
     }

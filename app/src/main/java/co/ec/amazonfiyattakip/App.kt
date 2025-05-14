@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip
 
-import android.app.Application
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import co.ec.amazonfiyattakip.db.AppDatabase
@@ -15,12 +14,13 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class App : CnsynApp() {
 
-    private lateinit var sharedSettings:SettingsHelper
+    private lateinit var sharedSettings: SettingsHelper
     lateinit var firebaseAnalytics: FirebaseAnalytics
 
 
@@ -28,22 +28,22 @@ class App : CnsynApp() {
 
         private lateinit var instance: App
 
-        private var snackOptions: Pair<SnackbarHostState, CoroutineScope>? = null
+        private var hostState: SnackbarHostState? = null
 
         fun context() = CnsynApp.context()
 
-        fun snack(text: String) {
-            snackOptions?.let {
-                it.second.launch {
-                    it.first.showSnackbar(text,
-                        duration = SnackbarDuration.Short )
+        fun snack(text: String, duration: SnackbarDuration = SnackbarDuration.Short) {
+            hostState?.let {
+                CoroutineScope(Dispatchers.IO).launch {
+                    hostState?.showSnackbar(text, duration = duration)
                 }
             }
         }
 
-        fun setupSnackbar(current: SnackbarHostState, coroutineScope: CoroutineScope) {
-            snackOptions = Pair(current, coroutineScope)
+        fun setupSnackbar(state: SnackbarHostState) {
+            hostState = state
         }
+
         /**
          * record event on actions
          */
@@ -67,20 +67,19 @@ class App : CnsynApp() {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
-        instance=this
+        instance = this
 
         setupSharedSettings()
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         AppDatabase.getDatabase()
-        CacheHelper(this,"globalCache")
+        CacheHelper(this, "globalCache")
 
         GlobalScope.launch {
             EventBus.subscribe<SettingsHelper.SettingsChange> {
-                if(it.name=="queryTime"){
+                if (it.name == "queryTime") {
                     PriceUpdate.setupJob()
-
                 }
             }
         }
@@ -91,7 +90,7 @@ class App : CnsynApp() {
 
     private fun setupSharedSettings() {
         //activate or deactivate collection
-        sharedSettings= SettingsHelper(applicationContext)
+        sharedSettings = SettingsHelper(applicationContext)
         //set run times
         if (sharedSettings.getBoolean("firstRun", true)) {
             sharedSettings.putBoolean("firstRun", false)
@@ -99,10 +98,9 @@ class App : CnsynApp() {
         }
         sharedSettings.putInt("appLastStart", unix().toInt())
         sharedSettings.apply {
-            putInt("queryTime", getInt("queryTime",15))
-            putBoolean("dynamicTheme", getBoolean("dynamicTheme",false))
-            putInt("colorContrast", getInt("colorContrast",1))
-
+            putInt("queryTime", getInt("queryTime", 15))
+            putBoolean("dynamicTheme", getBoolean("dynamicTheme", false))
+            putInt("colorContrast", getInt("colorContrast", 1))
         }
 
     }

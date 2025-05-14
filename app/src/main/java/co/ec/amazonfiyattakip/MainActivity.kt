@@ -103,7 +103,8 @@ fun AppContent(
         )
     }
     val coroutineScope = rememberCoroutineScope()
-    App.setupSnackbar(LocalSnackbar.current, coroutineScope)
+    App.setupSnackbar(LocalSnackbar.current)
+
     val fabAction by appModel.fabAction.observeAsState()
     val navigator = LocalNavigation.current
     navigator.addOnDestinationChangedListener { _, destination, _ ->

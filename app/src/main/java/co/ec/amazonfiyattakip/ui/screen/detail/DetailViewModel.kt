@@ -101,6 +101,9 @@ open class DetailViewModel : ViewModel() {
         })
     }
 
+    /**
+     * refresh product with pull
+     */
     fun refreshProduct(then: () -> Unit = {}, err: (e:Throwable) -> Unit = {}){
         product.value?.let { product ->
             PriceUpdate.collectOne(product,{

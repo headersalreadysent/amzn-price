@@ -15,6 +15,7 @@ import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.CacheHelper
@@ -218,7 +219,8 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     //insert into database
                     thread {
                         val product = update.copy(
-                            id = product.id
+                            id = product.id,
+                            status = ProductStatus.ACTIVE
                         )
                         PriceInfoDao.insertNewUpdate(product)
                         //add next run time
@@ -247,6 +249,13 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 then()
             }, {
                 LogHelper.e(it.localizedMessage ?: it.message ?: "", it)
+                App.event(
+                    "price_update_error", mapOf(
+                        "productAsin" to product.asin,
+                        "productTitle" to product.title,
+                        "error" to (it.localizedMessage ?: it.message ?: "")
+                    )
+                )
                 //complete defer with correct -1 because of error
                 thread { productDao.addErrorCount(product.id) }
                 FireDB.syncProduct(product)

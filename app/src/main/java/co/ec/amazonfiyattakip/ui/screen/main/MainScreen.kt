@@ -98,6 +98,7 @@ import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.LittleProductBox
+import co.ec.amazonfiyattakip.ui.part.MainProductCard
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
@@ -123,8 +124,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
         DisposableEffect(Unit) {
             //load start datas
-            model.loadProducts()
             model.collectServerProducts()
+            model.loadProducts()
             //set dealcount
             model.getPopularCount {
                 dealCount = it
@@ -579,133 +580,6 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
                     }
                 }
             }
-        }
-    }
-}
-
-
-@Composable
-fun MainProductCard(
-    productWithPrices: ProductWithPrices,
-    onClick: () -> Unit = {},
-    containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
-) {
-    CutCornerCard(
-        modifier = Modifier.fillMaxWidth(),
-        click = { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor
-        ),
-        cutSize = 10.dp,
-        shadow = 8.dp
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(2.5F)
-        ) {
-            ProductImage(
-                productWithPrices.product,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(1F)
-                    .align(Alignment.TopEnd),
-                color = containerColor,
-                radialGradient = true
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(.8F)
-            ) {
-                Text(
-                    productWithPrices.product.title + "\n",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
-                        .padding(top = 8.dp),
-                    style = TextStyle(
-                        lineHeight = 18.sp,
-                        shadow = Shadow(MaterialTheme.colorScheme.primary, Offset(1F, 1F), 1F)
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-
-                    )
-                AutoText(
-                    text = productWithPrices.product.price(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1F)
-                        .padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold
-                    )
-                )
-            }
-
-
-            Crossfade(
-                targetState = productWithPrices.priceInfoList.size > 1,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(.4F)
-                    .align(Alignment.BottomCenter)
-            ) {
-
-                if (it) {
-                    var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
-                    val groupedPrices by remember {
-                        var group =
-                            productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd") }
-                        if (group.size == 1) {
-                            group =
-                                productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd-hhmm") }
-                        }
-                        mutableStateOf(group.map {
-
-                            val ave =
-                                it.value.toList().sumOf { it.price }.toFloat() / it.value.size
-                            return@map PriceGraphPair(it.value[0].date, ave)
-                        })
-                    }
-                    PriceGraph(
-                        modifier = Modifier,
-                        prices = groupedPrices,
-                        onDrag = { pair ->
-                            selectedPair = pair
-                        },
-                        hasCircles = false,
-                        color = MaterialTheme.colorScheme.secondary.copy(alpha = .4F),
-                        subRatio = 0F
-                    )
-                    val textColor =
-                        contentColorFor(MaterialTheme.colorScheme.secondary.copy(alpha = .8F))
-                    selectedPair?.let {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomStart)
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-
-                            Text(
-                                it.price.toInt().price(),
-                                modifier = Modifier.padding(end = 8.dp),
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = textColor
-                                )
-                            )
-                        }
-
-                    }
-
-                }
-
-            }
-
         }
     }
 }
