@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cached
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
@@ -53,6 +54,8 @@ import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.BottomCardContent
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
+import co.ec.helper.helpers.CacheHelper
+import co.ec.helper.helpers.LogHelper
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Dispatchers
@@ -161,7 +164,12 @@ fun AppContent(
                             }
                         }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Settings")
-
+                        }
+                        IconButton(onClick = {
+                            val helper=CacheHelper.get()
+                            LogHelper.d("cacheHelper ${helper.get("a")}")
+                        }) {
+                            Icon(Icons.Default.Cached, contentDescription = "Settings")
                         }
                     }
                     Spacer(Modifier.weight(1f, true))

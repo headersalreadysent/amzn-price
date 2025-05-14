@@ -7,6 +7,7 @@ import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.service.job.DeleteOldProducts
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.CnsynApp
+import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.EventBus
 import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.unix
@@ -73,6 +74,7 @@ class App : CnsynApp() {
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         AppDatabase.getDatabase()
+        CacheHelper(this,"globalCache")
 
         GlobalScope.launch {
             EventBus.subscribe<SettingsHelper.SettingsChange> {

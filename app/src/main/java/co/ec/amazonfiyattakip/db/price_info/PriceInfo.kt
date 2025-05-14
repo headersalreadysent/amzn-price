@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import co.ec.amazonfiyattakip.db.product.Product
+import kotlinx.serialization.Serializable
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -21,6 +22,7 @@ import java.util.Locale
         Index(value = ["productId", "date"], unique = true)
     ]
 )
+@Serializable
 data class PriceInfo(
     @PrimaryKey(autoGenerate = true) var id: Int,
     val productId: Int,

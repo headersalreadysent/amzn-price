@@ -17,14 +17,18 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
+import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import com.google.firebase.components.Dependency.deferred
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
@@ -128,6 +132,10 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                         //mark error stop if access to limit
                         productDao.markErrorStop()
                     }
+                    asyncRun({
+                        var allProductsData=AppDatabase.getDatabase().product().getAllProducts()
+                        CacheHelper.get().put("allProducts",Json.encodeToString(allProductsData),43200)
+                    })
                     Result.success(outputData.build())
                 }
             } catch (e: Exception) {

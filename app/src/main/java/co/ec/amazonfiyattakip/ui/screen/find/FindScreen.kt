@@ -229,8 +229,7 @@ private fun DealsScreenPReview() {
 @Composable
 private fun FindScreenPreview() {
     PreviewProviders {
-        val isPreview = LocalInspectionMode.current
-        val model = FindViewModel(isPreview = isPreview)
+        val model = FindViewModel(isPreview = true)
         model.emulate()
         FindScreen(model, keyword = "android")
     }

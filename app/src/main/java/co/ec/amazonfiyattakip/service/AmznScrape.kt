@@ -3,7 +3,6 @@ package co.ec.amazonfiyattakip.service
 import android.os.SystemClock
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.helper.CnsynApp
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
@@ -18,18 +17,11 @@ import java.nio.charset.StandardCharsets
 
 class AmznScrape {
 
-
     companion object {
         private const val DETAIL_PAGE_URL = "https://www.amazon.com.tr/_title_/dp/_asin_"
-
-
         fun urlFromAsin(asin: String, title: String? = null): String {
             return DETAIL_PAGE_URL.replace("_asin_", asin).replace("_title_", title ?: asin)
         }
-
-
-        val cache: CacheHelper? =
-            if (CnsynApp.contextCheck() != null) CacheHelper(App.context(), "asin") else null
     }
 
     /**
@@ -51,11 +43,13 @@ class AmznScrape {
      * scrape data in back thread
      */
     suspend fun suspendScrape(url: String, cacheActive: Boolean = true): Product {
+
+        val cache =CacheHelper.get()
         return withContext(Dispatchers.IO) {
             val pageUrl = if (url.startsWith("http")) url else urlFromAsin(url)
             // Check cache first
             if (cacheActive) {
-                cache?.get(pageUrl)?.let { cachedData ->
+                cache.get("http-$pageUrl")?.let { cachedData ->
                     return@withContext Product.decode(cachedData)
                 }
             }
@@ -66,7 +60,7 @@ class AmznScrape {
             val product = extractProductDetails(response)
             if (cacheActive) {
                 // Cache the new product data
-                cache?.put(pageUrl, product.encode(), 60 * 60)
+                cache.put("http-$pageUrl", product.encode(), 60 * 60)
             }
             val duration = SystemClock.elapsedRealtime() - startTime
             App.event("product_scrape", mapOf(
@@ -179,7 +173,7 @@ class AmznScrape {
      */
     private fun extractProductDetails(html: String): Product {
 
-        val doc = Ksoup.parse(html ?: "")
+        val doc = Ksoup.parse(html)
         val asin = doc.getElementsByAttributeValue("name", "asin").first()?.value() ?: ""
         //get title
         val title = doc.getElementById("productTitle")?.text() ?: ""
@@ -242,7 +236,7 @@ class AmznScrape {
                 .first()?.let {
                     return (it.value().toFloat() * 100).toInt()
                 }
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
             return 0
         }
         return 0
@@ -256,7 +250,7 @@ class AmznScrape {
      */
     private fun extractPopularProducts(html: String): List<String> {
 
-        val doc = Ksoup.parse(html ?: "")
+        val doc = Ksoup.parse(html)
         return doc.select("li.a-carousel-card").map {
             val asin = it.getElementsByAttribute("data-asin").attr("data-asin")
             return@map asin
@@ -270,7 +264,7 @@ class AmznScrape {
      */
     private fun extractSearchResults(html: String): List<String> {
 
-        val doc = Ksoup.parse(html ?: "")
+        val doc = Ksoup.parse(html)
         return doc.select("div[role='listitem'][data-asin]").map {
             val asin = it.getElementsByAttribute("data-asin").attr("data-asin")
             return@map asin

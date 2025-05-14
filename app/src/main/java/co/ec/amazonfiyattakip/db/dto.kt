@@ -4,8 +4,9 @@ import androidx.room.Embedded
 import androidx.room.Relation
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
+import kotlinx.serialization.Serializable
 
-
+@Serializable
 data class ProductWithPrices(
     @Embedded val product: Product,
     @Relation(

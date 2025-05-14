@@ -31,7 +31,7 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
-    val cache: CacheHelper? = if (!isPreview) CacheHelper(App.context()) else null
+    val cache: CacheHelper? = if (!isPreview) CacheHelper.get() else null
 
     init {
         LogHelper.d("search model init ${searchFlow}")
