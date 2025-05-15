@@ -21,6 +21,7 @@
 #-renamesourcefileattribute SourceFile
 -keep class com.google.firebase.** { *; }
 -keep class co.ec.amazonfiyattakip.db.FireDB$ProductRecord { *; }
+-keep class co.ec.amazonfiyattakip.db.** { *; }
 
 # Keep Room entities and their fields
 -keepclassmembers class * {
