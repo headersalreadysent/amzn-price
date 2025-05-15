@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 class App : CnsynApp() {
 
     private lateinit var sharedSettings: SettingsHelper
+    private lateinit var cacheHelper: CacheHelper
     lateinit var firebaseAnalytics: FirebaseAnalytics
 
 
@@ -44,6 +45,14 @@ class App : CnsynApp() {
             hostState = state
         }
 
+        fun settings(): SettingsHelper {
+            return instance.sharedSettings
+        }
+
+        fun cache(): CacheHelper {
+            return instance.cacheHelper
+        }
+
         /**
          * record event on actions
          */
@@ -64,45 +73,43 @@ class App : CnsynApp() {
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
         instance = this
-
-        setupSharedSettings()
-
-        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
-
         AppDatabase.getDatabase()
-        CacheHelper(this, "globalCache")
+        setupSharedSettings()
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
+        cacheHelper = CacheHelper(this, "globalCache")
 
-        GlobalScope.launch {
+        //setup jobs
+        PriceUpdate.setupJob()
+        DeleteOldProducts.setupJob()
+        //setup listen
+        CoroutineScope(Dispatchers.IO).launch {
             EventBus.subscribe<SettingsHelper.SettingsChange> {
                 if (it.name == "queryTime") {
                     PriceUpdate.setupJob()
                 }
             }
         }
-        PriceUpdate.setupJob()
-        DeleteOldProducts.setupJob()
     }
 
 
     private fun setupSharedSettings() {
         //activate or deactivate collection
         sharedSettings = SettingsHelper(applicationContext)
-        //set run times
-        if (sharedSettings.getBoolean("firstRun", true)) {
-            sharedSettings.putBoolean("firstRun", false)
-            sharedSettings.putInt("appSetup", unix().toInt())
-        }
-        sharedSettings.putInt("appLastStart", unix().toInt())
         sharedSettings.apply {
+            if (getBoolean("firstRun", true)) {
+                putBoolean("firstRun", false)
+                putInt("appSetup", unix().toInt())
+            }
+            putInt("appLastStart", unix().toInt())
             putInt("queryTime", getInt("queryTime", 15))
             putBoolean("dynamicTheme", getBoolean("dynamicTheme", false))
             putInt("colorContrast", getInt("colorContrast", 1))
-            /*putBoolean("showBasketTotal", getBoolean("showBasketTotal", false))
-            putBoolean("showServerProducts",getBoolean("showServerProducts",true))*/
+            putBoolean("showBasketTotal", getBoolean("showBasketTotal", false))
+            putBoolean("showServerProducts", getBoolean("showServerProducts", true))
+            putBoolean("showDealsInfo", getBoolean("showDealsInfo", true))
         }
 
     }

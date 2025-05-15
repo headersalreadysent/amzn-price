@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,8 +39,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
-import co.ec.amazonfiyattakip.service.AmznScrape
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.dateString
@@ -69,7 +69,6 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
 
             )
             DisposableEffect(Unit) {
-                model.startWatch()
                 model.collectJobRuns()
                 AppModel.noFab()
                 onDispose {
@@ -77,80 +76,70 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 }
             }
 
-            val settings by model.map.observeAsState(mapOf())
-            if (settings.keys.isNotEmpty()) {
-                var queryTime: Int = readValue(settings, "queryTime", 15) as Int
-                SettingsValue(
-                    initialValue = queryTime.toString(),
-                    title = "Sorgulama sıklığı (dakika)",
-                    desc = "En az 15 dakika olacak şekilde sorgulama sıklığı",
-                    keyboard = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    override = { it.replace(Regex("[^0-9]"), "") }
-                ) {
-                    queryTime = it.toInt()
-                    model.set("queryTime", it.toInt())
-                }
-                TitleBar(
-                    title = "Görünüm",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+            SettingsValueInt(
+                name = "queryTime",
+                default = 15,
+                title = "Sorgulama sıklığı (dakika)",
+                desc = "En az 15 dakika olacak şekilde sorgulama sıklığı",
+                override = { it.toString().replace(Regex("[^0-9]"), "").toInt() }
+            )
+            TitleBar(
+                title = "Görünüm",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+            var dynamicTheme by remember {
+                mutableStateOf(
+                    App.settings().getBoolean("dynamicTheme")
                 )
-                var dynamicTheme: Boolean = readValue(settings, "dynamicTheme", false) as Boolean
-                SettingsToggle(
-                    initialValue = dynamicTheme,
-                    title = "Dinamik Tema",
-                ) {
-                    dynamicTheme = it
-                    model.set("dynamicTheme", it)
-                }
-                if (!dynamicTheme) {
-                    var colorContrast: Int = readValue(settings, "colorContrast", 1) as Int
-
-                    SettingsDropdown(
-                        initialValue = colorContrast,
-                        title = "Renk Karşıtlığı",
-                        values = mapOf(1 to "Düşük", 2 to "Orta", 3 to "Yüksek")
-                    ) {
-                        colorContrast = it
-                        model.set("colorContrast", it)
-                    }
-                }
-
-
-                TitleBar(
-                    title = "Gösterimler",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
-                var showServerProducts: Boolean =
-                    readValue(settings, "showServerProducts", true) as Boolean
-                SettingsToggle(
-                    initialValue = showServerProducts,
-                    title = "Hazır takipli ürünleri göster.",
-                ) {
-                    showServerProducts = it
-                    model.set("showServerProducts", it)
-                }
-
-                var showBasketTotal: Boolean =
-                    readValue(settings, "showBasketTotal", false) as Boolean
-                SettingsToggle(
-                    initialValue = showBasketTotal,
-                    title = "Takip listesi toplamını göster.",
-                ) {
-                    showBasketTotal = it
-                    model.set("showBasketTotal", it)
-                }
-
             }
+            SettingsToggle(
+                name = "dynamicTheme",
+                default = false,
+                title = "Dinamik Tema",
+            ) {
+                dynamicTheme = it
+            }
+            if (!dynamicTheme) {
+
+                SettingsDropdown(
+                    name = "colorContrast",
+                    default = 1,
+                    title = "Renk Karşıtlığı",
+                    values = mapOf(1 to "Düşük", 2 to "Orta", 3 to "Yüksek")
+                )
+            }
+
+
+            TitleBar(
+                title = "Gösterimler",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+
+            SettingsToggle(
+                name = "showServerProducts",
+                default = true,
+                title = "Hazır kayıtlı ürünleri göster.",
+            )
+            SettingsToggle(
+                name = "showDealsInfo",
+                default = true,
+                title = "Fırsatları göster.",
+            )
+            SettingsToggle(
+                name = "showBasketTotal",
+                default = false,
+                title = "Takip listesi toplamını göster.",
+            )
 
 
         }
@@ -181,19 +170,20 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
             }
         }
 
-
     }
 
 }
 
 @Composable
 fun SettingsToggle(
-    initialValue: Boolean,
+    name: String,
+    default: Boolean = true,
     title: String,
     desc: String? = null,
-    onConfirm: (Boolean) -> Unit
+    onConfirm: (Boolean) -> Unit = {}
 ) {
-    var value by remember { mutableStateOf(initialValue) }
+    val settings = LocalSettings.current
+    var value by remember { mutableStateOf(settings.getBoolean(name, default)) }
     ListItem(
         modifier = Modifier
             .padding(bottom = 3.dp)
@@ -203,6 +193,7 @@ fun SettingsToggle(
         trailingContent = {
             Switch(checked = value, onCheckedChange = {
                 value = !value
+                settings.putBoolean(name, value)
                 onConfirm(value)
             })
         }
@@ -212,16 +203,19 @@ fun SettingsToggle(
 
 @Composable
 fun SettingsValue(
-    initialValue: String,
+    name: String,
+    default: String,
     title: String,
     desc: String? = null,
     keyboard: KeyboardOptions = KeyboardOptions.Default,
     override: ((input: String) -> String)? = null,
-    onConfirm: (String) -> Unit
+    onConfirm: (String) -> Unit = {}
 ) {
-    var text by remember { mutableStateOf(initialValue) }
-    var settingsValue by remember { mutableStateOf(initialValue) }
+    val settings = LocalSettings.current
+    var settingsValue by remember { mutableStateOf(settings.getString(name, default).toString()) }
     var showDialog by remember { mutableStateOf(false) }
+    //textbox content
+    var text by remember { mutableStateOf(settingsValue) }
     ListItem(
         modifier = Modifier
             .clickable { showDialog = !showDialog }
@@ -245,7 +239,8 @@ fun SettingsValue(
                         )
                     }
                     TextField(
-                        value = text, onValueChange = { value ->
+                        value = text,
+                        onValueChange = { value ->
                             text = override?.let { it(value) } ?: value
                         },
                         keyboardOptions = keyboard
@@ -257,6 +252,7 @@ fun SettingsValue(
                     onConfirm(text)
                     showDialog = false
                     settingsValue = text
+                    settings.putString(name, settingsValue)
                 }) { Text("Kaydet") }
             },
             dismissButton = {
@@ -269,22 +265,101 @@ fun SettingsValue(
 
 }
 
+@Composable
+fun SettingsValueInt(
+    name: String,
+    default: Int,
+    title: String,
+    desc: String? = null,
+    keyboard: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+    override: ((input: Int) -> Int)? = null,
+    onConfirm: (Int) -> Unit = {}
+) {
+    val settings = LocalSettings.current
+    //read from settings
+    var settingsValue by remember { mutableIntStateOf(settings.getInt(name, default)) }
+    var showDialog by remember { mutableStateOf(false) }
+    //textbox content
+    var text by remember { mutableStateOf(settingsValue.toString()) }
+    ListItem(
+        modifier = Modifier
+            .clickable { showDialog = !showDialog }
+            .padding(bottom = 3.dp)
+            .shadow(3.dp),
+        headlineContent = { Text(text = title) },
+        supportingContent = { desc?.let { Text(text = it) } },
+        trailingContent = { Text(text = settingsValue.toString()) }
+    )
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(title) },
+            text = {
+                Column {
+                    desc?.let {
+                        Text(
+                            text = it, modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 4.dp)
+                        )
+                    }
+                    TextField(
+                        value = text,
+                        onValueChange = { value ->
+                            if (value != "") {
+                                text = (override?.let { it(value.toInt()) } ?: value).toString()
+                            } else {
+                                text = ""
+                            }
+                        },
+                        keyboardOptions = keyboard
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        //close
+                        showDialog = false
+                        //set value
+                        if (text == "") {
+                            //if empty set to default
+                            text = default.toString()
+                        }
+                        settingsValue = text.toInt()
+                        onConfirm(settingsValue)
+                        settings.putInt(name, settingsValue)
+                    }) { Text("Kaydet") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("İptal")
+                }
+            }
+        )
+    }
+
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsDropdown(
-    initialValue: Int,
+    name: String,
+    default: Int,
     values: Map<Int, String>? = null,
     title: String,
     desc: String? = null,
-    onConfirm: (Int) -> Unit
+    onConfirm: (Int) -> Unit = {},
 ) {
     if (values.orEmpty().isEmpty()) {
         return
     }
+    val settings = LocalSettings.current
+    var value by remember { mutableIntStateOf(settings.getInt(name, default)) }
+
     var showDialog by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf(initialValue) }
-    var settingsValue by remember { mutableStateOf(initialValue) }
+    var selectedItem by remember { mutableStateOf(value) }
+    var settingsValue by remember { mutableStateOf(value) }
 
     ListItem(
         modifier = Modifier
@@ -349,6 +424,7 @@ fun SettingsDropdown(
                 TextButton(onClick = {
                     onConfirm(settingsValue)
                     selectedItem = settingsValue
+                    settings.putInt(name, settingsValue)
                     showDialog = false
                 }) { Text("Kaydet") }
             },
@@ -361,13 +437,6 @@ fun SettingsDropdown(
 
     }
 
-}
-
-fun readValue(settings: Map<String, Any?>, key: String, default: Any): Any {
-    if (settings.containsKey(key)) {
-        return if (settings[key] == null) default else settings[key] as Any
-    }
-    return default
 }
 
 

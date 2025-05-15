@@ -1,11 +1,8 @@
 package co.ec.amazonfiyattakip.ui.screen.main
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
@@ -38,22 +34,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BatteryAlert
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -67,43 +55,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.focusModifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
-import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.LowPriced
-import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.PermissionHelper
-import co.ec.amazonfiyattakip.helper.format
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
@@ -117,8 +89,6 @@ import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
-import co.ec.helper.utils.unix
-import kotlin.math.absoluteValue
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -131,19 +101,22 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
     val stats by model.stats.observeAsState(null)
     Column(modifier = Modifier.fillMaxSize()) {
         var deals by remember { mutableStateOf<List<Product>>(listOf()) }
-        var dealCount by remember { mutableIntStateOf(0) }
+        var dealCount by remember { mutableStateOf<Int?>(null) }
         val lowPricedProducts by model.lowPriced.observeAsState(listOf())
-        val showServerProducts = settings.getBoolean("showServerProducts")
-        LogHelper.d("showServerProducts $showServerProducts")
+        val serverProducts by model.serverProducts.observeAsState(null)
         DisposableEffect(Unit) {
+            model.loadProducts()
             //load start datas
-            if(showServerProducts){
+            val showServerProducts = settings.getBoolean("showServerProducts", true)
+            if (showServerProducts) {
                 model.collectServerProducts()
             }
-            model.loadProducts()
-            //set dealcount
-            model.getPopularCount {
-                dealCount = it
+            //set dealcount if user wants to see it
+            val showDealsInfo = settings.getBoolean("showDealsInfo", true)
+            if (showDealsInfo) {
+                model.getPopularCount {
+                    dealCount = it
+                }
             }
             onDispose { }
         }
@@ -155,42 +128,15 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 deals = deals + deal
             }
         }
-        val serverProducts by model.serverProducts.observeAsState()
         TopArea(lowPricedProducts)
         stats?.let { stat ->
-            SlowQuery(stat)
+            SlowQueryArea(stat)
+        }
+        DealCountArea(dealCount)
+        serverProducts?.let {
+            ServerProductsArea(serverProducts)
+        }
 
-        }
-        AnimatedVisibility(
-            visible = dealCount != 0, enter = fadeIn() + expandVertically()
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-                    .clickable {
-                        navigation.navigate("find")
-                    }
-                    .padding(8.dp)
-            ) {
-                Text(
-                    "Amazondaki fırsatları görerek hızlaca takip et.",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                )
-                Text(
-                    "$dealCount adet fırsat var",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
-                    )
-                )
-            }
-        }
-        if (showServerProducts) {
-            ServerProducts(serverProducts)
-        }
         HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
@@ -314,7 +260,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                     navigation.navigate("add/${it.asin}")
                                 })
                         }
-                        if (deals.count() < dealCount) {
+                        if (deals.count() < (dealCount ?: 0)) {
                             OutlinedButton(
                                 modifier = Modifier.fillMaxWidth(),
                                 onClick = {
@@ -331,8 +277,12 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
     }
 
     var showTotal = settings.getBoolean("showBasketTotal", false)
-
-    AppModel.cutCard(if (showTotal) Modifier.aspectRatio(3.5F) else Modifier.height(30.dp)) {
+    val height = if (productList.orEmpty().isEmpty() || showTotal) {
+        Modifier.aspectRatio(3.5F)
+    } else {
+        Modifier.height(30.dp)
+    }
+    AppModel.cutCard(height) {
         productList?.let { products ->
             if (products.isNotEmpty()) {
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -498,7 +448,7 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
 }
 
 @Composable
-fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
+fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
     AnimatedVisibility(
         visible = serverProducts !== null, enter = fadeIn() + expandVertically()
     ) {
@@ -578,11 +528,41 @@ fun ServerProducts(serverProducts: List<Pair<Product, List<String>>>?) {
     }
 }
 
-/**
- * show slow query alert
- */
 @Composable
-fun SlowQuery(stat: Map<String, Int>) {
+fun DealCountArea(dealCount: Int? = null) {
+    val navigation = LocalNavigation.current
+    AnimatedVisibility(
+        visible = (dealCount ?: 0) > 0,
+        enter = fadeIn() + expandVertically()
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                .clickable {
+                    navigation.navigate("find")
+                }
+                .padding(8.dp)
+        ) {
+            Text(
+                "Amazondaki fırsatları görerek hızlaca takip et.",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            )
+            Text(
+                "$dealCount adet fırsat var",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun SlowQueryArea(stat: Map<String, Int>) {
     if (PermissionHelper.isIgnoringBattery()) {
         return
     }
