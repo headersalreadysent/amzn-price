@@ -100,13 +100,12 @@ fun DetailScreen(
     val urlHandler = LocalUriHandler.current
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
-    LaunchedEffect(product) {
-        //on product change set fab to add
-        AppModel.setFab(Icons.Filled.ShoppingCart) {
-            urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
+    AppModel.setFab(Icons.Filled.ShoppingCart) {
+        product?.let {
+            urlHandler.openUri(AmznScrape.urlFromAsin(it.asin))
         }
-
     }
+
     DisposableEffect(Unit) {
         productId?.let {
             model.loadProduct(productId)
