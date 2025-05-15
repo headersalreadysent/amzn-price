@@ -1,13 +1,18 @@
 package co.ec.amazonfiyattakip.ui.part
 
+import android.R.attr.maxLines
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 
@@ -30,12 +36,13 @@ fun LittleProductBox(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
     contentColor :Color= MaterialTheme.colorScheme.onTertiaryContainer,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    aspectRatio:Float=2.5F
 ) {
     Box(modifier = Modifier
         .fillMaxWidth(.5F)
         .padding(4.dp)
-        .aspectRatio(2.5F)
+        .aspectRatio(aspectRatio)
         .background(containerColor)
         .border(1.dp, contentColor.copy(alpha = .2F))
         .clickable(enabled = onClick != null) {
@@ -53,30 +60,34 @@ fun LittleProductBox(
                 .alpha(.9F),
             color = containerColor
         )
-        Text(
-            product.title,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .padding(end = 16.dp),
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = contentColor,
-                fontWeight = FontWeight.SemiBold,
-                shadow = Shadow(contentColor.copy(alpha = .3F), Offset(3F, 3F), 1F)
-            ),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            product.price(),
-            modifier = Modifier
-                .padding(8.dp)
-                .align(Alignment.BottomStart),
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = contentColor,
-                fontWeight = FontWeight.Bold,
+        Column(modifier = Modifier.fillMaxSize().padding(4.dp)) {
+            BasicText(
+                product.title,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(2F)
+                    .padding(end = 16.dp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = contentColor,
+                    fontWeight = FontWeight.SemiBold,
+                    shadow = Shadow(contentColor.copy(alpha = .3F), Offset(3F, 3F), 1F)
+                ),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = TextAutoSize.StepBased(12.sp,22.sp)
             )
-        )
+            BasicText(
+                product.price(),
+                modifier = Modifier
+                    .weight(1F),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = contentColor,
+                    fontWeight = FontWeight.Bold,
+                ),
+                autoSize = TextAutoSize.StepBased(12.sp,18.sp)
+            )
+        }
+
 
     }
 }

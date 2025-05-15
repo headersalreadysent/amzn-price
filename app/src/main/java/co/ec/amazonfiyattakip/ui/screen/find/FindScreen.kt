@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip.ui.screen.find
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,21 +14,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,6 +38,7 @@ import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutInput
 import co.ec.amazonfiyattakip.composables.Progress
+import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
@@ -59,25 +61,31 @@ fun FindScreen(
     val settings = LocalSettings.current
     var searchStarted by remember { mutableStateOf(false) }
 
-    var searchKeyword by remember { mutableStateOf(keyword) }
+    val searchKeyword by model.searchKeyword.observeAsState(keyword)
     var searchResults by remember { mutableStateOf<List<Product>>(listOf()) }
 
+    var showDealsInfo by remember { mutableStateOf(settings.getBoolean("showDealsInfo", true)) }
     var deals by remember { mutableStateOf<List<Product>>(listOf()) }
+
+    LaunchedEffect(Unit) {
+        if (showDealsInfo) {
+            model.deals.collect { deal ->
+                deals = deals + deal
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         model.searchResults.collect { result ->
+            searchStarted = true
             searchResults = searchResults + result
         }
     }
-    LaunchedEffect(Unit) {
-        model.deals.collect { deal ->
-            deals = deals + deal
-        }
-    }
+
     DisposableEffect(Unit) {
-        model.startAction { results, keyword ->
+        model.isSearchExists { keyword, results ->
             searchStarted = true
             searchResults = results
-            searchKeyword = keyword
         }
         if (searchKeyword != "") {
             model.search(searchKeyword)
@@ -88,10 +96,7 @@ fun FindScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+    Column(modifier = Modifier.fillMaxSize()) {
         if (searchStarted) {
             if (searchResults.isEmpty()) {
                 Progress("$searchKeyword araması yapılıyor")
@@ -132,7 +137,53 @@ fun FindScreen(
                 }
             }
         } else {
-            DealsListScreen(deals)
+            if (showDealsInfo) {
+                DealsListScreen(deals)
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val oldSearches by model.oldSearches.observeAsState(listOf<String>())
+
+                    if (oldSearches.isNotEmpty()) {
+                        Text(
+                            "Önceki Aramalar",
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                        val shape= cutShape()
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxWidth(.8F),
+
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            oldSearches.forEach {
+                                AssistChip(
+                                    label = {
+                                        Text(it)
+                                    }, onClick = {
+                                        model.search(it)
+                                        searchStarted = true
+                                    },
+                                    shape = shape,
+                                    colors = AssistChipDefaults.assistChipColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                )
+                            }
+                        }
+                    }
+
+                }
+            }
         }
 
     }
@@ -144,20 +195,25 @@ fun FindScreen(
             .padding(16.dp)
     ) {
         val keyboard by rememberKeyboardVisibleState()
+        var keyword by remember { mutableStateOf("") }
+        LaunchedEffect(searchKeyword) {
+            keyword=searchKeyword
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = if (keyboard) 16.dp else 0.dp)
         ) {
+
             CutInput(
-                value = searchKeyword,
-                valueChange = { searchKeyword = it },
+                value = keyword,
+                valueChange = { keyword = it },
                 action = "Ara",
                 height = 60.dp,
                 textStyle = MaterialTheme.typography.bodyLarge,
                 click = {
-                    if (searchKeyword.length > 3) {
-                        model.search(searchKeyword)
+                    if (keyword.length > 3) {
+                        model.search(keyword)
                         searchResults = listOf()
                         searchStarted = true
                         keyboardController?.hide()

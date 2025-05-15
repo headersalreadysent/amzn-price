@@ -1,9 +1,11 @@
 package co.ec.amazonfiyattakip.ui.screen.find
 
+import android.R.attr.text
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.App.Companion.cache
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.CacheHelper
@@ -23,30 +25,84 @@ import kotlin.random.Random
 
 open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
 
+    val cache: CacheHelper? = if (!isPreview) CacheHelper.get() else null
 
+    var searchKeyword = MutableLiveData<String>("")
+    val oldSearches = MutableLiveData<List<String>>(listOf<String>())
     private val searchFlow = MutableSharedFlow<Product>()
+
+
     val searchResults: SharedFlow<Product> = searchFlow
     private val recordedResults = MutableLiveData<List<Product>>()
+
 
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
-    val cache: CacheHelper? = if (!isPreview) CacheHelper.get() else null
-
     init {
-        LogHelper.d("search model init ${searchFlow}")
+        oldSearches.value = (cache?.get("oldSearches") ?: "").split("|").filter { it != "" }.distinct()
     }
 
 
-    fun startAction(searchExists: (list: List<Product>, search: String) -> Unit = {_,_ ->}) {
+    fun isSearchExists(searchExists: (keyword: String, list: List<Product>) -> Unit = { _, _ -> }) {
         //look older searches
-        val list = recordedResults.value.orEmpty()
-        if (list.isNotEmpty()) {
-            searchExists(list, cache?.get("searchKeyword") ?: "")
-            LogHelper.d("search model load exits ${list.size}")
-        } else {
-            LogHelper.d("search model not exits load deals")
+        recordedResults.value?.let {
+            if (it.isNotEmpty()) {
+                val cachedKeyword = cache?.get("searchKeyword") ?: ""
+                searchKeyword.value = cachedKeyword
+                searchExists(cachedKeyword, it)
+            }
+            return
+        }
+        if (App.settings().getBoolean("showDealsInfo", true)) {
             loadDeals()
+        }
+
+    }
+
+    /**
+     * search scrape
+     */
+    private fun searchScraper(asins: List<String>) {
+        val semaphore = Semaphore(10)
+        viewModelScope.launch {
+            channelFlow {
+                asins.map { asin ->
+                    async {
+                        semaphore.withPermit {
+                            runCatching { AmznScrape().suspendScrape(asin) }
+                                .onSuccess { send(it) }
+                        }
+                    }
+                }.forEach { it.await() }
+            }.collect { result ->
+                if (result.title.isNotEmpty() && result.price > 0) {
+                    searchFlow.emit(result)
+                    recordedResults.value = recordedResults.value.orEmpty() + result
+                    LogHelper.d("search model recorded ${recordedResults.value?.size}")
+                }
+            }
+        }
+    }
+
+
+    /**
+     * load deals from amazon
+     */
+    fun search(keyword: String) {
+        searchKeyword.value=keyword
+        cache?.put("searchKeyword", keyword, 60 * 5)
+        cache?.get("search-$keyword")?.let {
+            return searchScraper(it.split("|"))
+        }
+        AmznScrape().search(keyword, { asins ->
+            cache?.put("search-$keyword", asins.joinToString("|"), 60)
+            var olds = (cache?.get("oldSearches") ?: "").split("|")
+            var newList = listOf(keyword) + olds
+            cache?.put("oldSearches", newList.distinct().joinToString("|"), 86400 * 100)
+            searchScraper(asins)
+        }) {
+            App.snack("Arama sonucunda bir hata oluştu.")
         }
     }
 
@@ -83,46 +139,6 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
             cache?.put("latestDeals", asins.joinToString("|"), 60 * 60)
             scraper(asins)
         })
-    }
-
-
-    /**
-     * load deals from amazon
-     */
-    fun search(text: String) {
-        cache?.put("searchKeyword", text, 60 * 5)
-        val scraper: (List<String>) -> Unit = { asins ->
-            val semaphore = Semaphore(10)
-            viewModelScope.launch {
-                channelFlow {
-                    asins.map { asin ->
-                        async {
-                            semaphore.withPermit {
-                                runCatching { AmznScrape().suspendScrape(asin) }
-                                    .onSuccess { send(it) }
-                            }
-                        }
-                    }.forEach { it.await() }
-                }.collect { result ->
-                    if (result.title.isNotEmpty() && result.price > 0) {
-                        searchFlow.emit(result)
-                        recordedResults.value = recordedResults.value.orEmpty() + result
-                        LogHelper.d("search model recorded ${recordedResults.value?.size}")
-                    }
-                }
-            }
-        }
-        //first look cache
-        val old = cache?.get("search-$text")
-        if (old != null) {
-            return scraper(old.split("|"))
-        }
-        AmznScrape().search(text, { asins ->
-            cache?.put("search-$text", asins.joinToString("|"), 60)
-            scraper(asins)
-        }) {
-            App.snack("Arama sonucunda bir hata oluştu.")
-        }
     }
 
     /**
