@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.composables
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -18,11 +19,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.helper.composable.AutoText
@@ -31,12 +34,17 @@ import co.ec.helper.composable.AutoText
 fun ProductBox(
     product: Product,
 ) {
+
+    val urlHandler = LocalUriHandler.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable {
+                urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
+            }
             .padding(bottom = 8.dp)
             .background(MaterialTheme.colorScheme.secondaryContainer)
-            .aspectRatio(2F )
+            .aspectRatio(2F)
             .shadow(1.dp)
     ) {
         ProductImage(
@@ -50,7 +58,7 @@ fun ProductBox(
         )
         Column(
             modifier = Modifier
-                .fillMaxWidth(.8F  )
+                .fillMaxWidth(.8F)
                 .fillMaxHeight()
                 .padding(horizontal = 16.dp)
                 .statusBarsPadding()
@@ -60,9 +68,11 @@ fun ProductBox(
                 style = MaterialTheme.typography.titleLarge.copy(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontWeight = FontWeight.Bold,
-                    shadow = Shadow(MaterialTheme.colorScheme.onSecondaryContainer.copy(
-                        alpha = .5F
-                    ), Offset(1F,1F),1F)
+                    shadow = Shadow(
+                        MaterialTheme.colorScheme.onSecondaryContainer.copy(
+                            alpha = .5F
+                        ), Offset(1F, 1F), 1F
+                    )
                 ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -84,9 +94,9 @@ fun ProductBox(
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             )
-                ProductStat(
-                    product, color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+            ProductStat(
+                product, color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
 
         }
 

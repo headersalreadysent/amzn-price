@@ -100,7 +100,13 @@ fun DetailScreen(
     val urlHandler = LocalUriHandler.current
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
+    LaunchedEffect(product) {
+        //on product change set fab to add
+        AppModel.setFab(Icons.Filled.ShoppingCart) {
+            urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
+        }
 
+    }
     DisposableEffect(Unit) {
         productId?.let {
             model.loadProduct(productId)
@@ -109,14 +115,7 @@ fun DetailScreen(
 
         }
     }
-    LaunchedEffect(product) {
-        product?.let {
-            //on product change set fab to add
-            AppModel.setFab(Icons.Filled.ShoppingCart) {
-                urlHandler.openUri(AmznScrape.urlFromAsin(product?.asin ?: ""))
-            }
-        }
-    }
+
     //graph and lists show only changes
     var showOnlyChanges by remember { mutableStateOf(true) }
     val priceListData by remember(showOnlyChanges, prices) {
@@ -165,7 +164,6 @@ fun DetailScreen(
             ) {
                 ProductBox(product)
 
-
                 if (prices == null) {
                     Column(
                         modifier = Modifier
@@ -195,6 +193,18 @@ fun DetailScreen(
                         )
                         CalendarPriceDataArea(it)
                         PricePredictionArea(it)
+                        OutlinedButton(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            onClick = {
+                                urlHandler.openUri(AmznScrape.urlFromAsin(product.asin))
+                            }) {
+                            Row(horizontalArrangement = Arrangement.Center) {
+                                Icon(Icons.Filled.ShoppingCart,"",modifier = Modifier.padding(end = 8.dp))
+                                Text("Satın Al")
+                            }
+                        }
                         TitleBar(
                             title = "Fiyat Değişimi",
                             modifier = Modifier
