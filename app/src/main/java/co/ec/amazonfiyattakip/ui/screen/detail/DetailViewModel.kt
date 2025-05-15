@@ -106,10 +106,15 @@ open class DetailViewModel : ViewModel() {
      */
     fun refreshProduct(then: () -> Unit = {}, err: (e:Throwable) -> Unit = {}){
         product.value?.let { product ->
-            PriceUpdate.collectOne(product,{
-                loadProduct(product.id)
-                then()
-            },err)
+            viewModelScope.launch {
+                try {
+                    val update=PriceUpdate.collectProduct(product)
+                    loadProduct(product.id)
+                    then()
+                }catch (e: Throwable){
+                    err(e)
+                }
+            }
         }
     }
 

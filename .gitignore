@@ -16,3 +16,7 @@ local.properties
 /.idea/runConfigurations.xml
 /app/release/app-release.aab
 /app/google-services.json
+/app/release/baselineProfiles/0/app-release.dm
+/app/release/baselineProfiles/1/app-release.dm
+/app/release/app-release.apk
+/app/release/output-metadata.json

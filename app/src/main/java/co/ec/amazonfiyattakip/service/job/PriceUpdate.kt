@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
+import android.provider.SyncStateContract.Helpers.update
 import androidx.compose.ui.Modifier.Companion.then
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
@@ -25,9 +26,12 @@ import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import com.google.firebase.components.Dependency.deferred
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.concurrent.TimeUnit
@@ -46,7 +50,6 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
          * setup job on phone
          */
         fun setupJob() {
-
             val manager = WorkManager.getInstance(App.context())
             //test if work cancelled restart it
             val list = manager.getWorkInfosByTag(JOBTAG)
@@ -89,7 +92,6 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         private fun startJob() {
             val queryTime = SettingsHelper.get().getInt("queryTime", 15)
             val manager = WorkManager.getInstance(App.context())
-
             //clear all jobs
             manager.cancelAllWorkByTag(JOBTAG)
             manager.pruneWork()
@@ -105,7 +107,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
         suspend fun run(override: Boolean = false): Result {
             val productDao = AppDatabase.getDatabase().product()
-            val jobLog = AppDatabase.getDatabase().jobLog()
+            val jobLogDao = AppDatabase.getDatabase().jobLog()
             return try {
                 coroutineScope {
                     //get suitable products
@@ -117,11 +119,11 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     if (asinList.isNotEmpty()) {
                         LogHelper.d("Updating products: ${asinList.map { it.asin }}", JOBTAG)
                         val responseList = asinList.map {
-                            return@map async { collectPriceInfo(it) }
+                            return@map async { collectProduct(it) }
                         }.awaitAll()
                         outputData.putString("output", "$responseList")
                         //insert job log
-                        jobLog.insert(
+                        jobLogDao.insert(
                             JobLog(
                                 asin = asinList.joinToString(", ") { it.asin },
                                 date = unix(),
@@ -133,14 +135,16 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                         //mark error stop if access to limit
                         productDao.markErrorStop()
                     }
-                    asyncRun({
-                        var allProductsData=AppDatabase.getDatabase().product().getAllProducts()
-                        CacheHelper.get().put("allProducts",Json.encodeToString(allProductsData),43200)
-                    })
+                    CoroutineScope(Dispatchers.IO).launch {
+                        var allProductsData = AppDatabase.getDatabase().product().getAllProducts()
+                        CacheHelper.get()
+                            .put("allProducts", Json.encodeToString(allProductsData), 43200)
+                    }
+
                     Result.success(outputData.build())
                 }
             } catch (e: Exception) {
-                e.localizedMessage?.let { LogHelper.e(it, e, JOBTAG) }
+                LogHelper.e(e.localizedMessage ?: e.message ?: "", e)
                 Result.failure()
             }
         }
@@ -149,117 +153,58 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         /**
          * collect price and save to database
          */
-        private suspend fun collectPriceInfo(product: Product): Pair<String, Int> {
+        suspend fun collectProduct(product: Product): Pair<String, Int> {
 
             val productDao = AppDatabase.getDatabase().product()
             val deferred = CompletableDeferred<Pair<String, Int>>()
 
             val scraper = AmznScrape()
-            //collect one asin
+            //scrape from amazn
             scraper.scrapeFromAsin(product.asin, { update ->
+                //log update info
+                LogHelper.d(
+                    "${update.asin} (${update.shortTitle()}) : ${update.price()}",
+                    JOBTAG
+                )
                 if (update.price == 0) {
+                    //price is zero is very bad
                     LogHelper.d("Product ${product.asin} price error", JOBTAG)
-                } else {
-                    //insert into database
-                    thread {
-                        val product = update.copy(
-                            id = product.id
-                        )
-                        PriceInfoDao.insertNewUpdate(product)
-                        //add next run time
-                        productDao.updateProductInfoAndNextRun(
-                            product.id,
-                            product.price,
-                            product.star,
-                            product.comment
-                        )
-                        LogHelper.d(
-                            "${product.asin} (${product.shortTitle()}) : ${product.price()}",
-                            JOBTAG
-                        )
-                        //send to analytics for stats
-                        App.event(
-                            "price_update", mapOf(
-                                "productAsin" to product.asin,
-                                "productTitle" to product.title,
-                                "productPrice" to product.price,
-                                "productStar" to product.star.toString(),
-                                "productComment" to product.comment.toString()
-                            )
-                        )
-                    }
+                    deferred.complete(Pair(product.asin, -1))
+                    return@scrapeFromAsin
                 }
-
+                CoroutineScope(Dispatchers.IO).launch {
+                    //set id to new
+                    val product = update.copy(id = product.id)
+                    PriceInfoDao.insertNewUpdate(product)
+                    //add next run time
+                    productDao.updateProductInfoAndNextRun(
+                        product.id, product.price, product.star, product.comment
+                    )
+                    //send to analytics for stats
+                    App.event(
+                        "price_update", mapOf(
+                            "productAsin" to product.asin,
+                            "productTitle" to product.title,
+                            "productPrice" to product.price,
+                            "productStar" to product.star.toString(),
+                            "productComment" to product.comment.toString()
+                        )
+                    )
+                }
                 //complete defer with correct price
                 deferred.complete(Pair(product.asin, update.price))
             }, {
                 LogHelper.e(it.localizedMessage ?: it.message ?: "", it)
-                //complete defer with correct -1 because of error
-                thread { productDao.addErrorCount(product.id) }
+                CoroutineScope(Dispatchers.IO).launch {
+                    productDao.addErrorCount(product.id)
+                    FireDB.syncProduct(product)
+                }
                 deferred.complete(Pair(product.asin, -1))
-                FireDB.syncProduct(product)
             })
             //return response
             return deferred.await()
 
 
-        }
-
-        /**
-         * collect price and save to database
-         */
-        fun collectOne(product: Product,then: () -> Unit = {}, err: (e:Throwable) -> Unit = {}){
-            val productDao = AppDatabase.getDatabase().product()
-            val scraper = AmznScrape()
-            //collect one asin
-            scraper.scrapeFromAsin(product.asin, { update ->
-                if (update.price == 0) {
-                    LogHelper.d("Product ${product.asin} price error", JOBTAG)
-                } else {
-                    //insert into database
-                    thread {
-                        val product = update.copy(
-                            id = product.id,
-                            status = ProductStatus.ACTIVE
-                        )
-                        PriceInfoDao.insertNewUpdate(product)
-                        //add next run time
-                        productDao.updateProductInfoAndNextRun(
-                            product.id,
-                            product.price,
-                            product.star,
-                            product.comment
-                        )
-                        LogHelper.d(
-                            "${product.asin} (${product.shortTitle()}) : ${product.price()}",
-                            JOBTAG
-                        )
-                        //send to analytics for stats
-                        App.event(
-                            "price_update", mapOf(
-                                "productAsin" to product.asin,
-                                "productTitle" to product.title,
-                                "productPrice" to product.price,
-                                "productStar" to product.star.toString(),
-                                "productComment" to product.comment.toString()
-                            )
-                        )
-                    }
-                }
-                then()
-            }, {
-                LogHelper.e(it.localizedMessage ?: it.message ?: "", it)
-                App.event(
-                    "price_update_error", mapOf(
-                        "productAsin" to product.asin,
-                        "productTitle" to product.title,
-                        "error" to (it.localizedMessage ?: it.message ?: "")
-                    )
-                )
-                //complete defer with correct -1 because of error
-                thread { productDao.addErrorCount(product.id) }
-                err(it)
-            })
         }
 
     }

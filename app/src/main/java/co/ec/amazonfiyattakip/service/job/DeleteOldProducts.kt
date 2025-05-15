@@ -22,36 +22,22 @@ class DeleteOldProducts(appContext: Context, workerParams: WorkerParameters) :
         const val JOBTAG = "DeleteOldProductJob"
 
         fun setupJob() {
-
             val manager = WorkManager.getInstance(App.context())
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
-
+            //clear all jobs
+            manager.cancelAllWorkByTag(JOBTAG)
+            manager.pruneWork()
+            //add jobs
             val deleteOldProducts =
                 PeriodicWorkRequestBuilder<DeleteOldProducts>(1440, TimeUnit.MINUTES)
                     .setInitialDelay(1, TimeUnit.MINUTES)
                     .addTag(JOBTAG)
                     .setConstraints(constraints)
                     .build()
-
-            //clear all jobs
-            manager.cancelAllWorkByTag(JOBTAG)
-            manager.pruneWork()
-            //add jobs
             manager.enqueue(deleteOldProducts)
-
-            val oneTimeWorkRequest =
-                OneTimeWorkRequestBuilder<PriceUpdate>()
-                    .setInitialDelay(1, TimeUnit.MINUTES)
-                    .addTag(JOBTAG)
-                    .setConstraints(constraints)
-                    .build()
-            manager.enqueue(oneTimeWorkRequest)
-
-            LogHelper.d("Deleting old products", JOBTAG)
-
         }
 
 

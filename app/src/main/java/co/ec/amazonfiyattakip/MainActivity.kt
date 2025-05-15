@@ -159,8 +159,8 @@ fun AppContent(
                         IconButton(onClick = {
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
-                                    PriceUpdate.run(true)
                                     App.snack("Fiyatlar Güncelleniyor")
+                                    PriceUpdate.run(true)
                                 }
                             }
                         }) {

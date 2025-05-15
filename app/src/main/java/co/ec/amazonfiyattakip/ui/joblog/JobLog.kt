@@ -43,6 +43,7 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.graph.BarChart
 import co.ec.amazonfiyattakip.ui.part.graph.MinuteSpanData
 import co.ec.helper.helpers.ExceptionHelper
+import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.formatTime
@@ -52,6 +53,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 @Composable
 fun JobLogScreen() {
@@ -87,7 +90,13 @@ fun JobLogScreen() {
         asyncRun({
             return@asyncRun AppDatabase.getDatabase().jobLog().getStat()
         }, {
-            minuteSpanData = it
+            val counts = it.map { it.minuteSpan }
+            val mean = counts.average()
+            val stdDev = sqrt(counts.map { (it - mean).pow(2) }.average())
+            val lower = mean - 2 * stdDev
+            val upper = mean + 2 * stdDev
+            val filtered = it.filter { it.minuteSpan.toDouble() in lower..upper }
+            minuteSpanData = filtered
         })
     }
     AppModel.cutCard(Modifier.height(5.dp)) { }
@@ -256,7 +265,7 @@ fun JobLogScreen() {
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        log.date.toLong().dateString(),
+                                        "${log.date.toLong().dateString()} ${log.date.toLong().timeString()}",
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             color = MaterialTheme.colorScheme.onSecondaryContainer
                                         )

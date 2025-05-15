@@ -6,6 +6,7 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.autoToString
+import co.ec.amazonfiyattakip.service.job.DeleteOldProducts.Companion.JOBTAG
 import co.ec.helper.helpers.EventBus
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.unix
@@ -201,8 +202,11 @@ object FireDB {
                 .whereLessThan("latestUpdate", thirtyDaysAgo)
                 .get()
                 .await()
+            if(snapshot.documents.isNotEmpty()){
+                snapshot.documents.forEach { it.reference.delete().await() }
+                LogHelper.d("Deleting old products from firebase ${snapshot.documents.size} items", JOBTAG)
+            }
 
-            snapshot.documents.forEach { it.reference.delete().await() }
         } catch (e: Exception) {
             LogHelper.d("Firebase error while deleting old records ${e.message}")
         }
