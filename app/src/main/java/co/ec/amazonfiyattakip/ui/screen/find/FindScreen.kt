@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip.ui.screen.find
 
+import android.R.attr.textStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -118,10 +119,12 @@ fun FindScreen(
                             .padding(4.dp)
                             .statusBarsPadding(),
                         extra = {
-                            Text(
-                                deals.size.toString(),
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            if(deals.isNotEmpty()){
+                                Text(
+                                    deals.size.toString(),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                     )
                     searchResults.forEach {
@@ -170,6 +173,7 @@ fun FindScreen(
                                     }, onClick = {
                                         model.search(it)
                                         searchStarted = true
+                                        keyboardController?.hide()
                                     },
                                     shape = shape,
                                     colors = AssistChipDefaults.assistChipColors(
@@ -191,25 +195,22 @@ fun FindScreen(
     AppModel.cutCard(
         Modifier
             .fillMaxWidth()
-            .aspectRatio(4F)
-            .padding(16.dp)
+            .height(76.dp)
+            .padding(horizontal = 16.dp)
+            .padding(top = 16.dp)
     ) {
         val keyboard by rememberKeyboardVisibleState()
         var keyword by remember { mutableStateOf("") }
         LaunchedEffect(searchKeyword) {
             keyword=searchKeyword
         }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = if (keyboard) 16.dp else 0.dp)
-        ) {
+
 
             CutInput(
                 value = keyword,
                 valueChange = { keyword = it },
                 action = "Ara",
-                height = 60.dp,
+                height = 50.dp,
                 textStyle = MaterialTheme.typography.bodyLarge,
                 click = {
                     if (keyword.length > 3) {
@@ -223,7 +224,9 @@ fun FindScreen(
                 },
                 placeholder = "Ürün adı veya ASIN",
             )
-        }
+            if(keyboard){
+                Box(modifier = Modifier.fillMaxWidth().height(10.dp))
+            }
 
 
     }

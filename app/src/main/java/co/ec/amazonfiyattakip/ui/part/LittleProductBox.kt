@@ -60,7 +60,7 @@ fun LittleProductBox(
                 .alpha(.9F),
             color = containerColor
         )
-        Column(modifier = Modifier.fillMaxSize().padding(4.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
             BasicText(
                 product.title,
                 modifier = Modifier
@@ -70,11 +70,10 @@ fun LittleProductBox(
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = contentColor,
                     fontWeight = FontWeight.SemiBold,
-                    shadow = Shadow(contentColor.copy(alpha = .3F), Offset(3F, 3F), 1F)
+                    //shadow = Shadow(contentColor.copy(alpha = .3F), Offset(3F, 3F), 1F)
                 ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                autoSize = TextAutoSize.StepBased(12.sp,22.sp)
             )
             BasicText(
                 product.price(),
