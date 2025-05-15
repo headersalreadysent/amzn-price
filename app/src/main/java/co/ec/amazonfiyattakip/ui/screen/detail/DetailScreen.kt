@@ -200,8 +200,17 @@ fun DetailScreen(
                             onClick = {
                                 urlHandler.openUri(AmznScrape.urlFromAsin(product.asin))
                             }) {
-                            Row(horizontalArrangement = Arrangement.Center) {
-                                Icon(Icons.Filled.ShoppingCart,"",modifier = Modifier.padding(end = 8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.ShoppingCart,
+                                    "",
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                        .scale(.8F)
+                                )
                                 Text("Satın Al")
                             }
                         }
