@@ -34,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BatteryAlert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -99,6 +100,10 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
     val settings = LocalSettings.current
     val productList by model.products.observeAsState(null)
     val stats by model.stats.observeAsState(null)
+
+    AppModel.setFab(Icons.Filled.Search) {
+        navigation.navigate("find")
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         var deals by remember { mutableStateOf<List<Product>>(listOf()) }
         var dealCount by remember { mutableStateOf<Int?>(null) }

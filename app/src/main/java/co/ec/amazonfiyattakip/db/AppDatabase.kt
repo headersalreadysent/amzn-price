@@ -12,9 +12,14 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductDao
+import co.ec.amazonfiyattakip.db.view.DailyPrice
 
 
-@Database(entities = [Product::class, PriceInfo::class, JobLog::class], version = 2)
+@Database(
+    entities = [Product::class, PriceInfo::class, JobLog::class],
+    views = [DailyPrice::class],
+    version = 3
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -31,10 +36,8 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                    App.context(),
-                    AppDatabase::class.java,
-                    "amzn"
-                ).build()
+                    App.context(), AppDatabase::class.java, "amzn"
+                ).fallbackToDestructiveMigration(true).build()
                 INSTANCE = instance
                 instance
             }

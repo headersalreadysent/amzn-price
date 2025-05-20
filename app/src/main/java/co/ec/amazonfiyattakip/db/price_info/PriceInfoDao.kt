@@ -50,9 +50,10 @@ interface PriceInfoDao {
     fun delete(productId: Int): Int
 
     @Query(
-        "SELECT p.id,p.title,p.image, p.price,avg.avg FROM (SELECT productId,CAST(AVG(price) AS INT) AS avg FROM priceinfo GROUP BY productId) avg " +
-                "LEFT JOIN product p on productId=p.id " +
-                "WHERE p.status=:status AND price < avg"
+        """SELECT product.id,product.title,product.image,product.price, average.avg FROM product
+LEFT JOIN (SELECT productId,CAST(AVG(avgPrice) AS INT) AS avg FROM dailyprice GROUP BY productId) average
+ON average.productId=product.id
+WHERE product.status=:status AND price < avg"""
     )
     fun lowPricedProducts(status: ProductStatus = ProductStatus.ACTIVE): List<LowPriced>
 

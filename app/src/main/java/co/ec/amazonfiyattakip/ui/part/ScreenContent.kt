@@ -31,9 +31,6 @@ fun ScreenContent(
     ) {
         composable("main") {
             MainScreen()
-            AppModel.setFab(Icons.Filled.Search) {
-                navController.navigate("find")
-            }
         }
         composable("add") {
             AddScreen()
