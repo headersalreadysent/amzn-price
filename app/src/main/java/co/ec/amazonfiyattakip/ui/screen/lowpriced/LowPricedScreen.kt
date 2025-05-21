@@ -186,7 +186,7 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
-                    .padding(bottom = 20.dp)
+                    .padding(bottom = 30.dp)
                     .weight(1F)
                     .verticalScroll(rememberScrollState())
             ) {
@@ -323,7 +323,7 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                     .padding(top = 8.dp)
             ) {
                 val titleStyle = MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.onSecondary.copy(alpha = .8F),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.sp
                 )
