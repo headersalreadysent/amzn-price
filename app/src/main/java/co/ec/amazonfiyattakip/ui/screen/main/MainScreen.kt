@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -33,13 +34,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.BatteryAlert
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -60,6 +66,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
@@ -67,6 +74,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -178,6 +186,12 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer.copy(
+                                            alpha = .8F
+                                        ), RoundedCornerShape(8.dp)
+                                    )
+                                    .clip(RoundedCornerShape(8.dp))
                                     .clickable {
                                         if (sortDirection == 1) {
                                             sortDirection = -1
@@ -189,19 +203,19 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                         }
                                         settings.putInt("mainActiveSortDirection", sortDirection)
                                     }
-                                    .padding(horizontal = 3.dp)
-                                    .clip(RoundedCornerShape(3.dp))) {
+                                    .padding(horizontal = 8.dp)) {
                                 Text(
                                     activeSort,
                                     style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 )
                                 Icon(
-                                    Icons.AutoMirrored.Outlined.Sort, "sort",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    Icons.Filled.ArrowDropDown, "sort",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier
-                                        .scale(scaleY = .8F, scaleX = .5F)
                                         .graphicsLayer(scaleY = -1 * sortDirection.toFloat())
                                 )
                             }
@@ -414,8 +428,13 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
             )
         }
         if (lowPricedProducts.isNotEmpty()) {
+            val navigation = LocalNavigation.current
             Column(
-                horizontalAlignment = Alignment.End
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier
+                    .clickable(indication = null, interactionSource = null) {
+                        navigation.navigate("lowpriced")
+                    }
             ) {
                 Text(
                     "Ucuz ürünler",
@@ -428,20 +447,31 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
                         .wrapContentHeight(),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val navigator = LocalNavigation.current
-                    lowPricedProducts.forEach {
+                    lowPricedProducts.let {
+                        if(lowPricedProducts.size>5) lowPricedProducts.slice(0..3) else lowPricedProducts
+                    }.forEach {
                         ProductImage(
                             title = it.title,
                             image = it.image,
                             modifier = Modifier
                                 .height(25.dp)
-                                .clickable(indication = null, interactionSource = null) {
-                                    navigator.navigate("detail/${it.id}")
-                                }
                                 .aspectRatio(1F)
                                 .clip(CircleShape),
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+
+                    if(lowPricedProducts.size>5){
+                        Text("+${lowPricedProducts.size-3}",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontSize = 11.sp,
+                            lineHeight = with(LocalDensity.current) { 25.dp.toSp()  },
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = .5F),CircleShape)
+                                .height(25.dp)
+                                .aspectRatio(1F)
+                                .clip(CircleShape),)
                     }
 
 

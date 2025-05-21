@@ -45,3 +45,10 @@ data class LowPriced(
     val price: Int,
     val avg: Int
 )
+
+data class ProductWithStat(
+    @Embedded val entity: Product,
+    val min: Int,
+    val avg: Int,
+    val max: Int
+)

@@ -15,6 +15,7 @@ import co.ec.amazonfiyattakip.ui.joblog.JobLogScreen
 import co.ec.amazonfiyattakip.ui.screen.add.AddScreen
 import co.ec.amazonfiyattakip.ui.screen.detail.DetailScreen
 import co.ec.amazonfiyattakip.ui.screen.find.FindScreen
+import co.ec.amazonfiyattakip.ui.screen.lowpriced.LowPricedScreen
 import co.ec.amazonfiyattakip.ui.screen.main.MainScreen
 import co.ec.amazonfiyattakip.ui.screen.settings.SettingsScreen
 
@@ -51,6 +52,9 @@ fun ScreenContent(
         }
         composable("find") {
             FindScreen()
+        }
+        composable("lowpriced") {
+            LowPricedScreen()
         }
         composable("settings") {
             SettingsScreen()

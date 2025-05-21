@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cached
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
@@ -55,7 +57,9 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.BottomCardContent
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
 import co.ec.helper.helpers.CacheHelper
+import co.ec.helper.helpers.EventBus
 import co.ec.helper.helpers.LogHelper
+import co.ec.helper.helpers.SettingsHelper
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Dispatchers
@@ -119,6 +123,14 @@ fun AppContent(
     }
     var settingsClick by remember { mutableIntStateOf(0) }
     val settings = LocalSettings.current
+    var developerActive by remember { mutableStateOf(settings.getBoolean("developerActive", false)) }
+    LaunchedEffect(Unit) {
+        EventBus.subscribe<SettingsHelper.SettingsChange> {
+            if(it.name=="developerActive"){
+                developerActive=it.value as Boolean
+            }
+        }
+    }
     LaunchedEffect(Unit) {
         while (true) {
             settingsClick = 0
@@ -140,6 +152,11 @@ fun AppContent(
                         Icon(Icons.Default.Home, contentDescription = "Menu")
                     }
                     IconButton(onClick = {
+                        navigator.navigate("lowpriced")
+                    }) {
+                        Icon(Icons.Default.Insights, contentDescription = "Stat")
+                    }
+                    IconButton(onClick = {
                         settingsClick++
                         if (settingsClick == 5) {
                             settings.putBoolean("developerActive", true)
@@ -150,7 +167,7 @@ fun AppContent(
                     }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
-                    if (settings.getBoolean("developerActive", false)) {
+                    if (developerActive) {
                         IconButton(onClick = {
                             navigator.navigate("joblog")
                         }) {
@@ -165,12 +182,6 @@ fun AppContent(
                             }
                         }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Settings")
-                        }
-                        IconButton(onClick = {
-                            val helper=CacheHelper.get()
-                            LogHelper.d("cacheHelper ${helper.get("a")}")
-                        }) {
-                            Icon(Icons.Default.Cached, contentDescription = "Settings")
                         }
                     }
                     Spacer(Modifier.weight(1f, true))

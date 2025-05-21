@@ -40,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.App.Companion.settings
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
@@ -140,6 +141,15 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 default = false,
                 title = "Takip listesi toplamını göster.",
             )
+
+            if(settings().getBoolean("developerActive", false)){
+                SettingsToggle(
+                    name = "developerActive",
+                    default = false,
+                    title = "Geliştirici Seçenekleri",
+                )
+
+            }
 
 
         }

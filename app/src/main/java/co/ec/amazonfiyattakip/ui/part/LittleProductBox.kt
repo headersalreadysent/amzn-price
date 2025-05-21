@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.ui.part
 
 import android.R.attr.maxLines
+import android.R.attr.onClick
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import org.checkerframework.checker.units.qual.N
 
 @Composable
 fun LittleProductBox(
@@ -37,12 +39,13 @@ fun LittleProductBox(
     containerColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
     contentColor :Color= MaterialTheme.colorScheme.onTertiaryContainer,
     onClick: (() -> Unit)? = null,
-    aspectRatio:Float=2.5F
+    aspectRatio:Float=2.5F,
+    customWidth: Boolean=false,
 ) {
     Box(modifier = Modifier
-        .fillMaxWidth(.5F)
+        .then(if(customWidth) Modifier else Modifier.fillMaxWidth(.5F))
         .padding(4.dp)
-        .aspectRatio(aspectRatio)
+        .then(if(aspectRatio==0F) Modifier else Modifier.aspectRatio(aspectRatio))
         .background(containerColor)
         .border(1.dp, contentColor.copy(alpha = .2F))
         .clickable(enabled = onClick != null) {

@@ -8,6 +8,7 @@ import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.LowPriced
+import co.ec.amazonfiyattakip.db.ProductWithStat
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import kotlinx.coroutines.flow.Flow
@@ -50,12 +51,33 @@ interface PriceInfoDao {
     fun delete(productId: Int): Int
 
     @Query(
-        """SELECT product.id,product.title,product.image,product.price, average.avg FROM product
-LEFT JOIN (SELECT productId,CAST(AVG(avgPrice) AS INT) AS avg FROM dailyprice GROUP BY productId) average
-ON average.productId=product.id
-WHERE product.status=:status AND price < avg"""
+        """
+    SELECT product.id,product.title,product.image,product.price, average.avg 
+    FROM product LEFT JOIN 
+        (
+            SELECT productId,
+                CAST(AVG(avgPrice) AS INT) AS avg 
+            FROM dailyprice 
+            GROUP BY productId
+        ) average ON average.productId=product.id
+    WHERE product.status=:status AND price < avg"""
     )
     fun lowPricedProducts(status: ProductStatus = ProductStatus.ACTIVE): List<LowPriced>
+
+    @Query("""
+    SELECT product.*, stat.* 
+    FROM product LEFT JOIN 
+        (
+            SELECT productId,
+                CAST(MIN(avgPrice) AS INT) AS min,
+                CAST(AVG(avgPrice) AS INT) AS avg,
+                CAST(MAX(avgPrice) AS INT) AS max 
+            FROM dailyprice 
+            GROUP BY productId
+        ) stat ON product.id=stat.productId
+    WHERE product.status=:status
+    """)
+    fun priceStat(status: ProductStatus = ProductStatus.ACTIVE): List<ProductWithStat>
 
 
     companion object {
