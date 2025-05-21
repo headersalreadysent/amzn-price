@@ -18,7 +18,7 @@ import co.ec.amazonfiyattakip.db.view.DailyPrice
 @Database(
     entities = [Product::class, PriceInfo::class, JobLog::class],
     views = [DailyPrice::class],
-    version = 3
+    version = 4
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

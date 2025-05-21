@@ -6,6 +6,7 @@ import androidx.room.DatabaseView
 @DatabaseView("""
 SELECT productId,CAST(avg(price) AS INTEGER) as avgPrice, CAST(avg(date) AS INTEGER) as date,date(datetime(date, 'unixepoch')) as day 
 FROM priceinfo 
+WHERE price > 0
 GROUP BY productId,day
 ORDER BY productId, date
 """)
