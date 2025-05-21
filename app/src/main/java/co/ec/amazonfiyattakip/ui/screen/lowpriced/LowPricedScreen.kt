@@ -694,7 +694,9 @@ fun ModalContent() {
                 textAlign = TextAlign.Justify
             )
         )
-        val tempProduct = Product.fake()
+        val tempProduct = Product.fake().copy(
+            image = ""
+        )
         ProductPriceStatGraph(
             ProductWithStat(
                 entity = tempProduct.copy(
