@@ -682,15 +682,15 @@ fun ModalContent() {
         Text(
             "Grafikler Nasıl Okunur?",
             modifier = Modifier.padding(bottom = 8.dp),
-            style = MaterialTheme.typography.bodyMedium.copy(
+            style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.SemiBold
             )
         )
         Text(
             "Fiyat grafikleri, ürünün şimdiki fiyatını fiyat çubuğu üzerinde ortalayarak gösterir. " +
                     "Ürünün son fiyatı anlık fiyatına göre daha düşük olan ürünlerde grafik sağa yaslı olarak görüntülenir ve tüm zamanlara göre fiyatın ne kadar düşük olduğu gösterilmiş olur. ",
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.bodySmall.copy(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(
                 textAlign = TextAlign.Justify
             )
         )
@@ -711,8 +711,8 @@ fun ModalContent() {
             "Anlık fiyatın, ortalama fiyattan yüksek olduğu durumlarda grafik sola yaslı olarak görünür.",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            style = MaterialTheme.typography.bodySmall.copy(
+                .padding(vertical = 16.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(
                 textAlign = TextAlign.Justify
             )
         )
@@ -730,8 +730,8 @@ fun ModalContent() {
             "Anlık fiyatın en düşük değerde olduğu durumlarda grafik tamamen sağ tarafta yer alır.",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            style = MaterialTheme.typography.bodySmall.copy(
+                .padding(vertical = 16.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(
                 textAlign = TextAlign.Justify
             )
         )
@@ -748,8 +748,8 @@ fun ModalContent() {
             "Anlık fiyatın en yüksek değerde olduğu durumlarda grafik tamamen sol tarafta yer alır.",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            style = MaterialTheme.typography.bodySmall.copy(
+                .padding(vertical = 16.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(
                 textAlign = TextAlign.Justify
             )
         )
@@ -783,7 +783,7 @@ fun ModalContent() {
             var prices by remember {
                 mutableStateOf(
                     listOf(
-                        Random.nextInt(0, 10000),
+                        Random.nextInt(100, 10000),
                         Random.nextInt(0, 10000),
                         Random.nextInt(0, 100),
                         Random.nextInt(0, 100),
@@ -795,13 +795,13 @@ fun ModalContent() {
                     nameValue("Anlık Fiyat", prices[0]+(prices[1]*(prices[2].toFloat()/100F)).toInt()),
                     modifier = Modifier.weight(1F),
                     textAlign = TextAlign.Center,
-                    fontSize = 13.sp
+                    fontSize = 16.sp
                 )
                 Text(
                     nameValue("Ortalama", prices[0]+(prices[1]*(prices[3].toFloat()/100F)).toInt(),),
                     modifier = Modifier.weight(1F),
                     textAlign = TextAlign.Center,
-                    fontSize = 13.sp
+                    fontSize = 16.sp
                 )
             }
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -809,13 +809,13 @@ fun ModalContent() {
                     nameValue("En Düşük", prices[0]),
                     modifier = Modifier.weight(1F),
                     textAlign = TextAlign.Center,
-                    fontSize = 13.sp
+                    fontSize = 16.sp
                 )
                 Text(
                     nameValue("En Yüksek", prices[0] + prices[1]),
                     modifier = Modifier.weight(1F),
                     textAlign = TextAlign.Center,
-                    fontSize = 13.sp
+                    fontSize = 16.sp
                 )
             }
             Row(
@@ -826,7 +826,7 @@ fun ModalContent() {
                 Button(
                     onClick = {
                         prices = listOf(
-                            Random.nextInt(0, 10000),
+                            Random.nextInt(100, 10000),
                             Random.nextInt(0, 10000),
                             Random.nextInt(0, 100),
                             Random.nextInt(0, 100),
@@ -836,8 +836,10 @@ fun ModalContent() {
                     modifier = Modifier
                         .height(25.dp)
                 ) {
-                    Icon(Icons.Default.Refresh, "", modifier = Modifier.scale(.8F))
-                    Text("Yenile")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Refresh, "", modifier = Modifier.scale(.8F))
+                        Text("Yenile")
+                    }
                 }
             }
             ProductPriceStatGraph(
@@ -862,7 +864,7 @@ fun nameValue(name: String, value: Int): AnnotatedString {
         withStyle(
             style = SpanStyle(
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp
+                fontSize = 16.sp
             )
         ) {
             append(value.price())
