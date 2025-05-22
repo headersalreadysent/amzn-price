@@ -1,5 +1,8 @@
 package co.ec.amazonfiyattakip.db.price_info
 
+import android.icu.text.MessagePattern.ArgType.SELECT
+import android.system.Os.stat
+import android.webkit.WebSettings.PluginState.ON
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -11,6 +14,8 @@ import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithStat
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
+import com.google.firebase.firestore.AggregateField.average
+import com.google.firestore.v1.StructuredAggregationQuery.Aggregation.OperatorCase.AVG
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -34,6 +39,16 @@ interface PriceInfoDao {
                 "GROUP BY day,productId) WHERE date > strftime('%s', 'now') -:day*86400 GROUP BY day ORDER BY day ASC"
     )
     fun getDailyTotalPrices(day: Int = 30, format: String = "%Y-%m-%d"): List<DailyTotal>
+
+    @Query(
+        """
+SELECT dailyprice.date , sum(avgprice) AS total 
+FROM dailyprice LEFT JOIN product ON dailyprice.productId=product.id
+WHERE product.status=:status AND dailyprice.date > strftime('%s', 'now') -:day*86400
+GROUP BY dailyprice.day ORDER BY dailyprice.date ASC
+"""
+    )
+    fun getDailyAverages(day: Int = 30, status: ProductStatus= ProductStatus.ACTIVE): List<DailyTotal>
 
     @Query(
         "SELECT priceinfo.productId, priceinfo.price,product.title,product.image,priceinfo.date from priceinfo " +

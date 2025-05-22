@@ -88,8 +88,7 @@ open class MainScreenModel : ViewModel() {
      */
     private fun loadDailyTotals() {
         asyncRun({
-            return@asyncRun AppDatabase.getDatabase().priceInfo()
-                .getDailyTotalPrices(format = "%Y-%m-%d")
+            return@asyncRun AppDatabase.getDatabase().priceInfo().getDailyAverages()
         }, {
             dailyTotals.value = it
         })
