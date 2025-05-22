@@ -1,4 +1,5 @@
 [versions]
+accompanistPermissions = "0.31.0-alpha"
 accompanistSystemuicontroller = "0.36.0"
 agp = "8.9.2"
 androidHelper = "a42b3a1969"
@@ -24,6 +25,7 @@ workRuntime = "2.10.1"
 animationGraphicsAndroid = "1.8.1"
 
 [libraries]
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }

@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -46,6 +47,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
@@ -66,6 +69,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.Manifest
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,6 +81,7 @@ class MainActivity : ComponentActivity() {
             )
         )
         val destination = intent?.getStringExtra("destination") ?: "main"
+
         setContent {
             AppProviders {
                 AppContent(

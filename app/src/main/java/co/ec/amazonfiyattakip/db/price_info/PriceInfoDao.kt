@@ -14,6 +14,7 @@ import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithStat
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.db.view.DailyPrice
 import com.google.firebase.firestore.AggregateField.average
 import com.google.firestore.v1.StructuredAggregationQuery.Aggregation.OperatorCase.AVG
 import kotlinx.coroutines.flow.Flow
@@ -95,16 +96,10 @@ GROUP BY dailyprice.day ORDER BY dailyprice.date ASC
     fun priceStat(status: ProductStatus = ProductStatus.ACTIVE): List<ProductWithStat>
 
 
-    companion object {
-
-        fun insertNewUpdate(product: Product): Long {
-            val dao = AppDatabase.getDatabase().priceInfo()
-            val latestPrice = dao.getLatestPrice(product.id)
-            //set latest price
-            val priceInfo = product.toPriceInfo(product.id, latestPrice?.price ?: 0)
-            return dao.insert(priceInfo)
-        }
-    }
+    @Query("""
+        SELECT * FROM dailyprice WHERE productId=:productId ORDER BY DATE DESC LIMIT 1
+    """)
+    fun getLatestAverage(productId: Int): DailyPrice
 
 
 }

@@ -5,7 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -58,11 +57,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -74,7 +71,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -98,7 +94,19 @@ import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
 
+import android.Manifest
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.shouldShowRationale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -112,8 +120,9 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
     AppModel.setFab(Icons.Filled.Search) {
         navigation.navigate("find")
     }
+
+
     Column(modifier = Modifier.fillMaxSize()) {
-        var deals by remember { mutableStateOf<List<Product>>(listOf()) }
         var dealCount by remember { mutableStateOf<Int?>(null) }
         val lowPricedProducts by model.lowPriced.observeAsState(listOf())
         val serverProducts by model.serverProducts.observeAsState(null)
@@ -133,14 +142,6 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             }
             onDispose { }
         }
-        LaunchedEffect(productList) {
-            if (productList != null && productList!!.isEmpty()) {
-                model.loadDeals(6)
-            }
-            model.deals.collect { deal ->
-                deals = deals + deal
-            }
-        }
         TopArea(lowPricedProducts)
         stats?.let { stat ->
             SlowQueryArea(stat)
@@ -149,6 +150,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         serverProducts?.let {
             ServerProductsArea(serverProducts)
         }
+
+
 
         HorizontalDivider(
             modifier = Modifier
@@ -161,9 +164,13 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 .fillMaxWidth()
                 .weight(1F)
                 .verticalScroll(rememberScrollState())
-                .padding(top = 8.dp)
         ) {
-
+            PermissionArea()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
             productList?.let { products ->
                 val sort = listOf("Tarih", "Fiyat", "Son Güncelleme")
                 var activeSort by remember {
@@ -198,10 +205,13 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                         } else {
                                             sortDirection = 1
                                             val index = sort.indexOf(activeSort)
-                                            activeSort = sort.getOrNull(index + 1) ?: sort[0]
+                                            activeSort =
+                                                sort.getOrNull(index + 1) ?: sort[0]
                                             settings.putString("mainActiveSort", activeSort)
                                         }
-                                        settings.putInt("mainActiveSortDirection", sortDirection)
+                                        settings.putInt(
+                                            "mainActiveSortDirection", sortDirection
+                                        )
                                     }
                                     .padding(horizontal = 8.dp)) {
                                 Text(
@@ -213,14 +223,13 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                     )
                                 )
                                 Icon(
-                                    Icons.Filled.ArrowDropDown, "sort",
+                                    Icons.Filled.ArrowDropDown,
+                                    "sort",
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier
-                                        .graphicsLayer(scaleY = -1 * sortDirection.toFloat())
+                                    modifier = Modifier.graphicsLayer(scaleY = -1 * sortDirection.toFloat())
                                 )
                             }
-                        }
-                    )
+                        })
                     FlowRow(
                         modifier = Modifier
                             .fillMaxSize()
@@ -257,36 +266,28 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
                     }
                 }
-                if (products.isEmpty() && deals.isNotEmpty()) {
-                    //no product but deal
-                    TitleBar(
-                        title = "Amazon Fırsatlar",
+                if (products.isEmpty()) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp),
-                    )
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 4.dp)
+                            .weight(1F),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        deals.forEach {
-                            LittleProductBox(
-                                it,
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                onClick = {
-                                    navigation.navigate("add/${it.asin}")
-                                })
-                        }
-                        if (deals.count() < (dealCount ?: 0)) {
-                            OutlinedButton(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    navigation.navigate("find")
-                                }) {
-                                Text("Tüm Fırsatları Görüntüle")
-                            }
+                        Text(
+                            "Takip edilen ürün yok.",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                textAlign = TextAlign.Center,
+                                fontStyle = FontStyle.Italic
+                            )
+                        )
+                        Button(onClick = {
+                            navigation.navigate("find")
+                        }) {
+                            Text("Fırsatları Görüntüle")
                         }
                     }
                 }
@@ -296,7 +297,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
     }
 
     var showTotal = settings.getBoolean("showBasketTotal", false)
-    val height = if (productList.orEmpty().isEmpty() || showTotal) {
+    val height = if (showTotal) {
         Modifier.aspectRatio(3.5F)
     } else {
         Modifier.height(30.dp)
@@ -306,7 +307,11 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             if (products.isNotEmpty()) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (showTotal) {
-                        var totalDragValue by remember { mutableStateOf<PriceGraphPair?>(null) }
+                        var totalDragValue by remember {
+                            mutableStateOf<PriceGraphPair?>(
+                                null
+                            )
+                        }
                         val dailyTotals by model.dailyTotals.observeAsState(listOf())
                         Box(
                             modifier = Modifier
@@ -337,12 +342,14 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                 .padding(16.dp)
                         ) {
                             Text(
-                                "Sepet Toplamı", style = MaterialTheme.typography.bodyMedium.copy(
+                                "Sepet Toplamı",
+                                style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             )
                             AutoText(
-                                if (totalDragValue != null) totalDragValue!!.price.toInt().price()
+                                if (totalDragValue != null) totalDragValue!!.price.toInt()
+                                    .price()
                                 else if (dailyTotals.isEmpty()) 0.price() else dailyTotals.last().total.toInt()
                                     .price(),
                                 fontSize = 20..35,
@@ -369,34 +376,67 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                         }
                     }
                 }
-            } else {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "Hiç ürün kaydedilmemiş.",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    )
+            }
 
-                    Button(
-                        onClick = {
-                            navigation.navigate("find")
-                        }, colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ), modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        Icon(Icons.Filled.Add, "add product")
-                        Text("Kendi Ürünümü Ekleyeyim")
+        }
+
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun PermissionArea() {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        val notificationPermission = rememberPermissionState(
+            permission = Manifest.permission.POST_NOTIFICATIONS
+        )
+        val settings = LocalSettings.current
+        var notificationStatus by remember {
+            mutableIntStateOf(
+                settings.getInt(
+                    "notificationStatus",
+                    0
+                )
+            )
+        }
+        if(notificationStatus == 1){
+            return
+        }
+        if (!notificationPermission.status.isGranted ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    "Fiyat değişimlerinden haberdar olmak için bildirimlere izin vermeniz gerekiyor.",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        textAlign = TextAlign.Justify
+                    )
+                )
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        notificationStatus=1
+                        settings.putInt("notificationStatus",1)
+                        notificationPermission.launchPermissionRequest()
+                    }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Notifications, "notification",
+                            modifier = Modifier.scale(.5F)
+                        )
+                        Text("Bildirimlere İzin Ver")
                     }
                 }
             }
-        }
 
+
+        }
     }
 }
 
@@ -411,31 +451,23 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
     ) {
         Column {
             Text(
-                "Amazon",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 34.sp,
-                    lineHeight = 30.sp
+                "Amazon", style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 30.sp
                 )
             )
             Text(
-                "Fiyat Takibi",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 14.sp,
-                    lineHeight = 12.sp
-                ),
-                modifier = Modifier.offset(y = (-3).dp)
+                "Fiyat Takibi", style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 14.sp, lineHeight = 12.sp
+                ), modifier = Modifier.offset(y = (-3).dp)
             )
         }
         if (lowPricedProducts.isNotEmpty()) {
             val navigation = LocalNavigation.current
             Column(
                 horizontalAlignment = Alignment.End,
-                modifier = Modifier
-                    .clickable(indication = null, interactionSource = null) {
-                        navigation.navigate("lowpriced")
-                    }
-            ) {
+                modifier = Modifier.clickable(indication = null, interactionSource = null) {
+                    navigation.navigate("lowpriced")
+                }) {
                 Text(
                     "Ucuz ürünler",
                     style = MaterialTheme.typography.bodySmall,
@@ -448,7 +480,7 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     lowPricedProducts.let {
-                        if(lowPricedProducts.size>5) lowPricedProducts.slice(0..3) else lowPricedProducts
+                        if (lowPricedProducts.size > 5) lowPricedProducts.slice(0..3) else lowPricedProducts
                     }.forEach {
                         ProductImage(
                             title = it.title,
@@ -461,17 +493,22 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
                         )
                     }
 
-                    if(lowPricedProducts.size>5){
-                        Text("+${lowPricedProducts.size-3}",
+                    if (lowPricedProducts.size > 5) {
+                        Text(
+                            "+${lowPricedProducts.size - 3}",
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             fontSize = 11.sp,
-                            lineHeight = with(LocalDensity.current) { 25.dp.toSp()  },
+                            lineHeight = with(LocalDensity.current) { 25.dp.toSp() },
                             modifier = Modifier
-                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = .5F),CircleShape)
+                                .background(
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = .5F),
+                                    CircleShape
+                                )
                                 .height(25.dp)
                                 .aspectRatio(1F)
-                                .clip(CircleShape),)
+                                .clip(CircleShape),
+                        )
                     }
 
 
@@ -511,7 +548,9 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                                     start = if (it == 0) 8.dp else 0.dp,
                                     end = if (it == serverProducts.size - 1) 8.dp else 0.dp
                                 )
-                                .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
+                                .background(
+                                    MaterialTheme.colorScheme.tertiaryContainer, shape
+                                )
                                 .clickable {
                                     navigator.navigate("add/${pair.first.asin}")
                                 }
@@ -567,8 +606,7 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
 fun DealCountArea(dealCount: Int? = null) {
     val navigation = LocalNavigation.current
     AnimatedVisibility(
-        visible = (dealCount ?: 0) > 0,
-        enter = fadeIn() + expandVertically()
+        visible = (dealCount ?: 0) > 0, enter = fadeIn() + expandVertically()
     ) {
         Column(
             modifier = Modifier
@@ -578,8 +616,7 @@ fun DealCountArea(dealCount: Int? = null) {
                 .clickable {
                     navigation.navigate("find")
                 }
-                .padding(8.dp)
-        ) {
+                .padding(8.dp)) {
             Text(
                 "Amazondaki fırsatları görerek hızlaca takip et.",
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -615,8 +652,7 @@ fun SlowQueryArea(stat: Map<String, Int>) {
                         .clickable {
                             visible = false
                             PermissionHelper.batteryPermission()
-                        },
-                    colors = CardDefaults.cardColors(
+                        }, colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                     )
@@ -624,9 +660,7 @@ fun SlowQueryArea(stat: Map<String, Int>) {
                     val text = buildAnnotatedString {
                         appendInlineContent("battery", " ")
                         append(
-                            "Fiyat sorgulaması hedeflenen zamandan yavaş çalışıyor." +
-                                    " Bu durum batarya optimizasyonundan kaynaklanıyor olabilir." +
-                                    " Uygulamayı kısıtlanmamış ayarlayarak daha iyi sorgulama elde edebilirsiniz."
+                            "Fiyat sorgulaması hedeflenen zamandan yavaş çalışıyor." + " Bu durum batarya optimizasyonundan kaynaklanıyor olabilir." + " Uygulamayı kısıtlanmamış ayarlayarak daha iyi sorgulama elde edebilirsiniz."
                         )
                     }
                     Text(
@@ -644,8 +678,7 @@ fun SlowQueryArea(stat: Map<String, Int>) {
                         ),
                         modifier = Modifier.padding(8.dp),
                         style = MaterialTheme.typography.bodySmall.copy(
-                            textAlign = TextAlign.Justify,
-                            fontSize = 11.sp
+                            textAlign = TextAlign.Justify, fontSize = 11.sp
                         )
                     )
 
@@ -677,8 +710,7 @@ fun BoxScope.StatArea(stat: Map<String, Int>) {
         )
         if (stat.containsKey("product")) {
             Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.padding(end = 8.dp)
+                horizontalAlignment = Alignment.End, modifier = Modifier.padding(end = 8.dp)
             ) {
                 Text((stat["product"] ?: 0).toString(), style = numberStyle)
                 Text("Ürün", style = titleStyle)

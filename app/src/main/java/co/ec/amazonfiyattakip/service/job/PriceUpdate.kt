@@ -1,8 +1,6 @@
 package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
-import android.provider.SyncStateContract.Helpers.update
-import androidx.compose.ui.Modifier.Companion.then
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -14,17 +12,16 @@ import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.job_log.JobLog
-import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
+import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.db.view.DailyPrice
+import co.ec.amazonfiyattakip.helper.NotificationHelper
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
-import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
-import com.google.firebase.components.Dependency.deferred
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,11 +29,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.thread
-
 
 class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
@@ -67,17 +61,17 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     workInfos?.forEach { workInfo ->
                         when (workInfo.state) {
                             WorkInfo.State.CANCELLED -> {
-                                LogHelper.d("$JOBTAG is cancelled", "Job")
+                                LogHelper.d("$JOBTAG is cancelled", JOBTAG)
                                 startJob()
                             }
 
                             WorkInfo.State.FAILED -> {
-                                LogHelper.d("$JOBTAG is failed", "Job")
+                                LogHelper.d("$JOBTAG is failed", JOBTAG)
                                 startJob()
                             }
 
                             else -> {
-                                LogHelper.d("$JOBTAG state is ${workInfo.state}", "job")
+                                LogHelper.d("$JOBTAG state is ${workInfo.state}", JOBTAG)
                             }
                         }
                     }
@@ -106,6 +100,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         }
 
         suspend fun run(override: Boolean = false): Result {
+            LogHelper.d("price update running", JOBTAG)
             val productDao = AppDatabase.getDatabase().product()
             val jobLogDao = AppDatabase.getDatabase().jobLog()
             return try {
@@ -144,7 +139,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     Result.success(outputData.build())
                 }
             } catch (e: Exception) {
-                LogHelper.e(e.localizedMessage ?: e.message ?: "", e)
+                LogHelper.e(e.localizedMessage ?: e.message ?: "", e, JOBTAG)
                 Result.failure()
             }
         }
@@ -156,6 +151,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         suspend fun collectProduct(product: Product): Pair<String, Int> {
 
             val productDao = AppDatabase.getDatabase().product()
+            val priceDao = AppDatabase.getDatabase().priceInfo()
             val deferred = CompletableDeferred<Pair<String, Int>>()
 
             val scraper = AmznScrape()
@@ -175,7 +171,24 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 CoroutineScope(Dispatchers.IO).launch {
                     //set id to new
                     val product = update.copy(id = product.id)
-                    PriceInfoDao.insertNewUpdate(product)
+                    //get latest update
+                    val latestPrice = priceDao.getLatestPrice(product.id)
+                    val priceInfo = PriceInfo(
+                        id = 0, productId = product.id, asin = product.asin, date = unix(),
+                        price = product.price, star = product.star, comment = product.comment,
+                        priceChanged = product.price - (latestPrice?.price ?: 0)
+                    )
+                    latestPrice?.let {
+                        //thereis older price
+                        if (priceInfo.price != it.price) {
+                            //price changed in this query let test with average
+                            val latestAverage = priceDao.getLatestAverage(product.id)
+                            checkNotification(product, priceInfo, it, latestAverage)
+                        }
+                    }
+                    //insert new price
+                    priceDao.insert(priceInfo)
+
                     //add next run time
                     productDao.updateProductInfoAndNextRun(
                         product.id, product.price, product.star, product.comment
@@ -203,8 +216,33 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
             })
             //return response
             return deferred.await()
+        }
 
-
+        /**
+         * check if notification required
+         */
+        private fun checkNotification(
+            product: Product,
+            priceInfo: PriceInfo,
+            latestPrice: PriceInfo,
+            latestAverage: DailyPrice
+        ) {
+            if (priceInfo.price < latestAverage.avgPrice) {
+                LogHelper.d("${product.title} price dropped", JOBTAG)
+                NotificationHelper.showNotification(
+                    product,
+                    "Fiyat ortalamanın altına düstü. ${priceInfo.price.price()} -> ${latestPrice.price.price()}",
+                    "Şimdiki fiyat: ${priceInfo.price.price()}, Son ortalama fiyat ${latestAverage.avgPrice.price()} \n${product.title}"
+                )
+            }
+            if (priceInfo.price > latestAverage.avgPrice) {
+                LogHelper.d("${product.title} price increased", JOBTAG)
+                NotificationHelper.showNotification(
+                    product,
+                    "Fiyat ortalamanın üstüne yükseldi. ${priceInfo.price.price()} -> ${latestPrice.price.price()}",
+                    "Şimdiki fiyat: ${priceInfo.price.price()}, Son ortalama fiyat ${latestAverage.avgPrice.price()} \n${product.title}"
+                )
+            }
         }
 
     }
@@ -214,3 +252,4 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     }
 
 }
+

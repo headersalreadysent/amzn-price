@@ -38,8 +38,6 @@ open class MainScreenModel : ViewModel() {
 
     var stats = MutableLiveData<Map<String, Int>>()
 
-    private val dealFlow = MutableSharedFlow<Product>()
-    val deals: SharedFlow<Product> = dealFlow
 
     val cache: CacheHelper? = CacheHelper.get()
 
@@ -73,15 +71,6 @@ open class MainScreenModel : ViewModel() {
         })
     }
 
-    fun getSettings() {
-        var helper = SettingsHelper.get()
-
-        settings.value = mapOf(
-            "showServerProducts" to helper.getBoolean("showServerProducts", true),
-            "show" to helper.getBoolean("showServerProducts", true)
-        )
-
-    }
 
     /**
      * load daily stats
@@ -153,30 +142,6 @@ open class MainScreenModel : ViewModel() {
         }
     }
 
-    /**
-     * load deals from amazon
-     */
-    fun loadDeals(dealCount: Int? = null) {
-        val semaphore = Semaphore(10)
-        AmznScrape().getPopular({ asins ->
-            viewModelScope.launch {
-                channelFlow {
-                    asins.subList(0, dealCount ?: asins.size).forEach { asin ->
-                        launch {
-                            semaphore.withPermit {
-                                runCatching { AmznScrape().suspendScrape(asin) }
-                                    .onSuccess { send(it) }
-                            }
-                        }
-                    }
-                }.collect { result ->
-                    if (result.title.isNotEmpty() && result.price > 0) {
-                        dealFlow.emit(result)
-                    }
-                }
-            }
-        })
-    }
 
 
     /**
@@ -197,31 +162,12 @@ open class MainScreenModel : ViewModel() {
                 )
             })
         }
-        viewModelScope.launch {
-            (1..12).forEach {
-                dealFlow.emit(fake)
-                delay((Random.nextFloat() * 1000F).toLong())
-            }
-        }
+
         var firstPrice = 2000L
         dailyTotals.value = (1..30).map {
             firstPrice += (Random.nextFloat() * 400).toLong()
             DailyTotal(date = unix() - (30 - it) * 86400, firstPrice)
         }
-
-        val list = (1..30).map {
-            return@map LatestUpdate(
-                productId = 0,
-                date = unix() - it * 60 * 60,
-                price = 2000 + (if (Random.nextFloat() > 0.5F) 1 else -1) + (Random.nextFloat() * 200L).toInt(),
-                title = fake.title,
-                image = fake.image
-            )
-        }
-
-
-
-
         serverProducts.value = List(20) {
             val price = Random.nextInt(50, 100)
             val priceCount = Random.nextInt(50, 100)
