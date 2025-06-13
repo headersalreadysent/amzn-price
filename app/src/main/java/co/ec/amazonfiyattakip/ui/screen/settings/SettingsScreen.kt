@@ -19,6 +19,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -42,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.App.Companion.settings
 import co.ec.amazonfiyattakip.AppModel
+import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
@@ -57,6 +59,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .statusBarsPadding()
+                .padding(bottom = 35.dp)
         ) {
             TitleBar(
                 title = "Ayarlar",
@@ -95,7 +98,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
             )
             var dynamicTheme by remember {
                 mutableStateOf(
-                    App.settings().getBoolean("dynamicTheme")
+                    settings().getBoolean("dynamicTheme")
                 )
             }
             SettingsToggle(
@@ -142,7 +145,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 title = "Takip listesi toplamını göster.",
             )
 
-            if(settings().getBoolean("developerActive", false)){
+            if (settings().getBoolean("developerActive", false)) {
                 SettingsToggle(
                     name = "developerActive",
                     default = false,
@@ -150,6 +153,40 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 )
 
             }
+
+            TitleBar(
+                title = "Yedekleme",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+            SettingsButton(
+                title = "Verileri Yedekle",
+                desc = "Verileri yedekleyerek yeniden kurulumlarda kullan.",
+                action = "Yedek Oluştur",
+                onClick = {
+                    AppDatabase.backup(then = {
+                        App.snack("Veriler $it dosyasına yedeklendi.")
+                    })
+                }
+            )
+            SettingsButton(
+                title = "Verileri Yükle",
+                desc = "En son yedeği kullanarak verileri yükler.",
+                action = "Yedek Yükle",
+                onClick = {
+                    AppDatabase.restore(then = {
+                        if(it!=null) {
+                            App.snack("${it.products.size} ürün ve ${it.priceInfos.size} fiyat bilgisi geri yüklendi.")
+                        } else {
+                            App.snack("Yüklenecek yedek bulunamadı.")
+                        }
+                    })
+                }
+            )
 
 
         }
@@ -206,6 +243,33 @@ fun SettingsToggle(
                 settings.putBoolean(name, value)
                 onConfirm(value)
             })
+        }
+    )
+}
+
+
+@Composable
+fun SettingsButton(
+    title: String,
+    desc: String? = null,
+    action: String,
+    onClick: () -> Unit = {}
+) {
+    ListItem(
+        modifier = Modifier
+            .padding(bottom = 3.dp)
+            .shadow(3.dp),
+        headlineContent = { Text(text = title) },
+        supportingContent = { desc?.let { Text(text = it) } },
+        trailingContent = {
+            OutlinedButton(
+                onClick = {
+                    onClick()
+                },
+                content = {
+                    Text(action)
+                }
+            )
         }
     )
 }

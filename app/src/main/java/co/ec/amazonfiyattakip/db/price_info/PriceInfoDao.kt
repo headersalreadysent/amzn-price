@@ -1,22 +1,15 @@
 package co.ec.amazonfiyattakip.db.price_info
 
-import android.icu.text.MessagePattern.ArgType.SELECT
-import android.system.Os.stat
-import android.webkit.WebSettings.PluginState.ON
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithStat
-import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.db.view.DailyPrice
-import com.google.firebase.firestore.AggregateField.average
-import com.google.firestore.v1.StructuredAggregationQuery.Aggregation.OperatorCase.AVG
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -30,6 +23,9 @@ interface PriceInfoDao {
 
     @Query("SELECT * FROM priceinfo WHERE productId=:productId and price>0 ORDER BY date ASC")
     fun getPricesByProduct(productId: Int): List<PriceInfo>
+
+    @Query("SELECT * FROM priceinfo")
+    fun getAll(): List<PriceInfo>
 
     @Query(
         "SELECT SUM(latest_price) AS total, date FROM (SELECT \n" +
@@ -81,7 +77,7 @@ GROUP BY dailyprice.day ORDER BY dailyprice.date ASC
     fun lowPricedProducts(status: ProductStatus = ProductStatus.ACTIVE): List<LowPriced>
 
     @Query("""
-    SELECT product.*, stat.* 
+    SELECT product.*, stat.min, stat.max, stat.avg
     FROM product LEFT JOIN 
         (
             SELECT productId,

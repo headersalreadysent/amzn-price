@@ -8,6 +8,7 @@ import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.CnsynApp
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.EventBus
+import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.unix
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -99,7 +100,15 @@ class App : CnsynApp() {
         //activate or deactivate collection
         sharedSettings = SettingsHelper(applicationContext)
         sharedSettings.apply {
+            LogHelper.d("restore ${getBoolean("firstRun", true)}")
             if (getBoolean("firstRun", true)) {
+                //if first run try to restore data
+                AppDatabase.restore(then = {
+                    LogHelper.d("restore $it")
+                    it?.let {
+                        snack("Yedeklenmiş ${it.products.size} ürün ve ${it.priceInfos.size} fiyat bilgisi geri yüklendi.")
+                    }
+                })
                 putBoolean("firstRun", false)
                 putInt("appSetup", unix().toInt())
             }

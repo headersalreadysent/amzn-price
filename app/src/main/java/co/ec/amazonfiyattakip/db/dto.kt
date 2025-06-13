@@ -14,10 +14,13 @@ data class ProductWithPrices(
         entityColumn = "productId"
     )
     val priceInfoList: List<PriceInfo>
-) {
+)
 
-
-}
+@Serializable
+data class BackupData(
+    val products: List<Product>,
+    val priceInfos: List<PriceInfo>
+)
 
 /**
  * dailt basket totals
