@@ -2,7 +2,6 @@ package co.ec.amazonfiyattakip.ui.screen.lowpriced
 
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +27,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -50,7 +50,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,28 +88,29 @@ import androidx.core.graphics.drawable.toDrawable
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
-import co.ec.amazonfiyattakip.composables.ProductStat
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.part.MainProductCard
 import co.ec.amazonfiyattakip.ui.part.TitleBar
-import co.ec.helper.utils.unix
-import kotlinx.coroutines.launch
 import kotlin.collections.getOrNull
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
     val navigation = LocalNavigation.current
+    val settings = LocalSettings.current
     val products by model.list.observeAsState()
+    var lowPriceGraphInfoCardVisible by remember { mutableStateOf<Boolean?>(null) }
     DisposableEffect(Unit) {
         model.productStats()
+        lowPriceGraphInfoCardVisible = settings.getBoolean("showLowPriceDetailInfoCard", true)
         onDispose { }
     }
     val sheetState = rememberModalBottomSheetState(
@@ -151,79 +151,104 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                     .padding(vertical = 4.dp)
                     .statusBarsPadding(),
                 extra = {
+
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .background(
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = .8F),
-                                RoundedCornerShape(8.dp)
-                            )
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable {
-                                if (statSortDir == 1) {
-                                    statSortDir = -1
-                                } else {
-                                    statSortDir = 1
-                                    val index = sort.indexOf(statSort)
-                                    statSort = sort.getOrNull(index + 1) ?: sort[0]
-                                    settings.putString("statSort", statSort)
-                                }
-                                settings.putInt("statSortDir", statSortDir)
-                            }
-                            .padding(horizontal = 8.dp)) {
-                        Text(
-                            statSort,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Icon(
-                            Icons.Filled.ArrowDropDown, "sort",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .graphicsLayer(scaleY = -1 * statSortDir.toFloat())
-                        )
+                                .background(
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = .8F),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    if (statSortDir == 1) {
+                                        statSortDir = -1
+                                    } else {
+                                        statSortDir = 1
+                                        val index = sort.indexOf(statSort)
+                                        statSort = sort.getOrNull(index + 1) ?: sort[0]
+                                        settings.putString("statSort", statSort)
+                                    }
+                                    settings.putInt("statSortDir", statSortDir)
+                                }
+                                .padding(horizontal = 8.dp)) {
+                            Text(
+                                statSort,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                            Icon(
+                                Icons.Filled.ArrowDropDown, "sort",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier
+                                    .graphicsLayer(scaleY = -1 * statSortDir.toFloat())
+                            )
+                        }
+                        lowPriceGraphInfoCardVisible?.let {
+                            if (!it) {
+                                Icon(
+                                    Icons.Outlined.Info, "",
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .clickable(indication = null, interactionSource = null) {
+                                            showBottomSheet = true
+                                        })
+                            }
+                        }
+
                     }
                 }
             )
-            CutCornerCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .padding(bottom = 4.dp)
-            ) {
-                Text(
-                    text = "Fiyat istatistikleri, tüm takip edilen günlerin ortalamalarına göre, fiyatın ucuz ya da pahalı olup olmadığını gösterir." +
-                            " Fiyat çubuğu sağ tarafta ne kadar büyükse, ürün şu an o kadar ucuzdur.",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        textAlign = TextAlign.Justify
-                    ),
-                    modifier = Modifier.padding(8.dp)
-                )
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(30.dp)
-                        .padding(horizontal = 8.dp)
-                        .padding(bottom = 4.dp),
-                    contentPadding = PaddingValues(2.dp),
-                    onClick = {
-                        showBottomSheet = true
-                    }) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Info,
-                            "info",
-                            modifier = Modifier
-                                .padding(end = 1.dp)
-                                .scale(.8F)
+            lowPriceGraphInfoCardVisible?.let {
+                if (it) {
+                    CutCornerCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            text = "Fiyat istatistikleri, tüm takip edilen günlerin ortalamalarına göre, fiyatın ucuz ya da pahalı olup olmadığını gösterir." +
+                                    " Fiyat çubuğu sağ tarafta ne kadar büyükse, ürün şu an o kadar ucuzdur.",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                textAlign = TextAlign.Justify
+                            ),
+                            modifier = Modifier.padding(8.dp)
                         )
-                        Text("Detaylı Oku")
+                        OutlinedButton(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(30.dp)
+                                .padding(horizontal = 8.dp)
+                                .padding(bottom = 4.dp),
+                            contentPadding = PaddingValues(2.dp),
+                            onClick = {
+                                lowPriceGraphInfoCardVisible = false
+                                settings.putBoolean("showLowPriceDetailInfoCard", false)
+                                showBottomSheet = true
+                            }) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    "info",
+                                    modifier = Modifier
+                                        .padding(end = 1.dp)
+                                        .scale(.8F)
+                                )
+                                Text("Detaylı Oku")
+                            }
+                        }
                     }
                 }
             }
+
             HorizontalDivider(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -479,12 +504,12 @@ fun ProductPriceStatGraph(
     ) {
         val minSize by remember(stat) {
             mutableIntStateOf(
-                stat.entity.price - stat.min
+                stat.entity.price - min(stat.entity.price,stat.min)
             )
         }
         val maxSize by remember(stat) {
             mutableIntStateOf(
-                stat.max - stat.entity.price
+                max(stat.entity.price,stat.max) - stat.entity.price
             )
         }
 
@@ -689,7 +714,9 @@ fun ModalContent() {
         Text(
             "Fiyat grafikleri, ürünün şimdiki fiyatını fiyat çubuğu üzerinde ortalayarak gösterir. " +
                     "Ürünün son fiyatı anlık fiyatına göre daha düşük olan ürünlerde grafik sağa yaslı olarak görüntülenir ve tüm zamanlara göre fiyatın ne kadar düşük olduğu gösterilmiş olur. ",
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
             style = MaterialTheme.typography.bodyMedium.copy(
                 textAlign = TextAlign.Justify
             )
@@ -792,13 +819,19 @@ fun ModalContent() {
             }
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    nameValue("Anlık Fiyat", prices[0]+(prices[1]*(prices[2].toFloat()/100F)).toInt()),
+                    nameValue(
+                        "Anlık Fiyat",
+                        prices[0] + (prices[1] * (prices[2].toFloat() / 100F)).toInt()
+                    ),
                     modifier = Modifier.weight(1F),
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp
                 )
                 Text(
-                    nameValue("Ortalama", prices[0]+(prices[1]*(prices[3].toFloat()/100F)).toInt(),),
+                    nameValue(
+                        "Ortalama",
+                        prices[0] + (prices[1] * (prices[3].toFloat() / 100F)).toInt(),
+                    ),
                     modifier = Modifier.weight(1F),
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp
@@ -819,7 +852,8 @@ fun ModalContent() {
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -845,11 +879,11 @@ fun ModalContent() {
             ProductPriceStatGraph(
                 ProductWithStat(
                     entity = tempProduct.copy(
-                        price = prices[0]+(prices[1]*(prices[2].toFloat()/100F)).toInt(),
+                        price = prices[0] + (prices[1] * (prices[2].toFloat() / 100F)).toInt(),
                         title = "Örnek Ürün",
                     ),
                     min = prices[0],
-                    avg = prices[0]+(prices[1]*(prices[3].toFloat()/100F)).toInt(),
+                    avg = prices[0] + (prices[1] * (prices[3].toFloat() / 100F)).toInt(),
                     max = prices[0] + prices[1]
                 )
             )

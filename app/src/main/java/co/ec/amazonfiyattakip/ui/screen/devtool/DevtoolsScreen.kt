@@ -1,4 +1,4 @@
-package co.ec.amazonfiyattakip.ui.joblog
+package co.ec.amazonfiyattakip.ui.screen.devtool
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
@@ -14,9 +14,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.ThumbsUpDown
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,12 +46,11 @@ import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.job_log.JobLog
-import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.graph.BarChart
 import co.ec.amazonfiyattakip.ui.part.graph.MinuteSpanData
 import co.ec.helper.helpers.ExceptionHelper
-import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.formatTime
@@ -57,7 +64,7 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 @Composable
-fun JobLogScreen() {
+fun DevtoolsScreen() {
 
     var selected by remember { mutableIntStateOf(0) }
     var logs by remember { mutableStateOf<List<JobLog>?>(null) }
@@ -77,10 +84,10 @@ fun JobLogScreen() {
     LaunchedEffect(Unit) {
         while (true) {
             launch(Dispatchers.IO) {
-                val text= ExceptionHelper.readLogs()
+                val text = ExceptionHelper.readLogs()
                 withContext(Dispatchers.Main) {
                     // update UI
-                    textLog=text
+                    textLog = text
                 }
             }
             delay(5000)
@@ -101,30 +108,42 @@ fun JobLogScreen() {
     }
     AppModel.cutCard(Modifier.height(5.dp)) { }
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ) {
 
         TabRow(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             selectedTabIndex = selected,
         ) {
             Tab(
-                selected = selected == 0,
-                onClick = {
+                selected = selected == 0, onClick = {
                     selected = 0
                 }) {
-                Text("JOB LOG", modifier = Modifier.padding(8.dp)
-                    .statusBarsPadding())
+                Text(
+                    "Jobs", modifier = Modifier
+                        .padding(8.dp)
+                        .statusBarsPadding()
+                )
             }
             Tab(
-                selected = selected == 1,
-                onClick = {
+                selected = selected == 1, onClick = {
                     selected = 1
                 }) {
-                Text("APP LOG", modifier = Modifier.padding(8.dp)
-                    .statusBarsPadding())
+                Text(
+                    "App", modifier = Modifier
+                        .padding(8.dp)
+                        .statusBarsPadding()
+                )
+            }
+            Tab(
+                selected = selected == 2, onClick = {
+                    selected = 2
+                }) {
+                Text(
+                    "Settings", modifier = Modifier
+                        .padding(8.dp)
+                        .statusBarsPadding()
+                )
             }
         }
         Crossfade(
@@ -134,6 +153,7 @@ fun JobLogScreen() {
                 .weight(1F)
                 .padding(top = 8.dp)
         ) {
+
             if (it == 0) {
                 if (logs == null) {
                     Progress("log bekleniyor")
@@ -159,11 +179,11 @@ fun JobLogScreen() {
                             if (logs.size > 1) {
 
                                 items(logs.size) {
-                                    val next = if (logs.size == it+1) 0 else logs[it + 1].date
+                                    val next = if (logs.size == it + 1) 0 else logs[it + 1].date
                                     val log = logs[it]
                                     ListItem(
                                         colors = ListItemDefaults.colors(
-                                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                                         ),
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -172,9 +192,7 @@ fun JobLogScreen() {
                                         headlineContent = {
                                             Text(
                                                 log.detail,
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                                )
+                                                style = MaterialTheme.typography.bodyMedium
                                             )
                                         },
                                         overlineContent = {
@@ -186,17 +204,13 @@ fun JobLogScreen() {
                                             ) {
                                                 Text(
                                                     "${log.date.dateString()} ${log.date.timeString()}",
-                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                                    )
+                                                    style = MaterialTheme.typography.bodyMedium
                                                 )
                                                 val dates =
                                                     "${(log.date - next).formatTime()} - ${(now - log.date).formatTime()}"
                                                 Text(
                                                     dates,
-                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                                    )
+                                                    style = MaterialTheme.typography.bodyMedium
                                                 )
                                             }
                                         },
@@ -207,7 +221,7 @@ fun JobLogScreen() {
                         }
                     }
                 }
-            } else {
+            } else if (it == 1) {
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize()
@@ -222,7 +236,9 @@ fun JobLogScreen() {
                     } else {
                         item {
                             OutlinedButton(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
                                 onClick = {
                                     ExceptionHelper.clearLogs()
                                 },
@@ -243,7 +259,7 @@ fun JobLogScreen() {
                         val log = textLog[it]
                         ListItem(
                             colors = ListItemDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -251,10 +267,7 @@ fun JobLogScreen() {
                                 .padding(bottom = 4.dp),
                             headlineContent = {
                                 Text(
-                                    log.message,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
+                                    log.message, style = MaterialTheme.typography.bodyMedium
                                 )
                             },
                             overlineContent = {
@@ -265,16 +278,12 @@ fun JobLogScreen() {
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        "${log.date.toLong().dateString()} ${log.date.toLong().timeString()}",
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
+                                        "${log.date.toLong().dateString()} ${
+                                            log.date.toLong().timeString()
+                                        }", style = MaterialTheme.typography.bodyMedium
                                     )
                                     Text(
-                                        log.tag,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
+                                        log.tag, style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
                             },
@@ -282,6 +291,43 @@ fun JobLogScreen() {
                     }
                 }
 
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    val settings = LocalSettings.current
+                    settings.all().toSortedMap().forEach {
+                        val icon = if (it.value is Int) {
+                            Icons.Filled.Numbers
+                        } else {
+                            if (it.value is Boolean) {
+                                Icons.Filled.ThumbsUpDown
+                            } else {
+                                Icons.Filled.TextFields
+                            }
+                        }
+                        ListItem(
+                            headlineContent = {
+                                Text(it.value.toString())
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 5.dp)
+                                .padding(horizontal = 8.dp),
+                            overlineContent = {
+                                Text(it.key)
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            ),
+                            trailingContent = {
+                                Icon(icon, "")
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -292,7 +338,7 @@ fun JobLogScreen() {
 @Composable
 private fun JobLogPreview() {
     PreviewProviders {
-        JobLogScreen()
+        DevtoolsScreen()
     }
 
 }

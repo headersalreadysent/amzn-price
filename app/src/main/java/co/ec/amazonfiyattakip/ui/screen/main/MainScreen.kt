@@ -415,7 +415,8 @@ fun PermissionArea() {
                         .fillMaxWidth()
                         .padding(bottom = 4.dp),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        textAlign = TextAlign.Justify
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.SemiBold
                     )
                 )
                 OutlinedButton(

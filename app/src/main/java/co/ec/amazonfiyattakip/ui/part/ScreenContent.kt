@@ -2,16 +2,15 @@ package co.ec.amazonfiyattakip.ui.part
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import co.ec.amazonfiyattakip.ui.LocalNavigation
-import co.ec.amazonfiyattakip.ui.joblog.JobLogScreen
 import co.ec.amazonfiyattakip.ui.screen.add.AddScreen
 import co.ec.amazonfiyattakip.ui.screen.detail.DetailScreen
+import co.ec.amazonfiyattakip.ui.screen.devtool.DevtoolsScreen
 import co.ec.amazonfiyattakip.ui.screen.find.FindScreen
 import co.ec.amazonfiyattakip.ui.screen.lowpriced.LowPricedScreen
 import co.ec.amazonfiyattakip.ui.screen.main.MainScreen
@@ -58,7 +57,7 @@ fun ScreenContent(
             SettingsScreen()
         }
         composable("joblog") {
-            JobLogScreen()
+            DevtoolsScreen()
         }
     }
     DisposableEffect(Unit) {
