@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.helper.PermissionHelper
+import co.ec.amazonfiyattakip.service.job.Cleanup
 import co.ec.amazonfiyattakip.service.job.DeleteOldProducts
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.CnsynApp
@@ -86,6 +87,7 @@ class App : CnsynApp() {
         //setup jobs
         PriceUpdate.setupJob()
         DeleteOldProducts.setupJob()
+        Cleanup.setupJob()
         //setup listen
         CoroutineScope(Dispatchers.IO).launch {
             EventBus.subscribe<SettingsHelper.SettingsChange> {
