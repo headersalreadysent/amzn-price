@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip.helper
 
+import android.R.attr.name
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -16,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -47,7 +49,13 @@ object NotificationHelper {
 
         CoroutineScope(Dispatchers.IO).launch {
             //collect bitmap
-            val bitmap = downloadBitmap(product.image)
+            val bitmap = runCatching {
+                val name=product.image.split("/").last()
+                val file = File(context.getExternalFilesDir(null), "images/$name")
+                BitmapFactory.decodeFile(file.absolutePath)
+            }.getOrElse {
+                downloadBitmap(product.image)
+            }
 
             withContext(Dispatchers.Main) {
                 val notification = NotificationCompat.Builder(context, "price-change-channel")

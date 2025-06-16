@@ -1,6 +1,16 @@
 package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ImageSpan
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -231,21 +241,23 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 LogHelper.d("${product.title} price dropped", JOBTAG)
                 NotificationHelper.showNotification(
                     product,
-                    "Fiyat ortalamanın altına düstü. ${priceInfo.price.price()} -> ${latestPrice.price.price()}",
-                    "Şimdiki fiyat: ${priceInfo.price.price()}, Son ortalama fiyat ${latestAverage.avgPrice.price()} \n${product.title}"
+                    "⇗ ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın altına düştü.",
+                    "Son ortalama fiyat ${latestAverage.avgPrice.price()} Son Fiyat: ${latestPrice.price.price()}"
                 )
             }
             if (priceInfo.price > latestAverage.avgPrice) {
                 LogHelper.d("${product.title} price increased", JOBTAG)
                 NotificationHelper.showNotification(
                     product,
-                    "Fiyat ortalamanın üstüne yükseldi. ${priceInfo.price.price()} -> ${latestPrice.price.price()}",
-                    "Şimdiki fiyat: ${priceInfo.price.price()}, Son ortalama fiyat ${latestAverage.avgPrice.price()} \n${product.title}"
+                    "⇘ ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın üstüne yükseldi.",
+                    "Son ortalama fiyat ${latestAverage.avgPrice.price()} Son Fiyat: ${latestPrice.price.price()}"
                 )
             }
         }
 
     }
+
+
 
     override suspend fun doWork(): Result {
         return run()
