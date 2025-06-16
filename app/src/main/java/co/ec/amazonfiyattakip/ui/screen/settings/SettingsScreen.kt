@@ -1,5 +1,8 @@
 package co.ec.amazonfiyattakip.ui.screen.settings
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Modifier.Companion.then
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,6 +48,7 @@ import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.App.Companion.settings
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.service.job.DBBackup
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
@@ -153,7 +158,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 )
 
             }
-
+            val backupCount by model.backupFileCount.observeAsState()
             TitleBar(
                 title = "Yedekleme",
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -161,16 +166,83 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .padding(8.dp),
+                extra = {
+                    backupCount?.let {
+                        Text(
+                            "$backupCount Yedek",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+                }
+            )
+            var backupFolder by remember { mutableStateOf(settings().getString("backupLocation")) }
+            val backupLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocumentTree(),
+                onResult = { uri ->
+                    uri?.let {
+                        backupFolder = it.toString()
+                        settings().putString("backupLocation", it.toString())
+
+                        App.context().contentResolver.takePersistableUriPermission(
+                            it,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+
+                        AppDatabase.backup(it.toString(), then = {
+                            App.snack("Veriler $it dosyasına yedeklendi.")
+                        })
+                    }
+                }
+            )
+            val restoreLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocumentTree(),
+                onResult = { uri ->
+                    uri?.let {
+                        backupFolder = it.toString()
+                        settings().putString("backupLocation", it.toString())
+
+                        App.context().contentResolver.takePersistableUriPermission(
+                            it,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+
+                        AppDatabase.restore(it.toString(), then = {
+                            if (it != null) {
+                                App.snack("${it.products.size} ürün ve ${it.priceInfos.size} fiyat bilgisi geri yüklendi.")
+                            } else {
+                                App.snack("Yüklenecek yedek bulunamadı.")
+                            }
+                        })
+                    }
+                }
+            )
+
+            SettingsToggle(
+                name = "automaticBackup",
+                default = false,
+                title = "Otomatik Yedekleme",
+                desc = "Verileri yedekleme klasörüne otomatik yedekler.",
+                onConfirm = {
+                    if (it && backupFolder == null) {
+                        backupLauncher.launch(null)
+                    }
+                    DBBackup.setupJob(it)
+                }
             )
             SettingsButton(
                 title = "Verileri Yedekle",
                 desc = "Verileri yedekleyerek yeniden kurulumlarda kullan.",
                 action = "Yedek Oluştur",
                 onClick = {
-                    AppDatabase.backup(then = {
-                        App.snack("Veriler $it dosyasına yedeklendi.")
-                    })
+                    if (backupFolder == null) {
+                        backupLauncher.launch(null)
+                    } else {
+                        AppDatabase.backup(backupFolder.toString(), then = {
+                            App.snack("Veriler $it dosyasına yedeklendi.")
+                        })
+                    }
                 }
             )
             SettingsButton(
@@ -178,13 +250,18 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 desc = "En son yedeği kullanarak verileri yükler.",
                 action = "Yedek Yükle",
                 onClick = {
-                    AppDatabase.restore(then = {
-                        if(it!=null) {
-                            App.snack("${it.products.size} ürün ve ${it.priceInfos.size} fiyat bilgisi geri yüklendi.")
-                        } else {
-                            App.snack("Yüklenecek yedek bulunamadı.")
-                        }
-                    })
+                    if (backupFolder == null) {
+                        restoreLauncher.launch(null)
+                    } else {
+                        AppDatabase.restore(backupFolder.toString(), then = {
+                            if (it != null) {
+                                App.snack("${it.products.size} ürün ve ${it.priceInfos.size} fiyat bilgisi geri yüklendi.")
+                            } else {
+                                App.snack("Yüklenecek yedek bulunamadı.")
+                            }
+                        })
+                    }
+
                 }
             )
 

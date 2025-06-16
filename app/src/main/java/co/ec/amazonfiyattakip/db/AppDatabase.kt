@@ -2,7 +2,10 @@ package co.ec.amazonfiyattakip.db
 
 
 import android.R.attr.data
+import android.net.Uri
 import android.os.Environment
+import android.provider.DocumentsContract
+import androidx.compose.ui.Modifier.Companion.then
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -20,6 +23,8 @@ import co.ec.helper.utils.dateString
 import co.ec.helper.utils.unix
 import kotlinx.serialization.json.Json
 import java.io.File
+import androidx.core.net.toUri
+import coil.util.CoilUtils.result
 
 
 @Database(
@@ -51,52 +56,114 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        fun backup(then: (String) -> Unit = {}) {
+        fun backup(folder: String, then: (String) -> Unit = {}) {
+            val context = App.context()
             asyncRun({
-                val data = BackupData(
-                    getDatabase().product().getAll(),
-                    getDatabase().priceInfo().getAll()
+                val db = getDatabase()
+                val json = Json.encodeToString(
+                    BackupData.serializer(),
+                    BackupData(db.product().getAll(), db.priceInfo().getAll())
                 )
-                val filename = "amazon_data_backup_${unix()}.json"
 
-                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-                if (!dir.exists()) dir.mkdirs()
+                val treeUri = folder.toUri()
+                val parentUri = DocumentsContract.buildDocumentUriUsingTree(
+                    treeUri,
+                    DocumentsContract.getTreeDocumentId(treeUri)
+                )
+                val fileName =
+                    "amazon_data_backup_${unix()}.json"
+                val fileUri = DocumentsContract.createDocument(
+                    context.contentResolver, parentUri, "application/json", fileName
+                )
 
-                val json = Json.encodeToString(BackupData.serializer(), data)
-                val file = File(dir, filename)
-                file.setReadable(true, true)
-                file.setWritable(true, true)
-                file.writeText(json)
-                return@asyncRun file.path
-            }, {
-                then(it)
-            })
+                fileUri?.let {
+                    context.contentResolver.openOutputStream(it)
+                        ?.use { it.write(json.toByteArray()) }
+                }
+
+                fileName
+            }, then)
         }
 
-        fun restore(then: (BackupData?) -> Unit = {}) {
-            asyncRun({
-                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-                dir?.let {
-                    val latestFile = it.listFiles { file ->
-                        file.name.matches(Regex("amazon_data_backup_\\d+\\.json"))
-                    }?.maxByOrNull { file ->
-                        file.name.removePrefix("amazon_data_backup_").removeSuffix(".json").toLongOrNull()
-                            ?: 0
-                    }
-                    if (latestFile != null) {
+        fun listBackupFiles(folder: String): List<String>? {
+            val context = App.context()
+            val treeUri = folder.toUri()
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                treeUri,
+                DocumentsContract.getTreeDocumentId(treeUri)
+            )
 
-                        val json = latestFile.readText()
-                        val data = Json.decodeFromString(BackupData.serializer(), json)
+            val resolver = context.contentResolver
+            val result = mutableListOf<String>()
 
-                        getDatabase().product().insertAll(data.products)
-                        getDatabase().priceInfo().insertAll(data.priceInfos)
-                        return@asyncRun data
+            resolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                ),
+                null, null, null
+            )?.use { cursor ->
+                val nameIdx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(nameIdx)
+                    if (name.matches(Regex("amazon_data_backup_\\d+\\.json"))) {
+                        result.add(name)
                     }
                 }
-                return@asyncRun null
-            }, {
-                then(it)
-            })
+            }
+
+            return result
         }
+
+        fun restore(folder: String, then: (BackupData?) -> Unit = {}) {
+            val context = App.context()
+            asyncRun({
+                val treeUri = folder.toUri()
+                val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    DocumentsContract.getTreeDocumentId(treeUri)
+                )
+
+                val resolver = context.contentResolver
+                val latest = resolver.query(
+                    childrenUri,
+                    arrayOf(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    ),
+                    null, null, null
+                )?.use { cursor ->
+                    val nameIdx =
+                        cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                    val idIdx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                    generateSequence { if (cursor.moveToNext()) cursor else null }
+                        .map {
+                            val name = it.getString(nameIdx)
+                            val docId = it.getString(idIdx)
+                            name to DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+                        }
+                        .filter { it.first.matches(Regex("amazon_data_backup_\\d+\\.json")) }
+                        .maxByOrNull {
+                            it.first.removePrefix("amazon_data_backup_").removeSuffix(".json")
+                                .toLongOrNull() ?: 0
+                        }
+                }
+                listBackupFiles(folder)?.maxByOrNull {
+                    it.removePrefix("amazon_data_backup_").removeSuffix(".json")
+                        .toLongOrNull() ?: 0
+                }
+
+                latest?.second?.let { uri ->
+                    resolver.openInputStream(uri)?.bufferedReader()?.readText()?.let {
+                        Json.decodeFromString(BackupData.serializer(), it)
+                    }
+                }?.also {
+                    getDatabase().product().insertAll(it.products)
+                    getDatabase().priceInfo().insertAll(it.priceInfos)
+                }
+            }, then)
+        }
+
     }
 }

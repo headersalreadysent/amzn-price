@@ -3,6 +3,7 @@ package co.ec.amazonfiyattakip
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.helper.PermissionHelper
 import co.ec.amazonfiyattakip.service.job.DeleteOldProducts
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.CnsynApp
@@ -101,14 +102,9 @@ class App : CnsynApp() {
         sharedSettings = SettingsHelper(applicationContext)
         sharedSettings.apply {
             LogHelper.d("restore ${getBoolean("firstRun", true)}")
+            PermissionHelper.checkBackupAccess()
             if (getBoolean("firstRun", true)) {
                 //if first run try to restore data
-                AppDatabase.restore(then = {
-                    LogHelper.d("restore $it")
-                    it?.let {
-                        snack("Yedeklenmiş ${it.products.size} ürün ve ${it.priceInfos.size} fiyat bilgisi geri yüklendi.")
-                    }
-                })
                 putBoolean("firstRun", false)
                 putInt("appSetup", unix().toInt())
             }

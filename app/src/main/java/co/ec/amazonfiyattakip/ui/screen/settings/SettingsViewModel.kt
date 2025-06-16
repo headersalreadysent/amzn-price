@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.db.ProductWithStat
 import co.ec.amazonfiyattakip.service.job.PriceUpdate.Companion.JOBTAG
 
 class SettingsViewModel : ViewModel() {
@@ -20,6 +22,9 @@ class SettingsViewModel : ViewModel() {
         _nextWorkTime.value = nextRun
     }
 
+    val backupFileCount = MutableLiveData<Int>(null)
+
+
     fun collectJobRuns() {
         workManager.getWorkInfosByTagLiveData(JOBTAG).observeForever(workObserver)
     }
@@ -27,5 +32,11 @@ class SettingsViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         workManager.getWorkInfosByTagLiveData(JOBTAG).removeObserver(workObserver)
+    }
+
+    init {
+        App.settings().getString("backupLocation")?.let {
+            backupFileCount.value=AppDatabase.listBackupFiles(it)?.size ?: 0
+        }
     }
 }
