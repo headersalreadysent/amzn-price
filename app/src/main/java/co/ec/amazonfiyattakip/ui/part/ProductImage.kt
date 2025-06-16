@@ -1,5 +1,7 @@
 package co.ec.amazonfiyattakip.ui.part
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.CoilTrimTransform
 import co.ec.amazonfiyattakip.ui.PreviewProviders
@@ -34,6 +37,12 @@ import co.ec.helper.helpers.LogHelper
 import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import java.io.File
+import androidx.core.graphics.drawable.toDrawable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.FileOutputStream
 
 @Composable
 fun ProductImage(
@@ -74,15 +83,32 @@ fun ProductImage(
             // Show placeholder in Preview
             ColorPainter(MaterialTheme.colorScheme.primary)
         } else {
-            rememberAsyncImagePainter(
+            val context = LocalContext.current
+            //get file name and and test if exists
+            val name=image.split("/").last()
+            val file = File(context.getExternalFilesDir(null), "images/$name")
 
-                model = ImageRequest.Builder(LocalContext.current)
+            val source = if (file.exists()) file.toUri() else image
+            rememberAsyncImagePainter(
+                model = ImageRequest.Builder(context)
                     .networkCachePolicy(CachePolicy.ENABLED)
-                    .data(image)
+                    .data(source)
                     .crossfade(true)
                     .transformations(CoilTrimTransform())
-                    .error(ColorDrawable(Color.White.toArgb()))
+                    .error(Color.White.toArgb().toDrawable())
                     .listener(
+                        onSuccess = { _, result ->
+                            if (!file.exists() && result.drawable is BitmapDrawable) {
+                                //record image to phone to reuse
+                                val bitmap = (result.drawable as BitmapDrawable).bitmap
+                                file.parentFile?.mkdirs()
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    FileOutputStream(file).use {
+                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+                                    }
+                                }
+                            }
+                        },
                         onError = { _, throwable ->
                             LogHelper.e("coil error",throwable.throwable)
                         }
