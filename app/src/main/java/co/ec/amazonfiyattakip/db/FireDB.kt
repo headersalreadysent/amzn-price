@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.db
 
 import android.util.Log
 import androidx.annotation.Keep
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
@@ -48,6 +49,11 @@ object FireDB {
         @OptIn(DelicateCoroutinesApi::class)
         fun sync(product: Product, localPrices: List<PriceInfo>) {
             //merge prices
+            if (!App.settings().getBoolean("shareProductToServer", true)) {
+                //if user allow
+                return
+            }
+
 
             val existedDates = localPrices.map { it.date.toString() }
 
@@ -67,7 +73,7 @@ object FireDB {
                     )
                 }
             //generate local list
-            val localPriceList = localPrices.filter { it.price>0 }.map {
+            val localPriceList = localPrices.filter { it.price > 0 }.map {
                 listOf(
                     it.date.toString(),
                     it.price.toString(),
@@ -111,6 +117,10 @@ object FireDB {
 
     @OptIn(DelicateCoroutinesApi::class)
     fun syncProduct(product: Product) {
+        if (!App.settings().getBoolean("shareProductToServer", true)) {
+            //if user allow
+            return
+        }
         try {
             GlobalScope.launch {
                 //first get product
@@ -166,29 +176,31 @@ object FireDB {
         }
     }
 
-    suspend fun collectWithPriceCount(): List<Pair<Product,List<String>>> {
+    suspend fun collectWithPriceCount(): List<Pair<Product, List<String>>> {
 
         //first get product
         return try {
             val snapshot = Firebase.firestore.collection("products").get().await()
             snapshot.documents.mapNotNull { it.toObject(ProductRecord::class.java) }.map {
                 val price = (it.prices?.lastOrNull() ?: "0|0|0|0|").split("|")
-                Pair(Product(
-                    id = 0,
-                    asin = it.asin,
-                    date = it.latestUpdate,
-                    title = it.title,
-                    description = it.description,
-                    price = price[1].toInt(),
-                    star = price[2].toDouble(),
-                    comment = price[3].toInt(),
-                    image = it.image,
-                    extras = it.extras,
-                    nextRunTime = unix(),
-                    timeSpan = 60,
-                    errorCount = 0,
-                    status = ProductStatus.ACTIVE
-                ),it.prices.orEmpty())
+                Pair(
+                    Product(
+                        id = 0,
+                        asin = it.asin,
+                        date = it.latestUpdate,
+                        title = it.title,
+                        description = it.description,
+                        price = price[1].toInt(),
+                        star = price[2].toDouble(),
+                        comment = price[3].toInt(),
+                        image = it.image,
+                        extras = it.extras,
+                        nextRunTime = unix(),
+                        timeSpan = 60,
+                        errorCount = 0,
+                        status = ProductStatus.ACTIVE
+                    ), it.prices.orEmpty()
+                )
             }
         } catch (e: Exception) {
             emptyList()
@@ -202,9 +214,12 @@ object FireDB {
                 .whereLessThan("latestUpdate", thirtyDaysAgo)
                 .get()
                 .await()
-            if(snapshot.documents.isNotEmpty()){
+            if (snapshot.documents.isNotEmpty()) {
                 snapshot.documents.forEach { it.reference.delete().await() }
-                LogHelper.d("Deleting old products from firebase ${snapshot.documents.size} items", JOBTAG)
+                LogHelper.d(
+                    "Deleting old products from firebase ${snapshot.documents.size} items",
+                    JOBTAG
+                )
             }
 
         } catch (e: Exception) {
