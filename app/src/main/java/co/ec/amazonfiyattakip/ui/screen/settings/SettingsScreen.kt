@@ -1,8 +1,12 @@
 package co.ec.amazonfiyattakip.ui.screen.settings
 
+import android.R.attr.fontWeight
+import android.R.attr.headerBackground
+import android.R.attr.onClick
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +32,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -66,6 +71,8 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 .statusBarsPadding()
                 .padding(bottom = 35.dp)
         ) {
+            var headerBackground = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5F)
+            var headerColor = contentColorFor(headerBackground)
             TitleBar(
                 title = "Ayarlar",
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -84,7 +91,17 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
 
                 }
             }
-
+            TitleBar(
+                title = "Uygulama",
+                color = headerColor,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(headerBackground)
+                    .padding(12.dp)
+            )
             SettingsValueInt(
                 name = "queryTime",
                 default = 15,
@@ -92,14 +109,22 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 desc = "En az 15 dakika olacak şekilde sorgulama sıklığı",
                 override = { it.toString().replace(Regex("[^0-9]"), "").toInt() }
             )
+            SettingsToggle(
+                name = "shareProductToServer",
+                default = true,
+                title = "Toplanan fiyatları paylaş",
+                desc = "Ürünlerimi ve fiyatları diğer kullanıcılar ile anonim paylaş.",
+            )
             TitleBar(
                 title = "Görünüm",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold
+                color = headerColor,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .background(headerBackground)
+                    .padding(12.dp)
             )
             var dynamicTheme by remember {
                 mutableStateOf(
@@ -126,12 +151,14 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
 
             TitleBar(
                 title = "Gösterimler",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold
+                color = headerColor,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .background(headerBackground)
+                    .padding(12.dp)
             )
 
             SettingsToggle(
@@ -161,12 +188,14 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
             val backupCount by model.backupFileCount.observeAsState()
             TitleBar(
                 title = "Yedekleme",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold
+                color = headerColor,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .background(headerBackground)
+                    .padding(12.dp),
                 extra = {
                     backupCount?.let {
                         Text(
@@ -232,8 +261,16 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                 }
             )
             SettingsButton(
+                title = "Yedekleme Konumu",
+                action = if (backupFolder == null) "Konum Seç" else "Değiştir",
+                desc = backupFolder?.toString()?.split("%3A")[1] ?: "",
+                onClick = {
+                    backupLauncher.launch(null)
+
+                }
+            )
+            SettingsButton(
                 title = "Verileri Yedekle",
-                desc = "Verileri yedekleyerek yeniden kurulumlarda kullan.",
                 action = "Yedek Oluştur",
                 onClick = {
                     if (backupFolder == null) {
@@ -247,7 +284,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
             )
             SettingsButton(
                 title = "Verileri Yükle",
-                desc = "En son yedeği kullanarak verileri yükler.",
+                desc = "Son yedeği yükle.",
                 action = "Yedek Yükle",
                 onClick = {
                     if (backupFolder == null) {
@@ -439,7 +476,14 @@ fun SettingsValueInt(
             .shadow(3.dp),
         headlineContent = { Text(text = title) },
         supportingContent = { desc?.let { Text(text = it) } },
-        trailingContent = { Text(text = settingsValue.toString()) }
+        trailingContent = {
+            Text(
+                text = settingsValue.toString(),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+        }
     )
     if (showDialog) {
         AlertDialog(
@@ -521,7 +565,9 @@ fun SettingsDropdown(
         supportingContent = { desc?.let { Text(text = it) } },
         trailingContent = {
             Text(text = values?.let { it[selectedItem] } ?: "Seç",
-                style = MaterialTheme.typography.bodyMedium)
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                ))
         }
     )
     if (showDialog) {
