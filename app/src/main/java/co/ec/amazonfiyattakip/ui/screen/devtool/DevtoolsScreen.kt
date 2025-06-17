@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.AppModel
@@ -317,7 +318,13 @@ fun DevtoolsScreen() {
                                 .padding(bottom = 5.dp)
                                 .padding(horizontal = 8.dp),
                             overlineContent = {
-                                Text(it.key)
+                                Text(
+                                    it.key,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                                )
                             },
                             colors = ListItemDefaults.colors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant,

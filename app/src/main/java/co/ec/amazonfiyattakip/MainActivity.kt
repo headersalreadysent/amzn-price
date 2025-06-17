@@ -141,7 +141,6 @@ fun AppContent(
     val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
     LaunchedEffect(Unit) {
         App.settings().putInt("primaryColor", primaryColor)
-        NotificationHelper.showNotification(Product.fake(), "test",    "test",R.drawable.trending_down)
         EventBus.subscribe<SettingsHelper.SettingsChange> {
             if (it.name == "developerActive") {
                 developerActive = it.value as Boolean
