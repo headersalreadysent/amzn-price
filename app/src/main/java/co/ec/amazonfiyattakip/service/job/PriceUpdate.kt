@@ -19,6 +19,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.R
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.job_log.JobLog
@@ -242,7 +243,8 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 NotificationHelper.showNotification(
                     product,
                     "⇗ ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın altına düştü.",
-                    "Son ortalama fiyat ${latestAverage.avgPrice.price()} Son Fiyat: ${latestPrice.price.price()}"
+                    "Son ortalama fiyat ${latestAverage.avgPrice.price()} Son Fiyat: ${latestPrice.price.price()}",
+                    R.drawable.trending_down
                 )
             }
             if (priceInfo.price > latestAverage.avgPrice) {
@@ -250,7 +252,8 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 NotificationHelper.showNotification(
                     product,
                     "⇘ ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın üstüne yükseldi.",
-                    "Son ortalama fiyat ${latestAverage.avgPrice.price()} Son Fiyat: ${latestPrice.price.price()}"
+                    "Son ortalama fiyat ${latestAverage.avgPrice.price()} Son Fiyat: ${latestPrice.price.price()}",
+                    R.drawable.trending_up
                 )
             }
         }

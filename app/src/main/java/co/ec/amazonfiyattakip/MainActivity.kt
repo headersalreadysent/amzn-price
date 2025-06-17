@@ -70,6 +70,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.Manifest
+import android.R.id.message
+import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.helper.NotificationHelper
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +84,6 @@ class MainActivity : ComponentActivity() {
             )
         )
         val destination = intent?.getStringExtra("destination") ?: "main"
-
         setContent {
             AppProviders {
                 AppContent(
@@ -128,11 +130,21 @@ fun AppContent(
     }
     var settingsClick by remember { mutableIntStateOf(0) }
     val settings = LocalSettings.current
-    var developerActive by remember { mutableStateOf(settings.getBoolean("developerActive", false)) }
+    var developerActive by remember {
+        mutableStateOf(
+            settings.getBoolean(
+                "developerActive",
+                false
+            )
+        )
+    }
+    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
     LaunchedEffect(Unit) {
+        App.settings().putInt("primaryColor", primaryColor)
+        NotificationHelper.showNotification(Product.fake(), "test",    "test",R.drawable.trending_down)
         EventBus.subscribe<SettingsHelper.SettingsChange> {
-            if(it.name=="developerActive"){
-                developerActive=it.value as Boolean
+            if (it.name == "developerActive") {
+                developerActive = it.value as Boolean
             }
         }
     }
