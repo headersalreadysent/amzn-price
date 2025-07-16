@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip.helper
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -57,4 +58,29 @@ fun predictNextPrices(
         }, functionText
     )
 
+}
+
+
+// Extension property to get the luminance of a Color
+val Color.luminance: Float
+    get() {
+        // Linearize the RGB components first (if they aren't already)
+        // For standard sRGB colors from Compose, you usually don't need
+        // a full sRGB to linear conversion for a quick luminance check.
+        // Direct component access usually works for a basic check.
+        val r = red
+        val g = green
+        val b = blue
+
+        // ITU-R BT.709 coefficients for luminance calculation
+        // These are standard weights for human perception of brightness.
+        return (0.2126f * r + 0.7152f * g + 0.0722f * b)
+    }
+
+// Extension function to check if a Color is light
+fun Color.isLight(): Boolean {
+    // You can adjust the threshold (0.5f) if needed
+    // A lower threshold means more colors are considered "light".
+    // 0.5f is a common starting point.
+    return this.luminance > 0.5f
 }

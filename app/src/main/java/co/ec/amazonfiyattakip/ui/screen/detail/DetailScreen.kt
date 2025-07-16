@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,6 +85,7 @@ import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import co.ec.amazonfiyattakip.ui.SetIconColorEvent
 import co.ec.amazonfiyattakip.ui.part.FakeDetailScreen
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
@@ -91,6 +93,13 @@ import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 import co.ec.helper.composable.AutoText
+import co.ec.helper.helpers.EventBus
+import co.ec.helper.helpers.LogHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,13 +114,19 @@ fun DetailScreen(
             urlHandler.openUri(AmznScrape.urlFromAsin(it.asin))
         }
     }
-
+    val secondary = MaterialTheme.colorScheme.secondaryContainer
     DisposableEffect(Unit) {
         productId?.let {
             model.loadProduct(productId)
         }
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(500)
+            EventBus.publish(SetIconColorEvent(secondary))
+        }
         onDispose {
-
+            CoroutineScope(Dispatchers.Default).launch {
+                EventBus.publish(SetIconColorEvent(null))
+            }
         }
     }
 

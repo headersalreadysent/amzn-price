@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -14,11 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cached
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
-import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
@@ -30,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,9 +43,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.amazonfiyattakip.ui.AppProviders
@@ -59,33 +52,57 @@ import co.ec.amazonfiyattakip.ui.LocalSnackbar
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.BottomCardContent
 import co.ec.amazonfiyattakip.ui.part.ScreenContent
-import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.EventBus
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.Manifest
-import android.R.id.message
-import co.ec.amazonfiyattakip.db.product.Product
-import co.ec.amazonfiyattakip.helper.NotificationHelper
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import co.ec.amazonfiyattakip.helper.isLight
+import co.ec.amazonfiyattakip.ui.SetIconColorEvent
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val transparent = Color.Transparent.toArgb()
         enableEdgeToEdge(
-            navigationBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            )
+            statusBarStyle = SystemBarStyle.light(transparent, transparent),
+            navigationBarStyle = SystemBarStyle.light(transparent, transparent)
         )
         val destination = intent?.getStringExtra("destination") ?: "main"
         setContent {
             AppProviders {
+                val darkTheme = !MaterialTheme.colorScheme.secondaryContainer.isLight()
+                val surfaceIsDark = !MaterialTheme.colorScheme.surfaceContainer.isLight()
+                val view = LocalView.current
+                val window = (view.context as? ComponentActivity)?.window
+                val scope = rememberCoroutineScope()
+                LaunchedEffect(Unit) {
+                    window?.let {
+                        WindowCompat.getInsetsController(
+                            window,
+                            view
+                        ).isAppearanceLightNavigationBars = !darkTheme
+                    }
+                    scope.launch {
+                        EventBus.subscribe<SetIconColorEvent> { event ->
+                            //change color of icons by value or by surface
+                            var iconAppearance =
+                                if (event.color == null) !surfaceIsDark else event.color!!.isLight()
+                            window?.let {
+                                WindowCompat.getInsetsController(
+                                    window,
+                                    view
+                                ).isAppearanceLightStatusBars = iconAppearance
+                            }
+                        }
+                    }
+
+                }
                 AppContent(
                     startDestination = destination
                 )
@@ -99,20 +116,9 @@ class MainActivity : ComponentActivity() {
 fun AppContent(
     startDestination: String = "main", appModel: AppModel = viewModel()
 ) {
-    val uiController = rememberSystemUiController()
 
-    val container = MaterialTheme.colorScheme.secondaryContainer
     val surface = MaterialTheme.colorScheme.surfaceContainer
-    SideEffect {
-        uiController.setNavigationBarColor(
-            color = container,
-            darkIcons = ColorUtils.calculateLuminance(container.toArgb()) > 0.5
-        )
-        uiController.setStatusBarColor(
-            color = Color.Transparent,
-            darkIcons = ColorUtils.calculateLuminance(surface.toArgb()) > 0.5
-        )
-    }
+
     val coroutineScope = rememberCoroutineScope()
     App.setupSnackbar(LocalSnackbar.current)
 
@@ -237,6 +243,8 @@ fun AppContent(
                         screenHeight = it.height
                     }
             ) {
+
+                val view = LocalView.current
                 ScreenContent(
                     modifier = Modifier
                         .fillMaxWidth()
