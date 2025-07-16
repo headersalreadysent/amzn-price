@@ -8,7 +8,6 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 
 open class LowPricedViewModel() : ViewModel() {

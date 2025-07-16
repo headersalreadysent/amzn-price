@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip.db
 
-import android.util.Log
 import androidx.annotation.Keep
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo

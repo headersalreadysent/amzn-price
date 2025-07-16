@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Color
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.primaryConstructor
 
 
 fun Int.price(): String {

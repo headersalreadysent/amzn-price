@@ -1,7 +1,6 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
 
-import androidx.compose.ui.Modifier.Companion.then
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

@@ -1,22 +1,18 @@
 package co.ec.amazonfiyattakip.service.job
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
-import co.ec.amazonfiyattakip.db.FireDB
-import co.ec.helper.helpers.LogHelper
 import java.io.File
 import java.util.concurrent.TimeUnit
-import androidx.core.net.toUri
-import androidx.work.WorkInfo
 
 class Cleanup(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {

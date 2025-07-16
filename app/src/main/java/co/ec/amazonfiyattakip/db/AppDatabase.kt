@@ -1,11 +1,8 @@
 package co.ec.amazonfiyattakip.db
 
 
-import android.R.attr.data
-import android.net.Uri
-import android.os.Environment
 import android.provider.DocumentsContract
-import androidx.compose.ui.Modifier.Companion.then
+import androidx.core.net.toUri
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -19,12 +16,8 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductDao
 import co.ec.amazonfiyattakip.db.view.DailyPrice
 import co.ec.helper.utils.asyncRun
-import co.ec.helper.utils.dateString
 import co.ec.helper.utils.unix
 import kotlinx.serialization.json.Json
-import java.io.File
-import androidx.core.net.toUri
-import coil.util.CoilUtils.result
 
 
 @Database(

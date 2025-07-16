@@ -6,7 +6,6 @@ import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.OkHttpClient

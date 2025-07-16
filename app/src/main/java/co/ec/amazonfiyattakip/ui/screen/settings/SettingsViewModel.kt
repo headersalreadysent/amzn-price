@@ -8,7 +8,6 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
-import co.ec.amazonfiyattakip.db.ProductWithStat
 import co.ec.amazonfiyattakip.service.job.PriceUpdate.Companion.JOBTAG
 
 class SettingsViewModel : ViewModel() {

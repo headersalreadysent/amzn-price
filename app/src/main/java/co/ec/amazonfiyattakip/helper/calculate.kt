@@ -9,7 +9,6 @@ import androidx.compose.ui.text.withStyle
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import java.util.Locale
 import kotlin.math.pow
-import kotlin.math.roundToInt
 
 fun predictNextPrices(
     prices: List<PriceInfo>,

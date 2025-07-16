@@ -1,13 +1,11 @@
 package co.ec.amazonfiyattakip.ui.screen.main
 
-import androidx.compose.ui.Modifier.Companion.then
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.DailyTotal
 import co.ec.amazonfiyattakip.db.FireDB
-import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
@@ -15,16 +13,9 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
-import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 

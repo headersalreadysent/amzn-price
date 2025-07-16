@@ -2,7 +2,6 @@ package co.ec.amazonfiyattakip.helper
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.core.net.toUri

@@ -4,13 +4,11 @@ import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.FireDB
-import co.ec.helper.helpers.LogHelper
 import java.util.concurrent.TimeUnit
 
 class DeleteOldProducts(appContext: Context, workerParams: WorkerParameters) :
