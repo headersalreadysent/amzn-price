@@ -64,6 +64,5 @@ androidx-animation-graphics-android = { group = "androidx.compose.animation", na
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.0.20" }
-
+jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.0.21" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

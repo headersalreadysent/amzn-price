@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -102,9 +103,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                 }
-                AppContent(
-                    startDestination = destination
-                )
+                AppContent(startDestination = destination)
             }
         }
     }
@@ -116,54 +115,53 @@ fun AppContent(
     startDestination: String = "main", appModel: AppModel = viewModel()
 ) {
 
-    val surface = MaterialTheme.colorScheme.surfaceContainer
-
     val coroutineScope = rememberCoroutineScope()
     App.setupSnackbar(LocalSnackbar.current)
-
-    val fabAction by appModel.fabAction.observeAsState()
     val navigator = LocalNavigation.current
-    navigator.addOnDestinationChangedListener { _, destination, _ ->
-        val screenName = destination.label?.toString() ?: destination.route
-        screenName?.let {
-            App.event(
-                FirebaseAnalytics.Event.SCREEN_VIEW, mapOf(
-                    FirebaseAnalytics.Param.SCREEN_NAME to screenName
-                )
-            )
-        }
+    val settings = LocalSettings.current
+    val snackbarHostState = LocalSnackbar.current
+    val fabAction by appModel.fabAction.observeAsState()
+
+    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    val surface = MaterialTheme.colorScheme.surfaceContainer
+
+
+    var developerActive by remember {
+        mutableStateOf(settings.getBoolean("developerActive", false))
     }
     var settingsClick by remember { mutableIntStateOf(0) }
-    val settings = LocalSettings.current
-    var developerActive by remember {
-        mutableStateOf(
-            settings.getBoolean(
-                "developerActive",
-                false
-            )
-        )
-    }
-    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
-    LaunchedEffect(Unit) {
-        App.settings().putInt("primaryColor", primaryColor)
-        EventBus.subscribe<SettingsHelper.SettingsChange> {
-            if (it.name == "developerActive") {
-                developerActive = it.value as Boolean
+    DisposableEffect(Unit) {
+        settings.putInt("primaryColor", primaryColor)
+        navigator.addOnDestinationChangedListener { _, destination, _ ->
+            val screenName = destination.label?.toString() ?: destination.route
+            screenName?.let {
+                App.event(
+                    FirebaseAnalytics.Event.SCREEN_VIEW, mapOf(
+                        FirebaseAnalytics.Param.SCREEN_NAME to screenName
+                    )
+                )
             }
         }
+        coroutineScope.launch {
+            EventBus.subscribe<SettingsHelper.SettingsChange> {
+                if (it.name == "developerActive") {
+                    developerActive = it.value as Boolean
+                }
+            }
+        }
+        onDispose { }
     }
-    LaunchedEffect(Unit) {
-        while (true) {
-            settingsClick = 0
-            delay(2000)
+    if (BuildConfig.DEBUG) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                settingsClick = 0
+                delay(2000)
+            }
         }
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        snackbarHost = {
-            val snackbarHostState = LocalSnackbar.current
-            SnackbarHost(hostState = snackbarHostState)
-        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             BottomAppBar(
                 actions = {
@@ -178,9 +176,11 @@ fun AppContent(
                         Icon(Icons.Default.Insights, contentDescription = "Stat")
                     }
                     IconButton(onClick = {
-                        settingsClick++
-                        if (settingsClick == 5) {
-                            settings.putBoolean("developerActive", true)
+                        if (BuildConfig.DEBUG) {
+                            settingsClick++
+                            if (settingsClick == 5) {
+                                settings.putBoolean("developerActive", true)
+                            }
                         }
                         if (navigator.currentDestination?.route !== "settings") {
                             navigator.navigate("settings")
@@ -223,8 +223,6 @@ fun AppContent(
                 },
             )
         }
-
-
     ) { screen ->
         var cutCardHeight by remember { mutableIntStateOf(0) }
         var screenHeight by remember { mutableIntStateOf(0) }
@@ -242,8 +240,6 @@ fun AppContent(
                         screenHeight = it.height
                     }
             ) {
-
-                val view = LocalView.current
                 ScreenContent(
                     modifier = Modifier
                         .fillMaxWidth()
