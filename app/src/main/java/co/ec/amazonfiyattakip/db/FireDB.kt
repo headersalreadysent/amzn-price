@@ -52,10 +52,7 @@ object FireDB {
                 //if user allow
                 return
             }
-
-
             val existedDates = localPrices.map { it.date.toString() }
-
             val serverPriceList = prices.orEmpty().map { it.split("|") }
             val remotePrices = serverPriceList
                 .filter { !existedDates.contains(it[0]) }
