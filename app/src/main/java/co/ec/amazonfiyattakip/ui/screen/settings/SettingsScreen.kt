@@ -377,6 +377,7 @@ fun SettingsButton(
         supportingContent = { desc?.let { Text(text = it) } },
         trailingContent = {
             OutlinedButton(
+                modifier = Modifier.fillMaxWidth(.45F),
                 onClick = {
                     onClick()
                 },
