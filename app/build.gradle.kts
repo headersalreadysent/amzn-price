@@ -104,7 +104,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.ui.text.google.fonts)
-    implementation(libs.accompanist.systemuicontroller)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.database.ktx)
