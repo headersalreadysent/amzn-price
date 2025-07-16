@@ -48,6 +48,7 @@ import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.helper.price
+import co.ec.amazonfiyattakip.ui.ExpertMode
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
@@ -101,7 +102,7 @@ fun MainProductCard(
                 }
                 Text(
                     text,
-                    inlineContent =  mapOf(
+                    inlineContent = mapOf(
                         "stopIcon" to InlineTextContent(
                             Placeholder(22.sp, 20.sp, PlaceholderVerticalAlign.Center)
                         ) {
@@ -135,60 +136,63 @@ fun MainProductCard(
                     autoSize = TextAutoSize.StepBased(10.sp, 60.sp)
                 )
             }
-            Crossfade(
-                targetState = productWithPrices.priceInfoList.size > 1,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(.4F)
-                    .align(Alignment.BottomCenter)
-            ) {
+            if (ExpertMode.current) {
+                Crossfade(
+                    targetState = productWithPrices.priceInfoList.size > 1,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(.4F)
+                        .align(Alignment.BottomCenter)
+                ) {
 
-                if (it) {
-                    var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
-                    val groupedPrices by remember {
-                        var group =
-                            productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd") }
-                        if (group.size == 1) {
-                            group =
-                                productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd-hhmm") }
+                    if (it) {
+                        var selectedPair by remember { mutableStateOf<PriceGraphPair?>(null) }
+                        val groupedPrices by remember {
+                            var group =
+                                productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd") }
+                            if (group.size == 1) {
+                                group =
+                                    productWithPrices.priceInfoList.groupBy { it.date.dateString("yyyyMMdd-hhmm") }
+                            }
+                            mutableStateOf(group.map {
+                                val ave =
+                                    it.value.toList().sumOf { it.price }.toFloat() / it.value.size
+                                return@map PriceGraphPair(it.value[0].date, ave)
+                            })
                         }
-                        mutableStateOf(group.map {
-                            val ave =
-                                it.value.toList().sumOf { it.price }.toFloat() / it.value.size
-                            return@map PriceGraphPair(it.value[0].date, ave)
-                        })
-                    }
-                    PriceGraph(
-                        modifier = Modifier,
-                        prices = groupedPrices,
-                        onDrag = { pair ->
-                            selectedPair = pair
-                        },
-                        hasCircles = false,
-                        color = MaterialTheme.colorScheme.secondary.copy(alpha = .4F),
-                        subRatio = 0F
-                    )
-                    val textColor =
-                        contentColorFor(MaterialTheme.colorScheme.secondary.copy(alpha = .8F))
-                    selectedPair?.let {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomStart)
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            Text(
-                                it.price.toInt().price(),
-                                modifier = Modifier.padding(end = 8.dp),
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = textColor
+                        PriceGraph(
+                            modifier = Modifier,
+                            prices = groupedPrices,
+                            onDrag = { pair ->
+                                selectedPair = pair
+                            },
+                            hasCircles = false,
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = .4F),
+                            subRatio = 0F
+                        )
+                        val textColor =
+                            contentColorFor(MaterialTheme.colorScheme.secondary.copy(alpha = .8F))
+                        selectedPair?.let {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomStart)
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Text(
+                                    it.price.toInt().price(),
+                                    modifier = Modifier.padding(end = 8.dp),
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = textColor
+                                    )
                                 )
-                            )
-                        }
+                            }
 
+                        }
                     }
+
 
                 }
 
@@ -215,7 +219,9 @@ private fun MainProductCardPreview() {
             }
             val fake = Product.fake()
             MainProductCard(ProductWithPrices(product = fake, prices))
-            HorizontalDivider(modifier = Modifier.fillMaxWidth().height(5.dp))
+            HorizontalDivider(modifier = Modifier
+                .fillMaxWidth()
+                .height(5.dp))
             MainProductCard(
                 ProductWithPrices(
                     product = fake.copy(

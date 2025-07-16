@@ -44,10 +44,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.App.Companion.settings
 import co.ec.amazonfiyattakip.AppModel
+import co.ec.amazonfiyattakip.MainActivity
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.service.job.DBBackup
 import co.ec.amazonfiyattakip.ui.LocalSettings
@@ -55,6 +57,10 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(model: SettingsViewModel = viewModel()) {
@@ -178,6 +184,22 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                     name = "developerActive",
                     default = false,
                     title = "Geliştirici Seçenekleri",
+                )
+
+                SettingsToggle(
+                    name = "expertMode",
+                    default = false,
+                    title = "Uzman Modu",
+                    onConfirm = {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            delay(2000)
+                            val intent = Intent(App.context(), MainActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                            }
+                            App.context().startActivity(intent)
+                            Runtime.getRuntime().exit(0)
+                        }
+                    }
                 )
 
             }

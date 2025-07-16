@@ -80,6 +80,7 @@ import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.PermissionHelper
 import co.ec.amazonfiyattakip.helper.price
+import co.ec.amazonfiyattakip.ui.ExpertMode
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
@@ -101,6 +102,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
     val navigation = LocalNavigation.current
     val settings = LocalSettings.current
+    val expertMode = ExpertMode.current
     val productList by model.products.observeAsState(null)
     val stats by model.stats.observeAsState(null)
 
@@ -177,44 +179,47 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             .fillMaxWidth()
                             .padding(8.dp),
                         extra = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.primaryContainer.copy(
-                                            alpha = .8F
-                                        ), RoundedCornerShape(8.dp)
-                                    )
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        if (sortDirection == 1) {
-                                            sortDirection = -1
-                                        } else {
-                                            sortDirection = 1
-                                            val index = sort.indexOf(activeSort)
-                                            activeSort =
-                                                sort.getOrNull(index + 1) ?: sort[0]
-                                            settings.putString("mainActiveSort", activeSort)
-                                        }
-                                        settings.putInt(
-                                            "mainActiveSortDirection", sortDirection
+                            if (ExpertMode.current) {
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .background(
+                                            MaterialTheme.colorScheme.primaryContainer.copy(
+                                                alpha = .8F
+                                            ), RoundedCornerShape(8.dp)
                                         )
-                                    }
-                                    .padding(horizontal = 8.dp)) {
-                                Text(
-                                    activeSort,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            if (sortDirection == 1) {
+                                                sortDirection = -1
+                                            } else {
+                                                sortDirection = 1
+                                                val index = sort.indexOf(activeSort)
+                                                activeSort =
+                                                    sort.getOrNull(index + 1) ?: sort[0]
+                                                settings.putString("mainActiveSort", activeSort)
+                                            }
+                                            settings.putInt(
+                                                "mainActiveSortDirection", sortDirection
+                                            )
+                                        }
+                                        .padding(horizontal = 8.dp)) {
+                                    Text(
+                                        activeSort,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     )
-                                )
-                                Icon(
-                                    Icons.Filled.ArrowDropDown,
-                                    "sort",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.graphicsLayer(scaleY = -1 * sortDirection.toFloat())
-                                )
+                                    Icon(
+                                        Icons.Filled.ArrowDropDown,
+                                        "sort",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.graphicsLayer(scaleY = -1 * sortDirection.toFloat())
+                                    )
+                                }
                             }
                         })
                     FlowRow(
@@ -223,15 +228,17 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             .padding(bottom = 30.dp),
                         maxItemsInEachRow = 2
                     ) {
-                        products.let {
-                            when (activeSort) {
-                                "Tarih" -> it.sortedBy { it.product.date }
-                                "Fiyat" -> it.sortedBy { it.product.price }
-                                "Son Güncelleme" -> it.sortedBy { it.priceInfoList.lastOrNull()?.date }
-                                else -> it
-                            }
-                        }.let {
-                            if (sortDirection == -1) it.reversed() else it
+                        products.run {
+                            if (ExpertMode.current) {
+                                //if there is a expert mode
+                                val sorted = when (activeSort) {
+                                    "Tarih" -> sortedBy { it.product.date }
+                                    "Fiyat" -> sortedBy { it.product.price }
+                                    "Son Güncelleme" -> sortedBy { it.priceInfoList.lastOrNull()?.date }
+                                    else -> this
+                                }
+                                if (sortDirection == -1) sorted.reversed() else sorted
+                            } else this
                         }.forEachIndexed { index, item ->
                             Box(
                                 modifier = Modifier
@@ -386,10 +393,10 @@ fun PermissionArea() {
                 )
             )
         }
-        if(notificationStatus == 1){
+        if (notificationStatus == 1) {
             return
         }
-        if (!notificationPermission.status.isGranted ) {
+        if (!notificationPermission.status.isGranted) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -409,8 +416,8 @@ fun PermissionArea() {
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        notificationStatus=1
-                        settings.putInt("notificationStatus",1)
+                        notificationStatus = 1
+                        settings.putInt("notificationStatus", 1)
                         notificationPermission.launchPermissionRequest()
                     }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

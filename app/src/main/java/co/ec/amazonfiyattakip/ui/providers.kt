@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.mock.MockSettings
 import co.ec.amazonfiyattakip.ui.theme.AmazonFiyatTakipTheme
@@ -19,6 +20,7 @@ val LocalNavigation = compositionLocalOf<NavHostController> { error("No navcontr
 val LocalSnackbar = compositionLocalOf<SnackbarHostState> { error("No snackbarhost provided") }
 val LocalSettings = compositionLocalOf<SettingsHelper> { error("No settings provided") }
 val LocalCache = compositionLocalOf<CacheHelper> { error("No cache provided") }
+val ExpertMode = compositionLocalOf<Boolean> { error("No cache provided") }
 
 @Composable
 fun AppProviders(
@@ -30,12 +32,14 @@ fun AppProviders(
     val snackbarHostState = SnackbarHostState()
     val settings = SettingsHelper(context)
     val cache = CacheHelper(context)
+    val expertMode = settings.getBoolean("expertMode",false)
     CompositionLocalProvider(
         LocalNavigation provides navController,
         LocalDB provides db,
         LocalSnackbar provides snackbarHostState,
         LocalSettings provides settings,
-        LocalCache provides cache
+        LocalCache provides cache,
+        ExpertMode provides expertMode,
     ) {
         AmazonFiyatTakipTheme {
             content()
@@ -55,6 +59,7 @@ fun PreviewProviders(
         LocalSettings provides settings,
         LocalNavigation provides navController,
         LocalSnackbar provides snackbarHostState,
+        ExpertMode provides settings.getBoolean("expertMode",true),
     ) {
         AmazonFiyatTakipTheme(darkTheme = false) {
             content()

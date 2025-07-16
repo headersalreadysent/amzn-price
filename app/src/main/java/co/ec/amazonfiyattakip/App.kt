@@ -115,6 +115,7 @@ class App : CnsynApp() {
             putBoolean("showBasketTotal", getBoolean("showBasketTotal", false))
             putBoolean("showServerProducts", getBoolean("showServerProducts", true))
             putBoolean("showDealsInfo", getBoolean("showDealsInfo", true))
+            putBoolean("expertMode", getBoolean("expertMode", true))
         }
 
     }
