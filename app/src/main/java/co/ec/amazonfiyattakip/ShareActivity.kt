@@ -29,7 +29,6 @@ class ShareActivity : ComponentActivity() {
                     })
                 } else {
                     sharedSettings.putString("sharedUrl", "")
-
                     redirect()
                 }
 
@@ -40,10 +39,11 @@ class ShareActivity : ComponentActivity() {
     }
 
     private fun redirect() {
-
         //redirect to main
-        val redirectIntent = Intent(this, MainActivity::class.java)
-        redirectIntent.putExtra("destination", "add")
+        val redirectIntent = Intent(this, MainActivity::class.java).apply {
+            putExtra("destination", "add")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         startActivity(redirectIntent)
     }
 }

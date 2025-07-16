@@ -21,51 +21,40 @@ fun ScreenContent(
     modifier: Modifier = Modifier,
     startDestination: String = "main"
 ) {
+    //if contains slash start from main
+    var destination = if (startDestination.contains("/")) "main" else startDestination
     val navController = LocalNavigation.current
+    DisposableEffect(Unit) {
+        if (startDestination != "main" && startDestination.contains("/")) {
+            //not main and has slash in it
+            navController.navigate(startDestination)
+        }
+        onDispose {
+        }
+    }
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = "main"
+        startDestination = destination
     ) {
-        composable("main") {
-            MainScreen()
-        }
-        composable("add") {
-            AddScreen()
-        }
+        composable("main") { MainScreen() }
+        composable("add") { AddScreen() }
+        composable("find") { FindScreen() }
+        composable("lowpriced") { LowPricedScreen() }
+        composable("settings") { SettingsScreen() }
+        composable("joblog") { DevtoolsScreen() }
         composable(
             "add/{asin}",
             arguments = listOf(navArgument("asin") { type = NavType.StringType })
         ) { backStackEntry ->
-            val asin = backStackEntry.arguments?.getString("asin")
-            AddScreen(asin = asin)
+            AddScreen(asin = backStackEntry.arguments?.getString("asin"))
         }
         composable(
             "detail/{id}",
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("id")
-            DetailScreen(id) // Pass the id to your DetailScreen
-        }
-        composable("find") {
-            FindScreen()
-        }
-        composable("lowpriced") {
-            LowPricedScreen()
-        }
-        composable("settings") {
-            SettingsScreen()
-        }
-        composable("joblog") {
-            DevtoolsScreen()
+            DetailScreen(productId = backStackEntry.arguments?.getInt("id")) // Pass the id to your DetailScreen
         }
     }
-    DisposableEffect(Unit) {
-        if (startDestination != "main") {
-            navController.navigate(startDestination)
-        }
-        onDispose {
 
-        }
-    }
 }
