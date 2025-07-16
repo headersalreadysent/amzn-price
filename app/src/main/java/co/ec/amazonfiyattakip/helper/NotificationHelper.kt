@@ -79,13 +79,7 @@ object NotificationHelper {
                     .setContentText(message)
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
-                    .setStyle(
-                        if (bitmap != null)
-                            NotificationCompat.BigPictureStyle().bigPicture(bitmap)
-                        else
-                            NotificationCompat.BigPictureStyle()
-                    )
-
+                    .setLargeIcon(bitmap)
                     .build()
                 notificationManager.notify(product.id * 100000 + product.price, notification)
             }
@@ -106,10 +100,5 @@ object NotificationHelper {
         } catch (e: Exception) {
             null
         }
-    }
-
-    @Composable
-    fun primary(): Int {
-        return MaterialTheme.colorScheme.primary.toArgb()
     }
 }
