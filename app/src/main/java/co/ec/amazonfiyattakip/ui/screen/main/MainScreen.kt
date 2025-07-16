@@ -9,11 +9,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
@@ -34,6 +37,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.BatteryAlert
+import androidx.compose.material.icons.filled.LightbulbCircle
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -60,6 +64,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -92,6 +97,7 @@ import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
+import coil.util.Logger
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -222,43 +228,55 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                 }
                             }
                         })
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 30.dp),
-                        maxItemsInEachRow = 2
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        products.run {
-                            if (ExpertMode.current) {
-                                //if there is a expert mode
-                                val sorted = when (activeSort) {
-                                    "Tarih" -> sortedBy { it.product.date }
-                                    "Fiyat" -> sortedBy { it.product.price }
-                                    "Son Güncelleme" -> sortedBy { it.priceInfoList.lastOrNull()?.date }
-                                    else -> this
-                                }
-                                if (sortDirection == -1) sorted.reversed() else sorted
-                            } else this
-                        }.forEachIndexed { index, item ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(.5F)
-                                    .aspectRatio(2.5F)
-                                    .padding(
-                                        start = if (index % 2 == 0) 8.dp else 4.dp,
-                                        end = if (index % 2 == 1) 8.dp else 4.dp
-                                    )
+                        val isCompact = maxWidth < 600.dp
+                        val boxCount = if (isCompact) 2 else 3
+                        var size by remember { mutableStateOf(0.dp) }
+                        val density = LocalDensity.current
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp)
+                                .padding(bottom = 30.dp)
+                                .onSizeChanged {
+                                    size = density.run { it.width.toDp() }
+                                },
+                            maxItemsInEachRow = boxCount,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            products.run {
+                                if (ExpertMode.current) {
+                                    //if there is a expert mode
+                                    val sorted = when (activeSort) {
+                                        "Tarih" -> sortedBy { it.product.date }
+                                        "Fiyat" -> sortedBy { it.product.price }
+                                        "Son Güncelleme" -> sortedBy { it.priceInfoList.lastOrNull()?.date }
+                                        else -> this
+                                    }
+                                    if (sortDirection == -1) sorted.reversed() else sorted
+                                } else this
+                            }.forEachIndexed { index, item ->
+                                val itemSize = (size - 8.dp * (boxCount - 1)) / boxCount
+                                Box(
+                                    modifier = Modifier
+                                        .width(itemSize)
+                                        .aspectRatio(2.5F)
 
-                            ) {
-                                MainProductCard(item, onClick = {
-                                    navigation.navigate("detail/${item.product.id}")
-                                })
+                                ) {
+                                    MainProductCard(item, onClick = {
+                                        navigation.navigate("detail/${item.product.id}")
+                                    })
+                                }
+
+
                             }
 
-
                         }
-
                     }
+
                 }
                 if (products.isEmpty()) {
                     Column(
@@ -529,69 +547,72 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp),
                 )
-                LazyRow(
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(serverProducts.size) {
-                        val pair = serverProducts[it]
-                        Box(
-                            modifier = Modifier
-                                .fillParentMaxWidth(.55F)
-                                .height(IntrinsicSize.Max)
-                                .padding(
-                                    start = if (it == 0) 8.dp else 0.dp,
-                                    end = if (it == serverProducts.size - 1) 8.dp else 0.dp
-                                )
-                                .background(
-                                    MaterialTheme.colorScheme.tertiaryContainer, shape
-                                )
-                                .clickable {
-                                    navigator.navigate("add/${pair.first.asin}")
-                                }
-                                .clip(shape)) {
-
-                            PriceGraph(
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    LazyRow(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(serverProducts.size) {
+                            val pair = serverProducts[it]
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .fillMaxHeight(.8F)
-                                    .align(Alignment.BottomCenter),
-                                prices = pair.second.map { it.split("|") }.map {
-                                    PriceGraphPair(it[0].toLong(), it[1].toFloat())
-                                },
-                                color = MaterialTheme.colorScheme.tertiary.copy(alpha = .5F),
-                                hasCircles = false
-                            )
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp)
-                            ) {
-                                Text(
-                                    pair.first.title + "\n",
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        fontWeight = FontWeight.SemiBold
+                                    .fillParentMaxWidth(if(maxWidth<600.dp) .55F else .40F )
+                                    .height(IntrinsicSize.Max)
+                                    .padding(
+                                        start = if (it == 0) 8.dp else 0.dp,
+                                        end = if (it == serverProducts.size - 1) 8.dp else 0.dp
                                     )
-                                )
-                                Text(
-                                    pair.first.price(),
+                                    .background(
+                                        MaterialTheme.colorScheme.tertiaryContainer, shape
+                                    )
+                                    .clickable {
+                                        navigator.navigate("add/${pair.first.asin}")
+                                    }
+                                    .clip(shape)) {
+
+                                PriceGraph(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(top = 5.dp),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                        .fillMaxHeight(.8F)
+                                        .align(Alignment.BottomCenter),
+                                    prices = pair.second.map { it.split("|") }.map {
+                                        PriceGraphPair(it[0].toLong(), it[1].toFloat())
+                                    },
+                                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = .5F),
+                                    hasCircles = false
                                 )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                ) {
+                                    Text(
+                                        pair.first.title + "\n",
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    )
+                                    Text(
+                                        pair.first.price(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 5.dp),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
                 }
+
             }
         }
     }
@@ -603,25 +624,31 @@ fun DealCountArea(dealCount: Int? = null) {
     AnimatedVisibility(
         visible = (dealCount ?: 0) > 0, enter = fadeIn() + expandVertically()
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .padding(8.dp)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .clickable {
                     navigation.navigate("find")
                 }
-                .padding(8.dp)) {
-            Text(
-                "Amazondaki fırsatları görerek hızlaca takip et.",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.LightbulbCircle,"")
+                Text(
+                    "Fırsatları takip et.",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
-            )
+            Spacer(modifier = Modifier.weight(1F))
             Text(
-                "$dealCount adet fırsat var",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .8F)
+                "$dealCount",
+                modifier = Modifier.padding(horizontal = 8.dp),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = .8F),
+                    fontWeight = FontWeight.SemiBold
                 )
             )
         }
