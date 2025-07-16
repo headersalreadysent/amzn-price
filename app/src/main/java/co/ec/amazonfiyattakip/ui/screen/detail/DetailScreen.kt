@@ -104,6 +104,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.contracts.contract
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,15 +212,19 @@ fun DetailScreen(
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp)
                         )
-                        CalendarPriceDataArea(it)
-                        PricePredictionArea(it)
                         OutlinedButton(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp),
                             onClick = {
                                 urlHandler.openUri(AmznScrape.urlFromAsin(product.asin))
-                            }) {
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = RoundedCornerShape(25)
+                        ) {
                             Row(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
@@ -229,11 +234,16 @@ fun DetailScreen(
                                     "",
                                     modifier = Modifier
                                         .padding(end = 8.dp)
-                                        .scale(.8F)
                                 )
-                                Text("Satın Al")
+                                Text("Satın Al",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    ))
                             }
                         }
+
+                        CalendarPriceDataArea(it)
+                        PricePredictionArea(it)
                         if (priceListData.isNotEmpty()) {
 
                             TitleBar(

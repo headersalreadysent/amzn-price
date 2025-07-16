@@ -479,24 +479,19 @@ fun ProductPriceStatGraph(
     showPrices: Boolean = false,
     selected: (selected: ProductWithStat?) -> Unit = {}
 ) {
-    var showTitle by remember { mutableStateOf(false) }
-    val paddingVertical by animateDpAsState(
-        targetValue = if (showTitle) 4.dp else 0.dp,
-        label = "rowPadding"
-    )
-    LaunchedEffect(showTitle) {
-        selected(if (showTitle) stat else null)
+    var showInfo by remember { mutableStateOf(false) }
+    LaunchedEffect(showInfo) {
+        selected(if (showInfo) stat else null)
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = paddingVertical)
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
                         val isPressed = event.changes.any { it.pressed }
-                        showTitle = isPressed
+                        showInfo = isPressed
                     }
                 }
             }
