@@ -6,6 +6,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -75,15 +76,16 @@ class MainActivity : ComponentActivity() {
         val destination = intent?.getStringExtra("destination") ?: "main"
         setContent {
             AppProviders {
-                val darkTheme = !MaterialTheme.colorScheme.secondaryContainer.isLight()
+                val navigationDark = !MaterialTheme.colorScheme.secondaryContainer.isLight()
                 val surfaceIsDark = !MaterialTheme.colorScheme.surfaceContainer.isLight()
                 val view = LocalView.current
                 val window = (view.context as? ComponentActivity)?.window
                 val scope = rememberCoroutineScope()
+                val darkTheme = isSystemInDarkTheme()
                 LaunchedEffect(Unit) {
                     window?.let {
                         WindowCompat.getInsetsController(window, view).run {
-                            isAppearanceLightNavigationBars = !darkTheme
+                            isAppearanceLightNavigationBars = !navigationDark
                             isAppearanceLightStatusBars = !darkTheme
                         }
                     }
