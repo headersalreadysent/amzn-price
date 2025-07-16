@@ -220,19 +220,13 @@ fun FakeAddScreen() {
                 .height(20.dp)
                 .background(color.copy(alpha))
         )
-        LazyRow (modifier = Modifier.fillMaxWidth(),
-            userScrollEnabled = false) {
-            items(10) {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .padding(bottom = 4.dp)
-                        .height(50.dp)
-                        .aspectRatio(1F)
-                        .background(color.copy(alpha))
-                )
-            }
-        }
+        Box(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth()
+                .height(50.dp)
+                .background(color.copy(alpha))
+        )
 
     }
 }

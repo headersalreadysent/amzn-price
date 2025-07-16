@@ -140,8 +140,8 @@ fun ProductScreen(
             ExtrasArea(product = product)
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
-        TimeSpan(product.timeSpan/60,{
-            updateTimeSpan(it)
+        TimeSpan(product.timeSpan/60,{ time,text ->
+            updateTimeSpan(time)
         })
 
     }

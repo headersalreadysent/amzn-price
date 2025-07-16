@@ -1,25 +1,27 @@
 package co.ec.amazonfiyattakip.composables
 
-import androidx.compose.animation.animateColorAsState
+import android.R.attr.enabled
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -34,12 +36,13 @@ import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 import co.ec.helper.utils.unix
+import com.google.common.io.Files.append
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeSpan(
     time: Int,
-    updateTimeSpan: (time: Int) -> Unit = {},
-    showDesc: Boolean = true,
+    updateTimeSpan: (time: Int, text: String) -> Unit = { _, _ -> },
     timeList: List<Pair<Int, String>> = listOf(
         Pair(15, "15 Dakika"), Pair(30, "30 Dakika"), Pair(45, "45 Dakika"),
         Pair(60, "60 Dakika"), Pair(120, "2 Saat"), Pair(180, "3 Saat"),
@@ -50,7 +53,7 @@ fun TimeSpan(
 ) {
     var selectedTime by remember {
         mutableIntStateOf(
-            timeList.filter { it.first == time }.firstOrNull()?.first ?: timeList.first().first
+            timeList.firstOrNull { it.first == time }?.first ?: timeList.first().first
         )
     }
 
@@ -61,95 +64,84 @@ fun TimeSpan(
                 .fillMaxWidth()
                 .padding(8.dp),
         )
-        LazyRow(
+        var expanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 8.dp),
+            expanded = expanded,
+            onExpandedChange = { expanded = it }
         ) {
-            items(timeList.size) {
-                val pair = timeList[it]
-                val background by animateColorAsState(
-                    if (pair.first == selectedTime)
-                        MaterialTheme.colorScheme.primaryContainer
-                    else
-                        MaterialTheme.colorScheme.secondaryContainer
-                )
-                Box(
-                    modifier = Modifier
-                        .padding(
-                            start = if (it == 0) 8.dp else 0.dp,
-                            end = if (it == timeList.size - 1) 8.dp else 0.dp
-                        )
-                        .width(50.dp)
-                        .background(background)
-                        .aspectRatio(1F)
-                        .padding(2.dp)
-                        .clickable {
-                            selectedTime = pair.first
-                            updateTimeSpan(selectedTime)
-                        },
-                    Alignment.Center
-                ) {
-                    val parts = pair.second.split(" ")
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(
-                                style = SpanStyle(
-                                    fontSize = 18.sp
-                                )
-                            ) {
-                                append(parts[0] + "\n")
-                            }
-                            withStyle(
-                                style = SpanStyle(
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            ) {
-                                append(parts[1])
-                            }
-                        },
-                        modifier = Modifier,
-                        lineHeight = 14.sp,
-                        textAlign = TextAlign.Center,
-
-                        color = contentColorFor(background)
+            OutlinedTextField(
+                value = timeList.find { it.first == selectedTime }?.second ?: "Seç",
+                onValueChange = {
+                    selectedTime = it.toInt()
+                    val text = timeList.find { it.first == selectedTime }?.second ?: ""
+                    updateTimeSpan(selectedTime, text)
+                },
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(
+                        MenuAnchorType.PrimaryNotEditable,
+                        enabled = true
+                    ),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                timeList.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(item.second) },
+                        onClick = {
+                            selectedTime = item.first
+                            expanded = false
+                        }
                     )
                 }
             }
-
         }
-        if (showDesc) {
-            Text(
-                buildAnnotatedString {
-                    append(
-                        "Tarih aralığı fiyat toplama süreçleri arasında yer alacak süreyi gösterir. " +
-                                "Fiyat toplama zamanı kesin olmayıp, telefon durumuna göre otomatik ayarlanır.\n"
-                    )
-                    withStyle(
-                        SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    ) {
-                        val nextTime = ((latest?:unix()) + selectedTime * 60)
-                        append("Sonraki Sorgulama: ${nextTime.dateString()} ${nextTime.timeString()}")
+        val nextTimeQuery by remember(selectedTime) {
+            val nextTime = ((latest ?: unix()) + selectedTime * 60)
+            mutableStateOf("${nextTime.dateString()} ${nextTime.timeString()}")
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
 
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(8.dp),
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    textAlign = TextAlign.Justify,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp
+            Text("Sonraki Sorgulama:")
+            Text(
+                nextTimeQuery,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
                 )
             )
         }
+
+        Text(
+            "Tarih aralığı fiyat toplama süreçleri arasında yer alacak süreyi gösterir. " +
+                    "Fiyat toplama zamanı kesin olmayıp, telefon durumuna göre otomatik ayarlanır.",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                textAlign = TextAlign.Justify,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
+        )
+
 
     }
 }
@@ -158,6 +150,6 @@ fun TimeSpan(
 @Composable
 private fun TimeSpanPreview() {
     PreviewProviders {
-        TimeSpan(30, {})
+        TimeSpan(30, { _,_ ->})
     }
 }

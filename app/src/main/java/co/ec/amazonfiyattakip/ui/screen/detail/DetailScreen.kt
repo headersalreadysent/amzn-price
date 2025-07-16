@@ -23,9 +23,13 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingFlat
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
 import androidx.compose.material3.AlertDialog
@@ -35,11 +39,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -68,11 +75,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
+import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.TimeSpan
+import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
@@ -104,10 +113,12 @@ fun DetailScreen(
     val urlHandler = LocalUriHandler.current
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
-    AppModel.setFab(Icons.Filled.ShoppingCart) {
-        product?.let {
-            urlHandler.openUri(AmznScrape.urlFromAsin(it.asin))
-        }
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    AppModel.setFab(Icons.Filled.Settings) {
+        showBottomSheet = !showBottomSheet
     }
     val secondary = MaterialTheme.colorScheme.secondaryContainer
     DisposableEffect(Unit) {
@@ -223,33 +234,36 @@ fun DetailScreen(
                                 Text("Satın Al")
                             }
                         }
-                        TitleBar(
-                            title = "Fiyat Değişimi",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
-                                .clickable(
-                                    indication = null, interactionSource = null
-                                ) {
-                                    showOnlyChanges = !showOnlyChanges
-                                },
-                            extra = {
-                                Text(
-                                    text = if (showOnlyChanges) "(Değişimler)" else "(Tüm)",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        fontStyle = FontStyle.Italic
+                        if (priceListData.isNotEmpty()) {
+
+                            TitleBar(
+                                title = "Fiyat Değişimi",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp)
+                                    .clickable(
+                                        indication = null, interactionSource = null
+                                    ) {
+                                        showOnlyChanges = !showOnlyChanges
+                                    },
+                                extra = {
+                                    Text(
+                                        text = if (showOnlyChanges) "(Değişimler)" else "(Tüm)",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            fontStyle = FontStyle.Italic
+                                        )
                                     )
-                                )
-                                Icon(
-                                    if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
-                                    contentDescription = "filter",
-                                    modifier = Modifier.scale(.7F),
-                                    tint = MaterialTheme.colorScheme.secondary
-                                )
-                            })
-                        PriceListArea(priceListData)
+                                    Icon(
+                                        if (showOnlyChanges) Icons.Outlined.FilterAlt else Icons.Outlined.FilterAltOff,
+                                        contentDescription = "filter",
+                                        modifier = Modifier.scale(.7F),
+                                        tint = MaterialTheme.colorScheme.secondary
+                                    )
+                                })
+                            PriceListArea(priceListData)
+                        }
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
@@ -291,7 +305,7 @@ fun DetailScreen(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
-                TimeSpan(product.timeSpan / 60, {
+                /*TimeSpan(product.timeSpan / 60, {
                     model.updateTimeSpan(it)
                 }, latest = prices?.maxByOrNull { it.date }?.date)
                 Row(
@@ -354,7 +368,7 @@ fun DetailScreen(
                     ) {
                         Text(text = "Takibi Sil")
                     }
-                }
+                }*/
             }
             AppModel.cutCard(
                 modifier = Modifier
@@ -372,7 +386,23 @@ fun DetailScreen(
         }
 
     }
-
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showBottomSheet = false
+            },
+            sheetState = sheetState,
+            dragHandle = null,
+            containerColor = Color.Transparent,
+            shape = cutShape(
+                CutCorner.TOPRIGHT, 30.dp
+            )
+        ) {
+            product?.let {
+                ModalContent(model, it, prices?.maxByOrNull { it.date }?.date ?: 0L)
+            }
+        }
+    }
 
 }
 
@@ -532,23 +562,26 @@ fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
 
 @Composable
 fun CalendarPriceDataArea(prices: List<PriceInfo>) {
-    TitleBar(
-        title = "Günlük Fiyatlar",
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-    )
-    DateRow(
-        priceList = prices.associate { Pair(it.date.toInt(), it.price) },
-    ) {
-        if (it.second != 0) {
-            App.snack(
-                "${
-                    it.first.toLong().dateString()
-                } ortalama fiyat ${it.second.price()}"
-            )
+    if (prices.isNotEmpty()) {
+        TitleBar(
+            title = "Günlük Fiyatlar",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        )
+        DateRow(
+            priceList = prices.associate { Pair(it.date.toInt(), it.price) },
+        ) {
+            if (it.second != 0) {
+                App.snack(
+                    "${
+                        it.first.toLong().dateString()
+                    } ortalama fiyat ${it.second.price()}"
+                )
+            }
         }
     }
+
 }
 
 @Composable
@@ -669,6 +702,99 @@ fun PricePredictionArea(prices: List<PriceInfo>) {
             }
         }
     }
+}
+
+/**
+ * Modal content
+ */
+@Composable
+fun ModalContent(model: DetailViewModel, product: Product, latestQuery: Long) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surfaceColorAtElevation(12.dp),
+            )
+            .padding(top = 30.dp)
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 30.dp)
+    ) {
+
+        TimeSpan(product.timeSpan / 60, { time, text ->
+            model.updateTimeSpan(time)
+        }, latest = latestQuery)
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (product.status == ProductStatus.ACTIVE) {
+                OutlinedButton(
+                    onClick = {
+                        model.changeStatus(ProductStatus.PASSIVE)
+                    },
+                    modifier = Modifier
+                        .weight(1F)
+                        .padding(bottom = 10.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                ) {
+                    Icon(Icons.Filled.Stop, "stop")
+                    Text(text = "Takibi Durdur")
+                }
+            }
+            if (product.status == ProductStatus.PASSIVE) {
+                OutlinedButton(
+                    onClick = {
+                        model.changeStatus(ProductStatus.ACTIVE)
+                    },
+                    modifier = Modifier
+                        .weight(1F)
+                        .padding(bottom = 10.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(Icons.Filled.PlayArrow, "start")
+                    Text(text = "Takibi Başlat")
+                }
+            }
+
+            val navigation = LocalNavigation.current
+            OutlinedButton(
+                onClick = {
+                    model.deleteProduct {
+                        App.snack("Ürün silindi.")
+                        navigation.navigate("main")
+                    }
+                },
+                modifier = Modifier
+                    .weight(1F)
+                    .padding(bottom = 10.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+            ) {
+                Icon(Icons.Filled.Delete, "")
+                Text(text = "Takibi Sil")
+            }
+        }
+    }
+
+
 }
 
 /**
