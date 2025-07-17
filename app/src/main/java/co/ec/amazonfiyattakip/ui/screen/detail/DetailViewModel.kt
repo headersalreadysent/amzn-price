@@ -92,7 +92,9 @@ open class DetailViewModel : ViewModel() {
                     timeSpan = minute * 60
                 )
                 AppDatabase.getDatabase().product().update(newProduct)
-                product.value = newProduct
+                viewModelScope.launch {
+                    product.value = newProduct
+                }
             }
             return@asyncRun product.value
         }, {

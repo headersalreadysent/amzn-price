@@ -37,6 +37,7 @@ import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 import co.ec.helper.utils.unix
 import com.google.common.io.Files.append
+import com.google.common.primitives.UnsignedBytes.toInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +104,9 @@ fun TimeSpan(
                         onClick = {
                             selectedTime = item.first
                             expanded = false
+
+                            val text = timeList.find { it.first == selectedTime }?.second ?: ""
+                            updateTimeSpan(selectedTime, text)
                         }
                     )
                 }
