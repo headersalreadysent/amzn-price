@@ -108,7 +108,6 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
     val navigation = LocalNavigation.current
     val settings = LocalSettings.current
-    val expertMode = ExpertMode.current
     val productList by model.products.observeAsState(null)
     val stats by model.stats.observeAsState(null)
 
@@ -568,18 +567,19 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                                         navigator.navigate("add/${pair.first.asin}")
                                     }
                                     .clip(shape)) {
-
-                                PriceGraph(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(.8F)
-                                        .align(Alignment.BottomCenter),
-                                    prices = pair.second.map { it.split("|") }.map {
-                                        PriceGraphPair(it[0].toLong(), it[1].toFloat())
-                                    },
-                                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = .5F),
-                                    hasCircles = false
-                                )
+                                if(ExpertMode.current){
+                                    PriceGraph(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(.8F)
+                                            .align(Alignment.BottomCenter),
+                                        prices = pair.second.map { it.split("|") }.map {
+                                            PriceGraphPair(it[0].toLong(), it[1].toFloat())
+                                        },
+                                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = .5F),
+                                        hasCircles = false
+                                    )
+                                }
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
