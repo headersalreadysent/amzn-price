@@ -17,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.helper.helpers.EventBus
 import co.ec.helper.helpers.SettingsHelper
 
@@ -267,7 +269,7 @@ fun AmazonFiyatTakipTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val settings = SettingsHelper.get()
+    val settings = LocalSettings.current
     var dynamicSettings by remember { mutableStateOf(settings.getBoolean("dynamicTheme")) }
     var colorContrast by remember { mutableIntStateOf(settings.getInt("colorContrast",1)) }
     LaunchedEffect(Unit) {

@@ -74,7 +74,13 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.light(transparent, transparent),
             navigationBarStyle = SystemBarStyle.light(transparent, transparent)
         )
-        val destination = intent?.getStringExtra("destination") ?: "main"
+        var destination = intent?.getStringExtra("destination") ?: "main"
+        if(destination=="developer"){
+            //toggle developer
+            val developer=App.settings().getBoolean("developerActive",false)
+            App.settings().putBoolean("developerActive",!developer)
+            destination="main"
+        }
         setContent {
             AppProviders {
                 val navigationDark = !MaterialTheme.colorScheme.secondaryContainer.isLight()
@@ -151,14 +157,6 @@ fun AppContent(
         }
         onDispose { }
     }
-    if (BuildConfig.DEBUG) {
-        LaunchedEffect(Unit) {
-            while (true) {
-                settingsClick = 0
-                delay(2000)
-            }
-        }
-    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -176,12 +174,6 @@ fun AppContent(
                         Icon(Icons.Default.Insights, contentDescription = "Stat")
                     }
                     IconButton(onClick = {
-                        if (BuildConfig.DEBUG) {
-                            settingsClick++
-                            if (settingsClick == 5) {
-                                settings.putBoolean("developerActive", true)
-                            }
-                        }
                         if (navigator.currentDestination?.route !== "settings") {
                             navigator.navigate("settings")
                         }
