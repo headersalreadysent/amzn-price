@@ -268,7 +268,6 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
-                    .padding(bottom = 30.dp)
                     .weight(1F)
                     .verticalScroll(rememberScrollState())
             ) {
@@ -431,6 +430,11 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                         }
                     }
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+                )
 
             }
         }

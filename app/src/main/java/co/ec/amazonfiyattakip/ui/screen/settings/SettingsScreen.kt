@@ -110,7 +110,6 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(bottom = 30.dp)
     ) {
         Column(
             modifier = Modifier
@@ -153,7 +152,7 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .fillMaxHeight()
                     ) {
-                        val groups = listOf<Pair<String, ImageVector>>(
+                        listOf<Pair<String, ImageVector>>(
                             Pair("Uygulama", Icons.Filled.AppSettingsAlt),
                             Pair("Görünüm", Icons.Filled.Screenshot),
                             Pair("Gösterim", Icons.Filled.DashboardCustomize),
@@ -510,6 +509,13 @@ fun SettingActionList(model: SettingsViewModel, isPhone: Boolean = true, type: S
                     fontWeight = FontWeight.SemiBold
                 )
             )
+            if(isPhone){
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+                )
+            }
         }
     }
 
