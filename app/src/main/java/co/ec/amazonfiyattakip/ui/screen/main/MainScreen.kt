@@ -264,7 +264,6 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                     modifier = Modifier
                                         .width(itemSize)
                                         .aspectRatio(2.5F)
-
                                 ) {
                                     MainProductCard(item, onClick = {
                                         navigation.navigate("detail/${item.product.id}")

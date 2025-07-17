@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import co.ec.amazonfiyattakip.ui.PreviewProviders
+import com.google.android.gms.common.util.DeviceProperties.isPhone
 
 
 @Composable
@@ -76,7 +77,8 @@ private fun TitleBarPreview() {
                 title = "hello",
                 icon = Icons.Filled.Star
             )
-            TitleBar(title = "hello",
+            TitleBar(
+                title = "hello",
                 icon = Icons.Filled.Star,
                 extra = {
                     TextButton(onClick = { /*TODO*/ }) {
