@@ -116,6 +116,12 @@ class App : CnsynApp() {
             putBoolean("showServerProducts", getBoolean("showServerProducts", true))
             putBoolean("showDealsInfo", getBoolean("showDealsInfo", true))
             putBoolean("expertMode", getBoolean("expertMode", false))
+            putBoolean("developerActive", getBoolean("developerActive", false))
+            val developerActive = PermissionHelper.checkDeveloperFile()
+            if (developerActive) {
+
+                putBoolean("developerActive", true)
+            }
         }
 
     }

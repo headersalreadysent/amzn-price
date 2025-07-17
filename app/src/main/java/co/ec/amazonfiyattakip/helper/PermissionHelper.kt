@@ -3,9 +3,14 @@ package co.ec.amazonfiyattakip.helper
 import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
+import android.provider.DocumentsContract
 import android.provider.Settings
 import androidx.core.net.toUri
+import androidx.work.ListenableWorker
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.service.job.DBBackup.Companion.JOBTAG
+import co.ec.helper.helpers.LogHelper
 
 object PermissionHelper {
 
@@ -42,7 +47,38 @@ object PermissionHelper {
             return hasPerm
         }
         return false
+    }
 
+    fun checkDeveloperFile(): Boolean {
+        val context = App.context()
+        val backupFolder = App.settings().getString("backupLocation")
+
+        backupFolder?.let {
+            val treeUri = backupFolder.toUri()
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                treeUri,
+                DocumentsContract.getTreeDocumentId(treeUri)
+            )
+
+             context.contentResolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                ),
+                null, null, null
+            )?.use { cursor ->
+                val nameIdx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(nameIdx)
+                    if (name.matches(Regex("\\.developer"))) {
+                        return true
+                    }
+                }
+            }
+        }        
+
+        return false
     }
 
 }
