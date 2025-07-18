@@ -24,7 +24,7 @@ import kotlinx.serialization.json.Json
     entities = [Product::class, PriceInfo::class, JobLog::class],
     views = [DailyPrice::class],
     exportSchema = false,
-    version = 4
+    version = 5
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
