@@ -1,5 +1,7 @@
 package co.ec.amazonfiyattakip.ui.screen.detail
 
+import android.R.attr.maxHeight
+import android.R.attr.minHeight
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -60,10 +62,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
@@ -789,62 +796,92 @@ fun PriceListArea(priceListData: List<PriceInfo>) {
                 .clickable(indication = null, interactionSource = null) {
                     showPrice = !showPrice
                 }) {
-            list.let {
+
+
+            val visibleList=list.let {
                 if (it.size > 10 && !showAllList) it.slice(0..10)
                 else it
-            }.forEachIndexed { index, it ->
+            }
+            val max=visibleList.maxBy { it.price }.price.toFloat()
+            val min=visibleList.minBy { it.price }.price.toFloat()
+            visibleList.forEachIndexed { index, it ->
                 val prevPrice = if (list.size > index + 1) {
                     list[index + 1].price
                 } else 0
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 4.dp)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer)
-                        .height(40.dp)
-                        .shadow(.5.dp)
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        it.date.dateString() + " " + it.date.timeString(),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    )
-                    if (showPrice) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                it.price(),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                val collapseFraction = ((it.price-min) / (max-min))
+                val color=MaterialTheme.colorScheme.tertiaryContainer
+                Box(modifier = Modifier.fillMaxWidth()
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp)
+                    .background(color.copy(alpha = .95F))
+                    .height(40.dp)
+                    .shadow(.5.dp)) {
+                    Box(modifier = Modifier.fillMaxWidth(.45F+collapseFraction)
+                        .fillMaxHeight()
+                        .drawWithContent {
+                            drawContent() // normal içeriği çiz
+                            drawRect(
+                                color = color,
+                                size = Size(size.width - 10.dp.toPx(), size.height),
+                                topLeft = Offset.Zero
+                            )
+                            drawRect(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(color, Color.Transparent),
+                                    startX = size.width - 10.dp.toPx(), // gradient 5dp alanda
+                                    endX = size.width
                                 ),
+                                size = Size(10.dp.toPx(), size.height),
+                                topLeft = Offset(size.width - 10.dp.toPx(), 0f)
                             )
-                            Icon(
-                                if (prevPrice == it.price) {
-                                    Icons.AutoMirrored.Outlined.TrendingFlat
-                                } else if (prevPrice < it.price) {
-                                    Icons.AutoMirrored.Outlined.TrendingUp
-                                } else {
-                                    Icons.AutoMirrored.Outlined.TrendingDown
-                                },
-                                contentDescription = "trend",
-                                modifier = Modifier
-                                    .padding(start = 4.dp)
-                                    .scale(.6F),
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
-                                    alpha = .8F
+                        })
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            it.date.dateString() + " " + it.date.timeString(),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        )
+                        if (showPrice) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    it.price(),
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    ),
                                 )
-                            )
+                                Icon(
+                                    if (prevPrice == it.price) {
+                                        Icons.AutoMirrored.Outlined.TrendingFlat
+                                    } else if (prevPrice < it.price) {
+                                        Icons.AutoMirrored.Outlined.TrendingUp
+                                    } else {
+                                        Icons.AutoMirrored.Outlined.TrendingDown
+                                    },
+                                    contentDescription = "trend",
+                                    modifier = Modifier
+                                        .padding(start = 4.dp)
+                                        .scale(.8F),
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
+                                        alpha = .8F
+                                    )
+                                )
 
+                            }
+
+                        } else {
+                            PriceStat(it)
                         }
-
-                    } else {
-                        PriceStat(it)
                     }
                 }
+
             }
         }
     }
