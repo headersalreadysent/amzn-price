@@ -53,9 +53,13 @@ abstract class AppDatabase : RoomDatabase() {
             val context = App.context()
             asyncRun({
                 val db = getDatabase()
+                val products=db.product().getAll()
+                if(products.isEmpty()){
+                    throw Error("no product to backup")
+                }
                 val json = Json.encodeToString(
                     BackupData.serializer(),
-                    BackupData(db.product().getAll(), db.priceInfo().getAll())
+                    BackupData(products, db.priceInfo().getAll())
                 )
 
                 val treeUri = folder.toUri()

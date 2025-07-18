@@ -31,7 +31,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -348,36 +350,38 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 
                         Column(
                             modifier = Modifier
-                                .wrapContentWidth()
-                                .padding(16.dp)
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                "Sepet Toplamı",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                            Column(modifier = Modifier.fillMaxWidth()) {
+
+                                Text(
+                                    "Sepet Toplamı",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
                                 )
-                            )
-                            AutoText(
-                                if (totalDragValue != null) totalDragValue!!.price.toInt()
-                                    .price()
-                                else if (dailyTotals.isEmpty()) 0.price() else dailyTotals.last().total.toInt()
-                                    .price(),
-                                fontSize = 20..35,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontWeight = FontWeight.Bold,
+                                BasicText(
+                                    text = if (totalDragValue != null) totalDragValue!!.price.toInt()
+                                        .price()
+                                    else if (dailyTotals.isEmpty()) 0.price() else dailyTotals.last().total.toInt()
+                                        .price(),
+                                    autoSize = TextAutoSize.StepBased(15.sp, 25.sp, 1.sp),
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontWeight = FontWeight.Bold,
+                                    )
                                 )
-                            )
+                            }
                             totalDragValue?.let {
                                 Text(
                                     it.date.dateString(),
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         fontSize = 10.sp
-                                    ),
-                                    modifier = Modifier.graphicsLayer {
-                                        translationY = with(density) { (-10).dp.toPx() }
-                                    })
+                                    )
+                                )
                             }
                         }
 
@@ -554,7 +558,7 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                             val pair = serverProducts[it]
                             Box(
                                 modifier = Modifier
-                                    .fillParentMaxWidth(if(maxWidth<600.dp) .55F else .40F )
+                                    .fillParentMaxWidth(if (maxWidth < 600.dp) .55F else .40F)
                                     .height(IntrinsicSize.Max)
                                     .padding(
                                         start = if (it == 0) 8.dp else 0.dp,
@@ -567,7 +571,7 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                                         navigator.navigate("add/${pair.first.asin}")
                                     }
                                     .clip(shape)) {
-                                if(ExpertMode.current){
+                                if (ExpertMode.current) {
                                     PriceGraph(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -634,13 +638,13 @@ fun DealCountArea(dealCount: Int? = null) {
                 .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.LightbulbCircle,"")
-                Text(
-                    "Fırsatları takip et.",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+            Icon(Icons.Filled.LightbulbCircle, "")
+            Text(
+                "Fırsatları takip et.",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+            )
             Spacer(modifier = Modifier.weight(1F))
             Text(
                 "$dealCount",
