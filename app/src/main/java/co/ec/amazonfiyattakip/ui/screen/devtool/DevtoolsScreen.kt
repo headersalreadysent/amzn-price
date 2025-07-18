@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -219,6 +220,11 @@ fun DevtoolsScreen() {
 
                             }
                         }
+                        item {
+                            Spacer(modifier = Modifier
+                                .fillMaxWidth()
+                                .height(30.dp))
+                        }
                     }
                 }
             } else if (it == 1) {
@@ -289,6 +295,12 @@ fun DevtoolsScreen() {
                             },
                         )
                     }
+
+                    item {
+                        Spacer(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp))
+                    }
                 }
 
             } else {
@@ -322,7 +334,9 @@ fun DevtoolsScreen() {
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
-                                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 4.dp)
                                 )
                             },
                             colors = ListItemDefaults.colors(
@@ -333,6 +347,11 @@ fun DevtoolsScreen() {
                             }
                         )
                     }
+
+                    Spacer(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp))
+                    
                 }
             }
         }
