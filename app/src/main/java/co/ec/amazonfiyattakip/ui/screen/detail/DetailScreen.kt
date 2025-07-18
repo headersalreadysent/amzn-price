@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -53,6 +55,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +64,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
@@ -71,7 +75,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
@@ -98,6 +104,7 @@ import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
 import co.ec.helper.composable.AutoText
 import co.ec.helper.helpers.EventBus
+import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.timeString
 import kotlinx.coroutines.CoroutineScope
@@ -112,6 +119,7 @@ fun DetailScreen(
     productId: Int? = null, model: DetailViewModel = viewModel()
 ) {
     val urlHandler = LocalUriHandler.current
+    val density = LocalDensity.current
     val product by model.product.observeAsState()
     val prices by model.prices.observeAsState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -162,6 +170,7 @@ fun DetailScreen(
 
     product?.let { product ->
         var refreshing by remember { mutableStateOf(false) }
+        var size by remember { mutableStateOf(0.dp) }
         PullToRefreshBox(
             isRefreshing = refreshing,
             onRefresh = {
@@ -174,17 +183,38 @@ fun DetailScreen(
                     App.snack("Güncelleme sırasında bir sorun oluştu.")
                 }
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged {
+                    size = density.run { it.width.toDp() }
+                }
         ) {
             val scrollState = rememberScrollState()
+            val maxHeight = (size.value / 2.5F).dp
+            val minHeight = 90.dp
+
+            val collapseRange = density.run { (maxHeight - minHeight).toPx() }
+            val collapseFraction = (scrollState.value / collapseRange).coerceIn(0f, 1f)
+            val animatedHeight = lerp(maxHeight, minHeight, collapseFraction)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(animatedHeight)
+                    .zIndex(1f),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                ProductBox(product, height = animatedHeight)
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(scrollState)
+                    .zIndex(0F)
                     .padding(bottom = 35.dp)
             ) {
-                ProductBox(product)
 
+                Spacer(modifier = Modifier.height(maxHeight)) // boşluk bırak
                 if (prices == null) {
                     Column(
                         modifier = Modifier
@@ -235,10 +265,12 @@ fun DetailScreen(
                                     modifier = Modifier
                                         .padding(end = 8.dp)
                                 )
-                                Text("Satın Al",
+                                Text(
+                                    "Satın Al",
                                     style = MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.SemiBold
-                                    ))
+                                    )
+                                )
                             }
                         }
 
