@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.ui.screen.lowpriced
 
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -39,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -276,7 +279,12 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                         .fillMaxWidth()
                         .padding(top = 16.dp)
                 )
-
+                val showAllSize = 5
+                var showAll by remember {
+                    mutableStateOf(
+                        products.size <= showAllSize
+                    )
+                }
                 products.run {
                     if (ExpertMode.current) {
                         this.sortedBy {
@@ -289,13 +297,31 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                             if (statSortDir == -1) it.reversed() else it
                         }
                     } else {
-                        this
+                        this.sortedBy {
+                            if (it.max == it.min) 0.01F else ((it.entity.price - it.min).toFloat() / (it.max - it.min).toFloat())
+                        }.reversed()
                     }
+                }.run {
+                    if (showAll) this else this.slice(0..showAllSize)
                 }.forEach { item ->
                     ProductPriceStatGraph(item, selected = {
                         selectedStat = it
                     })
                 }
+                if (showAll == false) {
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(.6F)
+                            .align(Alignment.CenterHorizontally),
+                        onClick = {
+                            showAll = true
+                        },
+                        contentPadding = PaddingValues(14.dp, 2.dp)
+                    )
+                    {
+                        Text("Tümünü Göster")
+                    }
+                }
+
 
                 val cheapProducts by remember {
                     mutableStateOf(products.filter { it.entity.price <= it.avg }.sortedBy {
@@ -557,11 +583,11 @@ fun ProductPriceStatGraph(
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val isPhone = this.maxWidth < 600.dp
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(top = if (isPhone) 4.dp else 10.dp)
-                    .border(.5.dp,MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
-                    .padding(top = 1.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .border(.5.dp, MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
+                    .padding(top = 1.dp), horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val titleHeight = with(LocalDensity.current) { 20.sp.toDp() }
 

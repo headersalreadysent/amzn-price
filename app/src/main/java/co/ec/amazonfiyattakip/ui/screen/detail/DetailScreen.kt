@@ -197,7 +197,7 @@ fun DetailScreen(
                 }
         ) {
             val scrollState = rememberScrollState()
-            val maxHeight = (size.value / 2.5F).dp
+            val maxHeight = (size.value / 2F).dp
             val minHeight = 90.dp
 
             val collapseRange = density.run { (maxHeight - minHeight).toPx() }
