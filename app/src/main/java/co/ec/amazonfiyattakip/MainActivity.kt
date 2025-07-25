@@ -1,5 +1,6 @@
 package co.ec.amazonfiyattakip
 
+import android.R.attr.onClick
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 import co.ec.amazonfiyattakip.helper.isLight
 import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.amazonfiyattakip.ui.AppProviders
@@ -136,7 +138,9 @@ fun AppContent(
     var developerActive by remember {
         mutableStateOf(settings.getBoolean("developerActive", false))
     }
-    var settingsClick by remember { mutableIntStateOf(0) }
+
+    val navBackStackEntry by navigator.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination?.route ?: ""
     DisposableEffect(Unit) {
         settings.putInt("primaryColor", primaryColor)
         navigator.addOnDestinationChangedListener { _, destination, _ ->
@@ -170,17 +174,22 @@ fun AppContent(
             BottomAppBar(
                 actions = {
                     IconButton(onClick = {
-                        navigator.navigate("main")
+                        if (currentDestination !== "main") {
+                            navigator.navigate("main")
+                        }
                     }) {
-                        Icon(Icons.Default.Home, contentDescription = "Menu")
+                        Icon(Icons.Default.Home, contentDescription = "Main")
                     }
                     IconButton(onClick = {
-                        navigator.navigate("lowpriced")
+                        if (currentDestination !== "lowpriced") {
+                            navigator.navigate("lowpriced")
+                        }
                     }) {
                         Icon(Icons.Default.Insights, contentDescription = "Stat")
+
                     }
                     IconButton(onClick = {
-                        if (navigator.currentDestination?.route !== "settings") {
+                        if (currentDestination !== "settings") {
                             navigator.navigate("settings")
                         }
                     }) {
