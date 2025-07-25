@@ -11,6 +11,7 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/runConfigurations.xml
+/.idea/deploymentTargetSelector.xml
 /build
 /captures
 local.properties
