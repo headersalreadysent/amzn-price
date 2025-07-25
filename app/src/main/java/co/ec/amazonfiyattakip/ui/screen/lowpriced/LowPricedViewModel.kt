@@ -13,7 +13,7 @@ import kotlin.random.Random
 open class LowPricedViewModel() : ViewModel() {
 
 
-    val list = MutableLiveData<List<ProductWithStat>>()
+    val list = MutableLiveData<List<ProductWithStat>>(listOf<ProductWithStat>())
 
 
 

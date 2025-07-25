@@ -1,8 +1,6 @@
 package co.ec.amazonfiyattakip.ui.screen.lowpriced
 
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,8 +17,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -32,7 +30,9 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.ShoppingBasket
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -105,7 +105,6 @@ import co.ec.helper.helpers.LogHelper
 import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.google.android.gms.common.util.DeviceProperties.isPhone
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -116,7 +115,7 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
     val navigation = LocalNavigation.current
     val settings = LocalSettings.current
     val density = LocalDensity.current
-    val products by model.list.observeAsState()
+    val products by model.list.observeAsState(listOf<ProductWithStat>())
     var lowPriceGraphInfoCardVisible by remember { mutableStateOf<Boolean?>(null) }
     DisposableEffect(Unit) {
         model.productStats()
@@ -132,141 +131,179 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
         navigation.navigate("find")
     }
     var selectedStat: ProductWithStat? by remember { mutableStateOf(null) }
-    products?.let { products ->
-        Column(
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+    ) {
+        val sort = listOf("Fiyat", "Ucuzluk")
+        var statSort by remember {
+            mutableStateOf(
+                settings.getString("statSort") ?: "Fiyat"
+            )
+        }
+        var statSortDir by remember {
+            mutableIntStateOf(
+                settings.getInt("statSortDir", 1)
+            )
+        }
+        TitleBar(
+            title = "Fiyat İstatistikleri",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold
+            ),
             modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            val settings = LocalSettings.current
-            val sort = listOf("Fiyat", "Ucuzluk")
-            var statSort by remember {
-                mutableStateOf(
-                    settings.getString("statSort") ?: "Fiyat"
-                )
-            }
-            var statSortDir by remember {
-                mutableIntStateOf(
-                    settings.getInt("statSortDir", 1)
-                )
-            }
-            TitleBar(
-                title = "Fiyat İstatistikleri",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .padding(vertical = 4.dp)
-                    .statusBarsPadding(),
-                extra = {
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .padding(vertical = 4.dp)
+                .statusBarsPadding(),
+            extra = {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
                     if (ExpertMode.current) {
-
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = .8F),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        if (statSortDir == 1) {
-                                            statSortDir = -1
-                                        } else {
-                                            statSortDir = 1
-                                            val index = sort.indexOf(statSort)
-                                            statSort = sort.getOrNull(index + 1) ?: sort[0]
-                                            settings.putString("statSort", statSort)
-                                        }
-                                        settings.putInt("statSortDir", statSortDir)
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = .8F),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    if (statSortDir == 1) {
+                                        statSortDir = -1
+                                    } else {
+                                        statSortDir = 1
+                                        val index = sort.indexOf(statSort)
+                                        statSort = sort.getOrNull(index + 1) ?: sort[0]
+                                        settings.putString("statSort", statSort)
                                     }
-                                    .padding(horizontal = 8.dp)) {
-                                Text(
-                                    statSort, style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                                Icon(
-                                    Icons.Filled.ArrowDropDown,
-                                    "sort",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.graphicsLayer(scaleY = -1 * statSortDir.toFloat())
-                                )
-                            }
-                            lowPriceGraphInfoCardVisible?.let {
-                                if (!it) {
-                                    Icon(
-                                        Icons.Outlined.Info,
-                                        "",
-                                        modifier = Modifier
-                                            .padding(start = 8.dp)
-                                            .clickable(
-                                                indication = null, interactionSource = null
-                                            ) {
-                                                showBottomSheet = true
-                                            })
+                                    settings.putInt("statSortDir", statSortDir)
                                 }
-                            }
+                                .padding(horizontal = 8.dp))
+                        {
 
+                            Text(
+                                statSort, style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                            Icon(
+                                Icons.Filled.ArrowDropDown,
+                                "sort",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.graphicsLayer(scaleY = -1 * statSortDir.toFloat())
+                            )
                         }
+
                     }
-                })
-            lowPriceGraphInfoCardVisible?.let {
-                if (it) {
-                    CutCornerCard(
+                        lowPriceGraphInfoCardVisible?.let {
+                            if (!it) {
+                                Icon(
+                                    Icons.Outlined.Info,
+                                    "",
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .clickable(
+                                            indication = null, interactionSource = null
+                                        ) {
+                                            showBottomSheet = true
+                                        })
+                            }
+                        }
+
+                }
+            })
+        lowPriceGraphInfoCardVisible?.let {
+            if (it) {
+                CutCornerCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .padding(bottom = 4.dp)
+                ) {
+                    Text(
+                        text = "Fiyat istatistikleri, tüm takip edilen günlerin ortalamalarına göre, fiyatın ucuz ya da pahalı olup olmadığını gösterir." + " Fiyat çubuğu sağ tarafta ne kadar büyükse, ürün şu an o kadar ucuzdur.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.Justify
+                        ),
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    OutlinedButton(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(30.dp)
                             .padding(horizontal = 8.dp)
-                            .padding(bottom = 4.dp)
-                    ) {
-                        Text(
-                            text = "Fiyat istatistikleri, tüm takip edilen günlerin ortalamalarına göre, fiyatın ucuz ya da pahalı olup olmadığını gösterir." + " Fiyat çubuğu sağ tarafta ne kadar büyükse, ürün şu an o kadar ucuzdur.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                textAlign = TextAlign.Justify
-                            ),
-                            modifier = Modifier.padding(8.dp)
-                        )
-                        OutlinedButton(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(30.dp)
-                                .padding(horizontal = 8.dp)
-                                .padding(bottom = 4.dp),
-                            contentPadding = PaddingValues(2.dp),
-                            onClick = {
-                                lowPriceGraphInfoCardVisible = false
-                                settings.putBoolean("showLowPriceDetailInfoCard", false)
-                                showBottomSheet = true
-                            }) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Default.Info,
-                                    "info",
-                                    modifier = Modifier
-                                        .padding(end = 1.dp)
-                                        .scale(.8F)
-                                )
-                                Text("Detaylı Oku")
-                            }
+                            .padding(bottom = 4.dp),
+                        contentPadding = PaddingValues(2.dp),
+                        onClick = {
+                            lowPriceGraphInfoCardVisible = false
+                            settings.putBoolean("showLowPriceDetailInfoCard", false)
+                            showBottomSheet = true
+                        }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Info,
+                                "info",
+                                modifier = Modifier
+                                    .padding(end = 1.dp)
+                                    .scale(.8F)
+                            )
+                            Text("Detaylı Oku")
                         }
                     }
                 }
             }
+        }
 
-            HorizontalDivider(
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .shadow(5.dp)
+        )
+        if (products.isEmpty()) {
+            var width by remember { mutableStateOf(0.dp) }
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .shadow(5.dp)
-            )
+                    .fillMaxHeight()
+                    .onGloballyPositioned {
+                        width = density.run { (it.size.width / 2).toDp() }
+                    },
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (width > 0.dp) {
+                    Icon(
+                        Icons.Outlined.ShoppingBasket, "",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = .5F),
+                        modifier = Modifier
+                            .size(width)
+                            .padding(bottom = 10.dp)
+                    )
+                }
+                Text(
+                    "Takip edilen ürün bulunmuyor.",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth(.5F)
+                        .padding(top = 8.dp),
+                    onClick = {
+                        navigation.navigate("find")
+                    }) {
+                    Text("Ürün Arayın")
+                }
+            }
+        } else {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -310,14 +347,14 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                 }
                 if (showAll == false) {
                     OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(.6F)
+                        modifier = Modifier
+                            .fillMaxWidth(.6F)
                             .align(Alignment.CenterHorizontally),
                         onClick = {
                             showAll = true
                         },
                         contentPadding = PaddingValues(14.dp, 2.dp)
-                    )
-                    {
+                    ) {
                         Text("Tümünü Göster")
                     }
                 }
@@ -341,9 +378,11 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                             .padding(vertical = 8.dp)
                     )
                     TitleBar(
-                        title = "Ucuz Ürünler", style = MaterialTheme.typography.titleSmall.copy(
+                        title = "Ucuz Ürünler",
+                        style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.SemiBold
-                        ), modifier = Modifier
+                        ),
+                        modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
                     )
@@ -412,9 +451,11 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                             .padding(vertical = 8.dp)
                     )
                     TitleBar(
-                        title = "Pahalı Ürünler", style = MaterialTheme.typography.titleSmall.copy(
+                        title = "Pahalı Ürünler",
+                        style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.SemiBold
-                        ), modifier = Modifier
+                        ),
+                        modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
                     )
@@ -465,6 +506,7 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
             }
         }
     }
+
     AppModel.cutCard(if (selectedStat == null) Modifier.height(30.dp) else Modifier.wrapContentHeight()) {
         selectedStat?.let {
             Row(
