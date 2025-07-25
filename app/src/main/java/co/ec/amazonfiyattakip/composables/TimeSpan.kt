@@ -1,6 +1,10 @@
 package co.ec.amazonfiyattakip.composables
 
 import android.R.attr.enabled
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -38,6 +43,8 @@ import co.ec.helper.utils.timeString
 import co.ec.helper.utils.unix
 import com.google.common.io.Files.append
 import com.google.common.primitives.UnsignedBytes.toInt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,11 +66,31 @@ fun TimeSpan(
     }
 
     Column {
+        var timeSpanText by remember { mutableStateOf("") }
+        var timeSpanTextVisibility by remember { mutableStateOf(false) }
+        var scope = rememberCoroutineScope()
+
         TitleBar(
             title = "Takip Aralığı",
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),
+            extra = {
+                AnimatedVisibility(
+                    timeSpanTextVisibility,
+                    enter = fadeIn(animationSpec = tween(durationMillis = 200)),
+                    exit = fadeOut(animationSpec = tween(durationMillis = 500))
+                ) {
+
+                    Text(
+                        timeSpanText,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.End
+                        )
+                    )
+                }
+            }
         )
         var expanded by remember { mutableStateOf(false) }
         ExposedDropdownMenuBox(
@@ -107,6 +134,12 @@ fun TimeSpan(
 
                             val text = timeList.find { it.first == selectedTime }?.second ?: ""
                             updateTimeSpan(selectedTime, text)
+                            timeSpanText = "$text olarak güncellendi."
+                            timeSpanTextVisibility = true
+                            scope.launch {
+                                delay(2000L)
+                                timeSpanTextVisibility = false
+                            }
                         }
                     )
                 }
@@ -154,6 +187,6 @@ fun TimeSpan(
 @Composable
 private fun TimeSpanPreview() {
     PreviewProviders {
-        TimeSpan(30, { _,_ ->})
+        TimeSpan(30, { _, _ -> })
     }
 }

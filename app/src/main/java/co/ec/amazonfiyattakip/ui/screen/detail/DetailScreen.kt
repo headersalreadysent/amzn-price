@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.ui.screen.detail
 
 import android.R.attr.maxHeight
 import android.R.attr.minHeight
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -707,6 +709,8 @@ fun ModalContent(model: DetailViewModel, product: Product, latestQuery: Long) {
 
         TimeSpan(product.timeSpan / 60, { time, text ->
             model.updateTimeSpan(time)
+
+
         }, latest = latestQuery)
         HorizontalDivider(
             modifier = Modifier
@@ -798,43 +802,48 @@ fun PriceListArea(priceListData: List<PriceInfo>) {
                 }) {
 
 
-            val visibleList=list.let {
+            val visibleList = list.let {
                 if (it.size > 10 && !showAllList) it.slice(0..10)
                 else it
             }
-            val max=visibleList.maxBy { it.price }.price.toFloat()
-            val min=visibleList.minBy { it.price }.price.toFloat()
+            val max = visibleList.maxBy { it.price }.price.toFloat()
+            val min = visibleList.minBy { it.price }.price.toFloat()
             visibleList.forEachIndexed { index, it ->
                 val prevPrice = if (list.size > index + 1) {
                     list[index + 1].price
                 } else 0
-                val collapseFraction = ((it.price-min) / (max-min))
-                val color=MaterialTheme.colorScheme.tertiaryContainer
-                Box(modifier = Modifier.fillMaxWidth()
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp)
-                    .background(color.copy(alpha = .95F))
-                    .height(40.dp)
-                    .shadow(.5.dp)) {
-                    Box(modifier = Modifier.fillMaxWidth(.45F+collapseFraction)
-                        .fillMaxHeight()
-                        .drawWithContent {
-                            drawContent() // normal içeriği çiz
-                            drawRect(
-                                color = color,
-                                size = Size(size.width - 10.dp.toPx(), size.height),
-                                topLeft = Offset.Zero
-                            )
-                            drawRect(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(color, Color.Transparent),
-                                    startX = size.width - 10.dp.toPx(), // gradient 5dp alanda
-                                    endX = size.width
-                                ),
-                                size = Size(10.dp.toPx(), size.height),
-                                topLeft = Offset(size.width - 10.dp.toPx(), 0f)
-                            )
-                        })
+                val collapseFraction = ((it.price - min) / (max - min))
+                val color = MaterialTheme.colorScheme.tertiaryContainer
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp)
+                        .background(color.copy(alpha = .95F))
+                        .height(40.dp)
+                        .shadow(.5.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(.45F + collapseFraction)
+                            .fillMaxHeight()
+                            .drawWithContent {
+                                drawContent() // normal içeriği çiz
+                                drawRect(
+                                    color = color,
+                                    size = Size(size.width - 10.dp.toPx(), size.height),
+                                    topLeft = Offset.Zero
+                                )
+                                drawRect(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(color, Color.Transparent),
+                                        startX = size.width - 10.dp.toPx(), // gradient 5dp alanda
+                                        endX = size.width
+                                    ),
+                                    size = Size(10.dp.toPx(), size.height),
+                                    topLeft = Offset(size.width - 10.dp.toPx(), 0f)
+                                )
+                            })
                     Row(
                         modifier = Modifier
                             .fillMaxSize()

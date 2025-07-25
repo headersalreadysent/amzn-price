@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.helper.isLight
@@ -75,11 +76,11 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.light(transparent, transparent)
         )
         var destination = intent?.getStringExtra("destination") ?: "main"
-        if(destination=="developer"){
+        if (destination == "developer") {
             //toggle developer
-            val developer=App.settings().getBoolean("developerActive",false)
-            App.settings().putBoolean("developerActive",!developer)
-            destination="main"
+            val developer = App.settings().getBoolean("developerActive", false)
+            App.settings().putBoolean("developerActive", !developer)
+            destination = "main"
         }
         setContent {
             AppProviders {
@@ -159,7 +160,12 @@ fun AppContent(
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.zIndex(1000F)
+            )
+        },
         bottomBar = {
             BottomAppBar(
                 actions = {
