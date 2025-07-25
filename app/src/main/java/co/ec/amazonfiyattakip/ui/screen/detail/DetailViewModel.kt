@@ -4,6 +4,7 @@ package co.ec.amazonfiyattakip.ui.screen.detail
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.FireDB.ProductSync
@@ -62,6 +63,13 @@ open class DetailViewModel : ViewModel() {
             val copy = product.value!!.copy(
                 status = status
             )
+
+            App.event(
+                "product_change_status", mapOf(
+                    "productAsin" to copy.asin,
+                    "status" to copy.status.toString()
+                )
+            )
             AppDatabase.getDatabase().product().update(copy)
             return@asyncRun copy
         }, {
@@ -73,6 +81,11 @@ open class DetailViewModel : ViewModel() {
     fun deleteProduct(then: () -> Unit = {}) {
         asyncRun({
             product.value?.let {
+                App.event(
+                    "product_delete", mapOf(
+                        "productAsin" to it.asin,
+                    )
+                )
                 AppDatabase.getDatabase().priceInfo().delete(it.id)
                 AppDatabase.getDatabase().product().delete(it.id)
             }
@@ -105,14 +118,14 @@ open class DetailViewModel : ViewModel() {
     /**
      * refresh product with pull
      */
-    fun refreshProduct(then: () -> Unit = {}, err: (e:Throwable) -> Unit = {}){
+    fun refreshProduct(then: () -> Unit = {}, err: (e: Throwable) -> Unit = {}) {
         product.value?.let { product ->
             viewModelScope.launch {
                 try {
-                    val update=PriceUpdate.collectProduct(product)
+                    val update = PriceUpdate.collectProduct(product)
                     loadProduct(product.id)
                     then()
-                }catch (e: Throwable){
+                } catch (e: Throwable) {
                     err(e)
                 }
             }

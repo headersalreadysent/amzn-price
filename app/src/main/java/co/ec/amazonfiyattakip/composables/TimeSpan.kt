@@ -36,6 +36,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.helper.utils.dateString
@@ -106,6 +107,13 @@ fun TimeSpan(
                     selectedTime = it.toInt()
                     val text = timeList.find { it.first == selectedTime }?.second ?: ""
                     updateTimeSpan(selectedTime, text)
+                    App.event(
+                        "timespan_update", mapOf(
+                            "oldspan_time" to time,
+                            "span_time" to selectedTime,
+                            "span_text" to text,
+                        )
+                    )
                 },
                 readOnly = true,
                 modifier = Modifier

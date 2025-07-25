@@ -165,7 +165,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 )
                 if (update.price == 0) {
                     //price is zero is very bad
-                    LogHelper.d("Product ${product.asin} price error", JOBTAG)
+                    LogHelper.d("Product ${product.asin}:${product.title} price error", JOBTAG)
                     deferred.complete(Pair(product.asin, -1))
                     return@scrapeFromAsin
                 }
