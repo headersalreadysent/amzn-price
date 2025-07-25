@@ -1,3 +1,5 @@
+import com.android.tools.build.bundletool.model.utils.files.BufferedIo.inputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -8,6 +10,8 @@ plugins {
     id("com.google.firebase.crashlytics")
 
 }
+fun String.runCommand(): String =
+    ProcessBuilder(*split(" ").toTypedArray()).redirectErrorStream(true).start().inputStream.bufferedReader().readText().trim()
 
 android {
     namespace = "co.ec.amazonfiyattakip"
@@ -16,9 +20,10 @@ android {
     defaultConfig {
         applicationId = "co.ec.amazonfiyattakip"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.1"
+        targetSdk = 35
+        versionCode = "git rev-list --count HEAD".runCommand().toInt()
+        versionName = "1.0.${"git rev-list --count HEAD".runCommand()}-${"git rev-parse --abbrev-ref HEAD".runCommand()}+${"git rev-parse --short HEAD".runCommand()}${if ("git status --porcelain".runCommand().isNotEmpty()) "-dirty" else ""}"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
