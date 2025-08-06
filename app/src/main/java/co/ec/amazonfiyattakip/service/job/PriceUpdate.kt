@@ -13,6 +13,7 @@ import co.ec.amazonfiyattakip.R
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.job_log.JobLog
+import co.ec.amazonfiyattakip.db.noprice.NoPrice
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.view.DailyPrice
@@ -166,12 +167,15 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 if (update.price == 0) {
                     //price is zero is very bad
                     LogHelper.d("Product ${product.asin}:${product.title} price error", JOBTAG)
+                    NoPrice.add(product.asin, productId = product.id)
                     deferred.complete(Pair(product.asin, -1))
                     return@scrapeFromAsin
                 }
                 CoroutineScope(Dispatchers.IO).launch {
                     //set id to new
                     val product = update.copy(id = product.id)
+                    //delete old no product
+                    NoPrice.remove(product.id)
                     //get latest update
                     val latestPrice = priceDao.getLatestPrice(product.id)
                     val priceInfo = PriceInfo(

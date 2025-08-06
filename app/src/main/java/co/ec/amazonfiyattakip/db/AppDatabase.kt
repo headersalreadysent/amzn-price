@@ -2,14 +2,20 @@ package co.ec.amazonfiyattakip.db
 
 
 import android.provider.DocumentsContract
+import androidx.compose.ui.input.key.Key
 import androidx.core.net.toUri
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.work.impl.Migration_16_17
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.job_log.JobLog
 import co.ec.amazonfiyattakip.db.job_log.JobLogDao
+import co.ec.amazonfiyattakip.db.noprice.NoPrice
+import co.ec.amazonfiyattakip.db.noprice.NoPriceDao
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.price_info.PriceInfoDao
 import co.ec.amazonfiyattakip.db.product.Product
@@ -21,13 +27,14 @@ import kotlinx.serialization.json.Json
 
 
 @Database(
-    entities = [Product::class, PriceInfo::class, JobLog::class],
+    entities = [Product::class, PriceInfo::class, JobLog::class, NoPrice::class],
     views = [DailyPrice::class],
     exportSchema = false,
-    version = 5
+    version = 6
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
+
 
     abstract fun product(): ProductDao
 
@@ -35,7 +42,17 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun jobLog(): JobLogDao
 
+    abstract fun noPrice(): NoPriceDao
+
     companion object {
+        //add noprice database
+        val MIGRATION_5_6 =
+            object : Migration(5, 6) { // X ve X+1 yerine gerçek sürüm numaralarınızı yazın
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `NoPrice` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `asin` TEXT NOT NULL, `date` INTEGER NOT NULL, `productId` INTEGER NOT NULL, `active` INTEGER NOT NULL)")
+                }
+            }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -43,7 +60,9 @@ abstract class AppDatabase : RoomDatabase() {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     App.context(), AppDatabase::class.java, "amzn"
-                ).fallbackToDestructiveMigration(true).build()
+                )
+                    .addMigrations(MIGRATION_5_6)
+                    .build()
                 INSTANCE = instance
                 instance
             }
@@ -53,8 +72,8 @@ abstract class AppDatabase : RoomDatabase() {
             val context = App.context()
             asyncRun({
                 val db = getDatabase()
-                val products=db.product().getAll()
-                if(products.isEmpty()){
+                val products = db.product().getAll()
+                if (products.isEmpty()) {
                     throw Error("no product to backup")
                 }
                 val json = Json.encodeToString(
