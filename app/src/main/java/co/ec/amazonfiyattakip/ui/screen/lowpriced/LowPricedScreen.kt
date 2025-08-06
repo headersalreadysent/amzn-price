@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip.ui.screen.lowpriced
 
 
+import android.R.attr.fontWeight
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -88,6 +89,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
+import co.ec.amazonfiyattakip.composables.ProductGrid
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.ProductWithPrices
 import co.ec.amazonfiyattakip.db.ProductWithStat
@@ -116,9 +118,11 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
     val settings = LocalSettings.current
     val density = LocalDensity.current
     val products by model.list.observeAsState(listOf<ProductWithStat>())
+    val noPriceProducts by model.noPriceProduct.observeAsState(listOf<Product>())
     var lowPriceGraphInfoCardVisible by remember { mutableStateOf<Boolean?>(null) }
     DisposableEffect(Unit) {
         model.productStats()
+        model.noPriceProduct()
         lowPriceGraphInfoCardVisible = settings.getBoolean("showLowPriceDetailInfoCard", true)
         onDispose { }
     }
@@ -203,20 +207,20 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                         }
 
                     }
-                        lowPriceGraphInfoCardVisible?.let {
-                            if (!it) {
-                                Icon(
-                                    Icons.Outlined.Info,
-                                    "",
-                                    modifier = Modifier
-                                        .padding(start = 8.dp)
-                                        .clickable(
-                                            indication = null, interactionSource = null
-                                        ) {
-                                            showBottomSheet = true
-                                        })
-                            }
+                    lowPriceGraphInfoCardVisible?.let {
+                        if (!it) {
+                            Icon(
+                                Icons.Outlined.Info,
+                                "",
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .clickable(
+                                        indication = null, interactionSource = null
+                                    ) {
+                                        showBottomSheet = true
+                                    })
                         }
+                    }
 
                 }
             })
@@ -346,7 +350,7 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                     })
                 }
                 if (showAll == false) {
-                    OutlinedButton(
+                    TextButton(
                         modifier = Modifier
                             .fillMaxWidth(.6F)
                             .align(Alignment.CenterHorizontally),
@@ -359,143 +363,46 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                     }
                 }
 
+                if (noPriceProducts.isNotEmpty()) {
+                    ProductGrid(
+                        productList = noPriceProducts,
+                        title = "Fiyatsız Ürünler",
+                        description = "Amazon standartlarına göre fiyatı uygun olmadığı için satışta görünmeyen ürünlerdir."
+                    )
+                }
 
                 val cheapProducts by remember {
-                    mutableStateOf(products.filter { it.entity.price <= it.avg }.sortedBy {
-                        when (statSort) {
-                            "Fiyat" -> it.entity.price.toFloat()
-                            "Ucuzluk" -> if (it.max == it.min) 0.01F else ((it.entity.price - it.min).toFloat() / (it.max - it.min).toFloat())
-                            else -> it.entity.id.toFloat()
-                        }
-                    }.let {
-                        if (statSortDir == -1) it.reversed() else it
-                    })
+                    mutableStateOf(
+                        filteredList(
+                            products.filter { it.entity.price <= it.avg },
+                            statSort,
+                            statSortDir,
+                            noPriceProducts.map { it.id })
+                    )
                 }
                 if (cheapProducts.isNotEmpty()) {
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+                    ProductGrid(
+                        productList = cheapProducts,
+                        title = "Ucuz Ürünler"
                     )
-                    TitleBar(
-                        title = "Ucuz Ürünler",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp)
-                    )
-                    BoxWithConstraints(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        val isCompact = this.maxWidth < 600.dp
-                        val boxCount = if (isCompact) 2 else 3
-                        var itemSize by remember { mutableStateOf(0.dp) }
-
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(bottom = 8.dp)
-                                .onSizeChanged {
-                                    val width = density.run { it.width.toDp() }
-                                    if (width > 0.dp) {
-                                        itemSize = (width - 8.dp * (boxCount - 1)) / boxCount
-                                    }
-                                },
-                            maxItemsInEachRow = boxCount,
-
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            cheapProducts.forEachIndexed { index, item ->
-
-                                Box(
-                                    modifier = Modifier
-                                        .width(itemSize)
-                                        .aspectRatio(2.5F)
-                                ) {
-                                    MainProductCard(
-                                        ProductWithPrices(
-                                            product = item.entity, priceInfoList = listOf()
-                                        ), onClick = {
-                                            navigation.navigate("detail/${item.entity.id}")
-                                        })
-                                }
-                            }
-
-                        }
-                    }
-
-
                 }
 
 
                 val expensiveProducts by remember {
-                    mutableStateOf(products.filter { it.entity.price > it.avg }.sortedBy {
-                        when (statSort) {
-                            "Fiyat" -> it.entity.price.toFloat()
-                            "Ucuzluk" -> if (it.max == it.min) 0.01F else ((it.entity.price - it.min).toFloat() / (it.max - it.min).toFloat())
-                            else -> it.entity.id.toFloat()
-                        }
-                    }.let {
-                        if (statSortDir == -1) it.reversed() else it
-                    })
+                    mutableStateOf(
+                        filteredList(
+                            products.filter { it.entity.price > it.avg },
+                            statSort,
+                            statSortDir,
+                            noPriceProducts.map { it.id })
+                    )
                 }
 
-
                 if (expensiveProducts.isNotEmpty()) {
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+                    ProductGrid(
+                        productList = expensiveProducts,
+                        title = "Pahalı Ürünler"
                     )
-                    TitleBar(
-                        title = "Pahalı Ürünler",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp)
-                    )
-                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-
-                        val isCompact = this.maxWidth < 600.dp
-                        val boxCount = if (isCompact) 2 else 3
-                        var itemSize by remember { mutableStateOf(0.dp) }
-                        val density = LocalDensity.current
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(bottom = 8.dp)
-                                .onSizeChanged {
-                                    val width = density.run { it.width.toDp() }
-                                    if (width > 0.dp) {
-                                        itemSize = (width - 8.dp * (boxCount - 1)) / boxCount
-                                    }
-                                },
-                            maxItemsInEachRow = boxCount,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-
-                            expensiveProducts.forEachIndexed { index, item ->
-                                Box(
-                                    modifier = Modifier
-                                        .width(itemSize)
-                                        .aspectRatio(2.5F)
-                                ) {
-                                    MainProductCard(
-                                        ProductWithPrices(
-                                            product = item.entity, priceInfoList = listOf()
-                                        ), onClick = {
-                                            navigation.navigate("detail/${item.entity.id}")
-                                        })
-                                }
-                            }
-                        }
-                    }
                 }
                 Box(
                     modifier = Modifier
@@ -571,6 +478,29 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
     }
 
 }
+
+/**
+ * filter and sort by data
+ */
+fun filteredList(
+    products: List<ProductWithStat>,
+    statSort: String,
+    statSortDir: Int,
+    filter: List<Int>
+): List<Product> {
+    return products.let {
+        it.filter { !filter.contains(it.entity.id) }
+    }.sortedBy {
+        when (statSort) {
+            "Fiyat" -> it.entity.price.toFloat()
+            "Ucuzluk" -> if (it.max == it.min) 0.01F else ((it.entity.price - it.min).toFloat() / (it.max - it.min).toFloat())
+            else -> it.entity.id.toFloat()
+        }
+    }.let {
+        if (statSortDir == -1) it.reversed() else it
+    }.map { it.entity }
+}
+
 
 @Composable
 fun ProductPriceStatGraph(
@@ -989,6 +919,7 @@ fun nameValue(name: String, value: Int): AnnotatedString {
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

@@ -7,16 +7,33 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
+import co.ec.helper.helpers.LogHelper
 import java.util.Locale
+import kotlin.math.absoluteValue
 import kotlin.math.pow
 
 fun predictNextPrices(
     prices: List<PriceInfo>,
-    days: List<Int> = listOf(7, 14, 21, 28)
+    days: List<Int> = listOf(15,30,45)
 ): Pair<List<Pair<Long, Double>>, AnnotatedString> {
 
-    val firstQuery = prices.minOf { it.date }
-    val x = prices.map { (it.date - firstQuery) }
+    val predicter=predictFunction(prices)
+    val lastDay = prices.maxOf { it.date }
+    // return
+    return Pair(days
+        .map { day -> predicter.second(day) }
+        .mapIndexed { index, it ->
+            Pair(lastDay + days[index] * 86400, it * 100)
+        }, predicter.first
+    )
+
+}
+
+fun predictFunction(
+    prices: List<PriceInfo>,
+): Pair<AnnotatedString, (Int) -> Double> {
+
+    val x = prices.map { (it.date) }
     val y = prices.map { (it.price / 100).toDouble() }
     val lastDay = x.maxOf { it }
 
@@ -30,7 +47,7 @@ fun predictNextPrices(
     val beta1 = numerator / denominator
     val beta0 = yMean - beta1 * xMean
     val beta0Text = String.format(Locale.getDefault(), "%.2f", beta0)
-    val beta1Text = String.format(Locale.getDefault(), "%.6f", beta1)
+    val beta1Text = String.format(Locale.getDefault(), "%.6f", beta1.absoluteValue)
     val boldStyle = SpanStyle(
         fontWeight = FontWeight.SemiBold
     )
@@ -38,11 +55,11 @@ fun predictNextPrices(
         withStyle(boldStyle) {
             append(beta0Text)
         }
-        append(" + ")
+        append(if(beta1<0) " - " else " + ")
         withStyle(boldStyle) {
             append(beta1Text)
         }
-        append(" * (${lastDay + firstQuery} + ")
+        append(" * (${lastDay} + ")
         withStyle(boldStyle) {
             append("day")
         }
@@ -50,12 +67,7 @@ fun predictNextPrices(
     }
 
     // return
-    return Pair(days
-        .map { day -> beta0 + beta1 * (lastDay + day * 86400) }
-        .mapIndexed { index, it ->
-            Pair(lastDay + firstQuery + days[index] * 86400, it * 100)
-        }, functionText
-    )
+    return Pair(functionText,{ day:Int -> beta0 + beta1 * (lastDay + day * 86400) })
 
 }
 

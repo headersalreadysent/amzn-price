@@ -9,6 +9,7 @@ import co.ec.amazonfiyattakip.db.LatestUpdate
 import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.ProductWithStat
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
+import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.amazonfiyattakip.db.view.DailyPrice
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,9 @@ interface NoPriceDao {
 
     @Query("SELECT * FROM noprice")
     fun getAll(): List<NoPrice>
+
+    @Query("SELECT * FROM product WHERE id IN (SELECT productId FROM noprice GROUP BY productId)")
+    fun getProducts(): List<Product>
 
 
     @Query("DELETE FROM noprice WHERE productId=:productId")

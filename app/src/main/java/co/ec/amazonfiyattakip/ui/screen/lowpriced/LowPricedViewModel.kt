@@ -15,6 +15,7 @@ open class LowPricedViewModel() : ViewModel() {
 
     val list = MutableLiveData<List<ProductWithStat>>(listOf<ProductWithStat>())
 
+    val noPriceProduct = MutableLiveData<List<Product>>(listOf<Product>())
 
 
     fun productStats() {
@@ -27,17 +28,27 @@ open class LowPricedViewModel() : ViewModel() {
         })
     }
 
+    fun noPriceProduct() {
+        asyncRun({
+            return@asyncRun AppDatabase.getDatabase().noPrice().getProducts()
+        }, {
+            noPriceProduct.value = it
+        }, {
+            LogHelper.e(it.message.toString(), it)
+        })
+    }
+
     /**
      * emulate datas for preview
      */
     fun emulate() {
-        list.value=(1..10).map {
+        list.value = (1..10).map {
             val min = Random.nextInt(10000)
             val max = Random.nextInt(100000)
             var ave = Random.nextInt(45000, 68000)
             ProductWithStat(
                 entity = Product.fake().copy(
-                    price = Random.nextInt(min,max)
+                    price = Random.nextInt(min, max)
                 ),
                 min = min,
                 avg = ave,

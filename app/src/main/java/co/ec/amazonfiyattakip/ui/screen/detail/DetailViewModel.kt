@@ -136,7 +136,7 @@ open class DetailViewModel : ViewModel() {
     fun emulate() {
         //generate fake products
         product.value = Product.fake()
-        prices.value = (0..10).map {
+        prices.value = (0..30).map {
             val price = Random.nextFloat() * 20000 + product.value?.price!!
             PriceInfo(
                 id = it,

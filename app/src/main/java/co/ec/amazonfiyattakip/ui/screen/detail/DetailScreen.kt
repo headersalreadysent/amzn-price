@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
@@ -57,6 +59,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -103,6 +106,7 @@ import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.helper.predictFunction
 import co.ec.amazonfiyattakip.helper.predictNextPrices
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
@@ -184,8 +188,7 @@ fun DetailScreen(
         var refreshing by remember { mutableStateOf(false) }
         var size by remember { mutableStateOf(0.dp) }
         PullToRefreshBox(
-            isRefreshing = refreshing,
-            onRefresh = {
+            isRefreshing = refreshing, onRefresh = {
                 refreshing = true
                 model.refreshProduct({
                     App.snack("Ürün güncellendi.")
@@ -194,13 +197,11 @@ fun DetailScreen(
                     refreshing = false
                     App.snack("Güncelleme sırasında bir sorun oluştu.")
                 }
-            },
-            modifier = Modifier
+            }, modifier = Modifier
                 .fillMaxSize()
                 .onSizeChanged {
                     size = density.run { it.width.toDp() }
-                }
-        ) {
+                }) {
             val scrollState = rememberScrollState()
             val maxHeight = (size.value / 2.5F).dp
             val minHeight = 90.dp
@@ -253,7 +254,8 @@ fun DetailScreen(
                         HorizontalDivider(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp)
+                                .padding(top = 8.dp)
+                                .padding(bottom = 4.dp)
                         )
                         OutlinedButton(
                             modifier = Modifier
@@ -261,12 +263,10 @@ fun DetailScreen(
                                 .padding(8.dp),
                             onClick = {
                                 urlHandler.openUri(AmznScrape.urlFromAsin(product.asin))
-                            },
-                            colors = ButtonDefaults.outlinedButtonColors(
+                            }, colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            shape = RoundedCornerShape(25)
+                            ), shape = RoundedCornerShape(25)
                         ) {
                             Row(
                                 horizontalArrangement = Arrangement.Center,
@@ -275,12 +275,10 @@ fun DetailScreen(
                                 Icon(
                                     Icons.Filled.ShoppingCart,
                                     "",
-                                    modifier = Modifier
-                                        .padding(end = 8.dp)
+                                    modifier = Modifier.padding(end = 8.dp)
                                 )
                                 Text(
-                                    "Satın Al",
-                                    style = MaterialTheme.typography.titleLarge.copy(
+                                    "Satın Al", style = MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 )
@@ -300,6 +298,11 @@ fun DetailScreen(
                                         indication = null, interactionSource = null
                                     ) {
                                         showOnlyChanges = !showOnlyChanges
+                                        if(showOnlyChanges){
+                                            App.snack("Sadece fiyat değişimleri gösteriliyor.")
+                                        } else {
+                                            App.snack("Tüm sorgulamalar gösteriliyor.")
+                                        }
                                     },
                                 extra = {
                                     Text(
@@ -332,8 +335,7 @@ fun DetailScreen(
                         .clickable(enabled = canExtend) {
                             showFull = !showFull
                         }
-                        .padding(horizontal = 8.dp)
-                ) {
+                        .padding(horizontal = 8.dp)) {
                     Text(
                         text = if (canExtend && showFull) buildAnnotatedString {
                             append(product.shortDesc(300))
@@ -347,8 +349,7 @@ fun DetailScreen(
                             }
                         } else buildAnnotatedString {
                             append(product.description)
-                        },
-                        style = MaterialTheme.typography.bodyMedium.copy(
+                        }, style = MaterialTheme.typography.bodyMedium.copy(
                             textAlign = TextAlign.Justify
                         ),
                         modifier = Modifier.padding(8.dp)
@@ -356,21 +357,17 @@ fun DetailScreen(
                 }
 
                 ExtrasArea(
-                    product = product,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    product = product, modifier = Modifier.padding(horizontal = 8.dp)
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
             }
 
             AppModel.cutCard(
-                modifier = Modifier
-                    .then(
-                        if (priceListData.size > 2)
-                            Modifier.aspectRatio(5F) else
-                            Modifier.height(
-                                40.dp
-                            )
+                modifier = Modifier.then(
+                    if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
+                        40.dp
                     )
+                )
             ) {
                 PricesGraphWithDrag(
                     prices = priceListData
@@ -408,29 +405,23 @@ fun ErrorStop(product: Product, activate: () -> Unit = {}) {
                 .fillMaxWidth()
                 .padding(8.dp)
                 .background(
-                    MaterialTheme.colorScheme.errorContainer,
-                    RoundedCornerShape(5.dp)
+                    MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(5.dp)
                 )
                 .padding(8.dp)
         ) {
             Text(
-                "Bu ürün bir çok hatalı sorgulama sebebiyle pasifleştirildi. " +
-                        "Amazon üzerinde ürüne ulaşılamıyor olabilir.",
+                "Bu ürün bir çok hatalı sorgulama sebebiyle pasifleştirildi. " + "Amazon üzerinde ürüne ulaşılamıyor olabilir.",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
             )
             OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
+                modifier = Modifier.fillMaxWidth(), onClick = {
                     activate()
-                },
-                colors = ButtonDefaults.outlinedButtonColors(
+                }, colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.onErrorContainer,
                     contentColor = MaterialTheme.colorScheme.errorContainer
-                ),
-                shape = RoundedCornerShape(5.dp),
-                contentPadding = PaddingValues(vertical = 1.dp)
+                ), shape = RoundedCornerShape(5.dp), contentPadding = PaddingValues(vertical = 1.dp)
             ) {
                 Text("Aktifleştir")
             }
@@ -459,33 +450,34 @@ fun TreePriceRow(
                 .weight(1F)
                 .background(containerColor)
                 .padding(4.dp)
-        val titleStyle = MaterialTheme.typography.bodySmall.copy(
-            textAlign = TextAlign.Center,
-            color = contentColor.copy(alpha = .8F)
+                .padding(top = 4.dp)
+        val titleStyle = MaterialTheme.typography.bodyMedium.copy(
+            textAlign = TextAlign.Center, color = contentColor
         )
         val valueStyle = MaterialTheme.typography.bodyLarge.copy(
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.SemiBold,
-            color = contentColor
+            textAlign = TextAlign.Center, fontWeight = FontWeight.SemiBold, color = contentColor
         )
         Column(modifier = columnModifier) {
             Text(
                 text = "En Düşük", modifier = Modifier.fillMaxWidth(), style = titleStyle
             )
-            Text(
-                text = min.price(), modifier = Modifier.fillMaxWidth(), style = valueStyle
+            BasicText(
+                text = min.price(),
+                modifier = Modifier.fillMaxWidth(),
+                style = valueStyle,
+                autoSize = TextAutoSize.StepBased(14.sp, 20.sp)
             )
         }
         if (max != min) {
-
             Column(modifier = columnModifier) {
                 Text(
                     text = "Ortalama", modifier = Modifier.fillMaxWidth(), style = titleStyle
                 )
-                Text(
+                BasicText(
                     text = ((min + max) / 2F).toInt().price(),
                     modifier = Modifier.fillMaxWidth(),
-                    style = valueStyle
+                    style = valueStyle,
+                    autoSize = TextAutoSize.StepBased(14.sp, 20.sp)
                 )
             }
         }
@@ -493,8 +485,11 @@ fun TreePriceRow(
             Text(
                 text = "En Yüksek", modifier = Modifier.fillMaxWidth(), style = titleStyle
             )
-            Text(
-                text = max.price(), modifier = Modifier.fillMaxWidth(), style = valueStyle
+            BasicText(
+                text = max.price(),
+                modifier = Modifier.fillMaxWidth(),
+                style = valueStyle,
+                autoSize = TextAutoSize.StepBased(14.sp, 20.sp)
             )
         }
     }
@@ -558,8 +553,7 @@ fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
 fun CalendarPriceDataArea(prices: List<PriceInfo>) {
     if (prices.isNotEmpty()) {
         TitleBar(
-            title = "Günlük Fiyatlar",
-            modifier = Modifier
+            title = "Günlük Fiyatlar", modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
         )
@@ -584,52 +578,48 @@ fun PricePredictionArea(prices: List<PriceInfo>) {
         val predict by remember {
             mutableStateOf(predictNextPrices(prices))
         }
+        val predictFunction by remember {
+            mutableStateOf(predictFunction(prices))
+        }
         var showDialog by remember { mutableStateOf(false) }
         if (showDialog) {
-            AlertDialog(
-                text = {
-                    Column {
-                        Text(
-                            text = "Fiyat tahmini bilgisi sınırlı bir tahmin olup, regresyon hesaplaması ile bulunmaktadır.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                textAlign = TextAlign.Justify
-                            )
+            AlertDialog(text = {
+                Column {
+                    Text(
+                        text = "Fiyat tahmini bilgisi sınırlı bir tahmin olup, regresyon hesaplaması ile bulunmaktadır.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.Justify
                         )
-                        Text(
-                            "Tahmin Fonksiyonu",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp),
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                textAlign = TextAlign.Start
-                            )
+                    )
+                    Text(
+                        "Tahmin Fonksiyonu",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.Start
                         )
-                        Text(
-                            predict.second,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp),
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                textAlign = TextAlign.Start
-                            )
+                    )
+                    Text(
+                        predict.second,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            textAlign = TextAlign.Start
                         )
-                    }
-                },
-                onDismissRequest = {
-                    showDialog = false
-                },
-                confirmButton = {
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showDialog = false
-                        }
-                    ) {
-                        Text("Kapat")
-                    }
+                    )
                 }
-            )
+            }, onDismissRequest = {
+                showDialog = false
+            }, confirmButton = {}, dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDialog = false
+                    }) {
+                    Text("Kapat")
+                }
+            })
         }
 
         Column(
@@ -641,20 +631,17 @@ fun PricePredictionArea(prices: List<PriceInfo>) {
         ) {
 
             TitleBar(
-                title = "Fiyat Tahmini",
-                modifier = Modifier
-                    .fillMaxWidth(),
-                extra = {
+                title = "Fiyat Tahmini", modifier = Modifier.fillMaxWidth(), extra = {
                     Icon(
-                        Icons.Filled.Info, "",
+                        Icons.Filled.Info,
+                        "",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .scale(.8F)
                             .clickable {
                                 showDialog = true
                             })
-                }
-            )
+                })
 
             Row(
                 modifier = Modifier
@@ -670,21 +657,25 @@ fun PricePredictionArea(prices: List<PriceInfo>) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val date = it.first.dateString()
-                        Text(
+                        BasicText(
                             date.replace(" 202", "\n202"),
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = FontWeight.Light,
-                                fontSize = 12.sp,
                                 textAlign = TextAlign.Center,
-                                lineHeight = 13.sp
                             ),
                             modifier = Modifier.padding(bottom = 2.dp)
+
                         )
-                        AutoText(
+                        BasicText(
                             it.second.toInt().price(),
-                            fontSize = 1..16,
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.SemiBold
+                            autoSize = TextAutoSize.StepBased(12.sp, 20.sp),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.secondary,
+                            ),
+                            maxLines = 1
+
                         )
                     }
                     if (index < predict.first.size - 1) {
@@ -798,115 +789,107 @@ fun ModalContent(model: DetailViewModel, product: Product, latestQuery: Long) {
  */
 @Composable
 fun PriceListArea(priceListData: List<PriceInfo>) {
-    var showPrice by remember { mutableStateOf(true) }
     var showAllList by remember { mutableStateOf(false) }
-    priceListData.reversed().let { list ->
-        Column(
-            modifier = Modifier
-                .padding(8.dp)
-                .clickable(indication = null, interactionSource = null) {
-                    showPrice = !showPrice
-                }) {
+    val visibleList by remember {
+        mutableStateOf(priceListData.reversed().let {
+            if (it.size > 10 && !showAllList) it.slice(0..10)
+            else it
+        })
+    }
 
+    val max by remember(visibleList,showAllList) {
+        mutableFloatStateOf(visibleList.maxBy { it.price }.price.toFloat())
+    }
 
-            val visibleList = list.let {
-                if (it.size > 10 && !showAllList) it.slice(0..10)
-                else it
-            }
-            val max = visibleList.maxBy { it.price }.price.toFloat()
-            val min = visibleList.minBy { it.price }.price.toFloat()
-            visibleList.forEachIndexed { index, it ->
-                val prevPrice = if (list.size > index + 1) {
-                    list[index + 1].price
-                } else 0
-                val collapseFraction = ((it.price - min) / (max - min))
-                val color = MaterialTheme.colorScheme.tertiaryContainer
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxWidth()
-                        .padding(bottom = 4.dp)
-                        .background(color.copy(alpha = .95F))
-                        .height(40.dp)
-                        .shadow(.5.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(.45F + collapseFraction)
-                            .fillMaxHeight()
-                            .drawWithContent {
-                                drawContent() // normal içeriği çiz
-                                drawRect(
-                                    color = color,
-                                    size = Size(size.width - 10.dp.toPx(), size.height),
-                                    topLeft = Offset.Zero
-                                )
-                                drawRect(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(color, Color.Transparent),
-                                        startX = size.width - 10.dp.toPx(), // gradient 5dp alanda
-                                        endX = size.width
-                                    ),
-                                    size = Size(10.dp.toPx(), size.height),
-                                    topLeft = Offset(size.width - 10.dp.toPx(), 0f)
-                                )
-                            })
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            it.date.dateString() + " " + it.date.timeString(),
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
+    val min by remember(visibleList,showAllList) {
+        mutableFloatStateOf(visibleList.minBy { it.price }.price.toFloat())
+    }
+    Column(modifier = Modifier.padding(8.dp)) {
+
+        visibleList.forEachIndexed { index, it ->
+            val prevPrice = if (visibleList.size > index + 1) {
+                visibleList[index + 1].price
+            } else 0
+            val collapseFraction = ((it.price - min) / (max - min))
+            val color = MaterialTheme.colorScheme.tertiaryContainer
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 5.dp)
+                    .background(color.copy(alpha = .90F), RoundedCornerShape(2.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colorStops = arrayOf(
+                                0.5F to color,
+                                0.5F + collapseFraction to color.copy(alpha = .95F),
+                                0.5F + collapseFraction + 0.05F to Color.Transparent,
                             )
+                        ), RoundedCornerShape(2.dp)
+                    )
+                    .shadow(.5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1F)
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        it.date.dateString() + " " + it.date.timeString(),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 18.sp
                         )
-                        if (showPrice) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    it.price(),
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    ),
-                                )
-                                Icon(
-                                    if (prevPrice == it.price) {
-                                        Icons.AutoMirrored.Outlined.TrendingFlat
-                                    } else if (prevPrice < it.price) {
-                                        Icons.AutoMirrored.Outlined.TrendingUp
-                                    } else {
-                                        Icons.AutoMirrored.Outlined.TrendingDown
-                                    },
-                                    contentDescription = "trend",
-                                    modifier = Modifier
-                                        .padding(start = 4.dp)
-                                        .scale(.8F),
-                                    tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
-                                        alpha = .8F
-                                    )
-                                )
+                    )
+                    PriceStat(it)
+                }
+                Row(
+                    modifier = Modifier
+                        .weight(1F)
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    BasicText(
+                        it.price(),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        ),
+                        autoSize = TextAutoSize.StepBased(12.sp, 26.sp)
 
-                            }
-
+                    )
+                    Icon(
+                        if (prevPrice == it.price) {
+                            Icons.AutoMirrored.Outlined.TrendingFlat
+                        } else if (prevPrice < it.price) {
+                            Icons.AutoMirrored.Outlined.TrendingUp
                         } else {
-                            PriceStat(it)
-                        }
-                    }
+                            Icons.AutoMirrored.Outlined.TrendingDown
+                        },
+                        contentDescription = "trend",
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .scale(.8F),
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
+                            alpha = .8F
+                        )
+                    )
+
                 }
 
             }
+
         }
     }
+
     if (showAllList == false && priceListData.size > 10) {
         OutlinedButton(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            onClick = {
+                .padding(horizontal = 8.dp), onClick = {
                 showAllList = true
             }) {
             Text("Tüm Listeyi Göster")
@@ -920,22 +903,23 @@ fun PriceStat(
     color: Color = MaterialTheme.colorScheme.onTertiaryContainer
 ) {
     Row(
-        modifier = Modifier
-            .height(IntrinsicSize.Max),
+        modifier = Modifier.height(IntrinsicSize.Max),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val density = LocalDensity.current
+        val iconHeight = density.run { 12.sp.toDp() }
         Icon(
-            Icons.Filled.Star, "",
+            Icons.Filled.Star,
+            "",
             modifier = Modifier
-                .height(with(density) { 13.sp.toDp() })
+                .height(iconHeight)
                 .padding(end = 4.dp),
             tint = color.copy(alpha = .8F)
         )
         Text(
             price.star.toString(),
             color = color,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodySmall
         )
         VerticalDivider(
             modifier = Modifier
@@ -943,16 +927,17 @@ fun PriceStat(
                 .fillMaxHeight(.8F)
         )
         Icon(
-            Icons.Filled.ChatBubble, "",
+            Icons.Filled.ChatBubble,
+            "",
             modifier = Modifier
-                .height(with(density) { 13.sp.toDp() })
+                .height(iconHeight)
                 .padding(end = 4.dp),
             tint = color.copy(alpha = .8F)
         )
         Text(
             price.comment.toString(),
             color = color,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }

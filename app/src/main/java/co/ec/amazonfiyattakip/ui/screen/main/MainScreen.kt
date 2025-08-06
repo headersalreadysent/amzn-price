@@ -81,15 +81,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.ec.amazonfiyattakip.App.Companion.settings
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
+import co.ec.amazonfiyattakip.composables.ProductGrid
+import co.ec.amazonfiyattakip.composables.ProductGridPrices
 import co.ec.amazonfiyattakip.composables.Responsive
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.PermissionHelper
 import co.ec.amazonfiyattakip.helper.condition
+import co.ec.amazonfiyattakip.helper.lazyPadding
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.ExpertMode
 import co.ec.amazonfiyattakip.ui.LocalNavigation
@@ -149,14 +153,10 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         Responsive(
             phone = {
                 DealCountArea(dealCount)
-            }
-        )
+            })
         serverProducts?.let {
             ServerProductsArea(serverProducts)
         }
-
-
-
         HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
@@ -176,18 +176,19 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                     .padding(top = 8.dp)
             )
             productList?.let { products ->
-                val sort = listOf("Tarih", "Fiyat", "Son Güncelleme")
-                var activeSort by remember {
-                    mutableStateOf(
-                        settings.getString("mainActiveSort") ?: "Tarih"
-                    )
-                }
-                var sortDirection by remember {
-                    mutableIntStateOf(
-                        settings.getInt("mainActiveSortDirection", 1)
-                    )
-                }
+
                 if (products.isNotEmpty()) {
+                    val sort = listOf("Tarih", "Fiyat", "Son Güncelleme")
+                    var activeSort by remember {
+                        mutableStateOf(
+                            settings.getString("mainActiveSort") ?: "Tarih"
+                        )
+                    }
+                    var sortDirection by remember {
+                        mutableIntStateOf(
+                            settings.getInt("mainActiveSortDirection", 1)
+                        )
+                    }
                     TitleBar(
                         title = "Takip Ürünler",
                         modifier = Modifier
@@ -236,57 +237,25 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                 }
                             }
                         })
-                    BoxWithConstraints(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        val isCompact = maxWidth < 600.dp
-                        val boxCount = if (isCompact) 2 else 3
-                        var size by remember { mutableStateOf(0.dp) }
-                        val density = LocalDensity.current
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 8.dp)
-                                .padding(bottom = 30.dp)
-                                .onSizeChanged {
-                                    size = density.run { it.width.toDp() }
-                                },
-                            maxItemsInEachRow = boxCount,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            products.run {
-                                if (ExpertMode.current) {
-                                    //if there is a expert mode
-                                    val sorted = when (activeSort) {
-                                        "Tarih" -> sortedBy { it.product.date }
-                                        "Fiyat" -> sortedBy { it.product.price }
-                                        "Son Güncelleme" -> sortedBy { it.priceInfoList.lastOrNull()?.date }
-                                        else -> this
-                                    }
-                                    if (sortDirection == -1) sorted.reversed() else sorted
-                                } else this
-                            }.forEachIndexed { index, item ->
-                                val itemSize = (size - 8.dp * (boxCount - 1)) / boxCount
-                                Box(
-                                    modifier = Modifier
-                                        .width(itemSize)
-                                        .aspectRatio(2.5F)
-                                ) {
-                                    MainProductCard(item, onClick = {
-                                        navigation.navigate("detail/${item.product.id}")
-                                    },
-                                        )
-                                }
-
-
+                    products.run {
+                        if (ExpertMode.current) {
+                            //if there is a expert mode
+                            val sorted = when (activeSort) {
+                                "Tarih" -> sortedBy { it.product.date }
+                                "Fiyat" -> sortedBy { it.product.price }
+                                "Son Güncelleme" -> sortedBy { it.priceInfoList.lastOrNull()?.date }
+                                else -> this
                             }
-
-                        }
+                            if (sortDirection == -1) sorted.reversed() else sorted
+                        } else this
                     }
-
-                }
-                if (products.isEmpty()) {
+                    ProductGridPrices(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        productList = products
+                    )
+                } else {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -315,7 +284,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
         }
     }
 
-    var showTotal = settings.getBoolean("showBasketTotal", false)
+    val showTotal = settings.getBoolean("showBasketTotal", false)
     val height = if (showTotal) {
         Modifier.aspectRatio(3.5F)
     } else {
@@ -407,21 +376,16 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionArea() {
+    val settings = LocalSettings.current
+    val status = settings.getInt("notificationStatus", 0)
+    if (status == 1) {
+        //if status 1
+        return
+    }
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
         val notificationPermission = rememberPermissionState(
             permission = Manifest.permission.POST_NOTIFICATIONS
         )
-        val settings = LocalSettings.current
-        var notificationStatus by remember {
-            mutableIntStateOf(
-                settings.getInt(
-                    "notificationStatus", 0
-                )
-            )
-        }
-        if (notificationStatus == 1) {
-            return
-        }
         if (!notificationPermission.status.isGranted) {
             Column(
                 modifier = Modifier
@@ -440,7 +404,6 @@ fun PermissionArea() {
                 )
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(), onClick = {
-                        notificationStatus = 1
                         settings.putInt("notificationStatus", 1)
                         notificationPermission.launchPermissionRequest()
                     }) {
@@ -484,20 +447,15 @@ fun TopArea(lowPricedProducts: List<LowPriced>, dealCount: Int?) {
                 )
             }
         }
-        Responsive(
-            modifier = Modifier.weight(1F),
-            phone = {
-
-
+        Responsive(modifier = Modifier.weight(1F), phone = {
+            TitleArea()
+        }, tablet = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 TitleArea()
-            },
-            tablet = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TitleArea()
-                    Spacer(modifier = Modifier.weight(1F))
-                    DealCountArea(dealCount, true)
-                }
-            })
+                Spacer(modifier = Modifier.weight(1F))
+                DealCountArea(dealCount, true)
+            }
+        })
 
         if (lowPricedProducts.isNotEmpty()) {
             val navigation = LocalNavigation.current
@@ -573,7 +531,7 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                         .padding(horizontal = 8.dp),
                 )
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    val isCompact= maxWidth < 600.dp
+                    val isCompact = this.maxWidth < 600.dp
                     LazyRow(
                         modifier = Modifier.padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -584,13 +542,8 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                                 modifier = Modifier
                                     .fillParentMaxWidth(if (isCompact) .55F else .40F)
                                     .height(IntrinsicSize.Max)
-                                    .padding(
-                                        start = if (it == 0) 8.dp else 0.dp,
-                                        end = if (it == serverProducts.size - 1) 8.dp else 0.dp
-                                    )
-                                    .background(
-                                        MaterialTheme.colorScheme.tertiaryContainer, shape
-                                    )
+                                    .lazyPadding(it, serverProducts.size, 8.dp)
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer, shape)
                                     .clickable {
                                         navigator.navigate("add/${pair.first.asin}")
                                     }
@@ -667,8 +620,7 @@ fun DealCountArea(dealCount: Int? = null, shortStyle: Boolean = false) {
                     padding(8.dp)
                         .fillMaxWidth()
                         .background(
-                            MaterialTheme.colorScheme.primaryContainer,
-                            RoundedCornerShape(5.dp)
+                            MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(5.dp)
                         )
                 }
                 .clickable {
@@ -676,10 +628,10 @@ fun DealCountArea(dealCount: Int? = null, shortStyle: Boolean = false) {
                 }
                 .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+            verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Filled.LightbulbCircle, "",
+                Icons.Filled.LightbulbCircle,
+                "",
                 modifier = Modifier.condition(shortStyle) {
                     padding(end = 8.dp)
                 },
@@ -691,7 +643,6 @@ fun DealCountArea(dealCount: Int? = null, shortStyle: Boolean = false) {
                 )
             )
             if (!shortStyle) {
-
                 Spacer(modifier = Modifier.weight(1F))
             }
             Text(
@@ -711,54 +662,50 @@ fun SlowQueryArea(stat: Map<String, Int>) {
     if (PermissionHelper.isIgnoringBattery()) {
         return
     }
-    if (stat.containsKey("querySpan")) {
-        var span = stat["querySpan"]
-        var targetTime = LocalSettings.current.getInt("queryTime", 15) * 60
-        if (span != null) {
-            var visible by remember { mutableStateOf(true) }
-            if (span > targetTime * 1.1F && visible) {
-                LogHelper.i("querySpan $span $targetTime")
-                CutCornerCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
-                        .clickable {
-                            visible = false
-                            PermissionHelper.batteryPermission()
-                        }, colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+    stat["querySpan"]?.let { span ->
+        val targetTime = LocalSettings.current.getInt("queryTime", 15) * 60
+        var visible by remember { mutableStateOf(true) }
+        if (span > targetTime * 1.1F && visible) {
+            CutCornerCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .clickable {
+                        visible = false
+                        PermissionHelper.batteryPermission()
+                    }, colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+            ) {
+                val text = buildAnnotatedString {
+                    appendInlineContent("battery", " ")
+                    append(
+                        "Fiyat sorgulaması hedeflenen zamandan yavaş çalışıyor." + " Bu durum batarya optimizasyonundan kaynaklanıyor olabilir." + " Uygulamayı kısıtlanmamış ayarlayarak daha iyi sorgulama elde edebilirsiniz."
                     )
-                ) {
-                    val text = buildAnnotatedString {
-                        appendInlineContent("battery", " ")
-                        append(
-                            "Fiyat sorgulaması hedeflenen zamandan yavaş çalışıyor." + " Bu durum batarya optimizasyonundan kaynaklanıyor olabilir." + " Uygulamayı kısıtlanmamış ayarlayarak daha iyi sorgulama elde edebilirsiniz."
-                        )
-                    }
-                    Text(
-                        text,
-                        inlineContent = mapOf(
-                            "battery" to InlineTextContent(
-                                Placeholder(20.sp, 16.sp, PlaceholderVerticalAlign.Center)
-                            ) {
-                                Icon(
-                                    Icons.Default.BatteryAlert,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                )
-                            },
-                        ),
-                        modifier = Modifier.padding(8.dp),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            textAlign = TextAlign.Justify,
-                        )
-                    )
-
                 }
+                Text(
+                    text,
+                    inlineContent = mapOf(
+                        "battery" to InlineTextContent(
+                            Placeholder(20.sp, 16.sp, PlaceholderVerticalAlign.Center)
+                        ) {
+                            Icon(
+                                Icons.Default.BatteryAlert,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                        },
+                    ),
+                    modifier = Modifier.padding(8.dp),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        textAlign = TextAlign.Justify,
+                    )
+                )
+
+
             }
         }
-
     }
 }
 
