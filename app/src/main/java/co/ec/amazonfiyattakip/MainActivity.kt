@@ -1,6 +1,7 @@
 package co.ec.amazonfiyattakip
 
-import android.R.attr.onClick
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -8,17 +9,21 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
@@ -27,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -37,13 +43,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -231,35 +240,50 @@ fun AppContent(
             )
         }
     ) { screen ->
-        var cutCardHeight by remember { mutableIntStateOf(0) }
-        var screenHeight by remember { mutableIntStateOf(0) }
-        var size by remember { mutableStateOf(Size.Unspecified) }
-        val density = LocalDensity.current
-        with(density) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        bottom = (screen.calculateBottomPadding().value - 5).dp
-                    )
-                    .onSizeChanged {
-                        size = it.toSize()
-                        screenHeight = it.height
-                    }
-            ) {
-                ScreenContent(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height((screenHeight - cutCardHeight + 30.dp.toPx()).toDp()),
-                    startDestination = startDestination
-                )
-                val content by appModel.cutCardContent.observeAsState(null)
-                BottomCardContent(content, {
-                    cutCardHeight = it
-                })
+        val orientation = LocalConfiguration.current.orientation
+        val isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT
+        if(!isPortrait){
+            Column(modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center){
+                Icon(Icons.Filled.ScreenRotation,"", modifier = Modifier.size(80.dp).padding(bottom = 20.dp))
+                Text("Bu uygulama ekranın dikey modu için optimize edilmiştir.",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ))
             }
+        } else {
+            var cutCardHeight by remember { mutableIntStateOf(0) }
+            var screenHeight by remember { mutableIntStateOf(0) }
+            var size by remember { mutableStateOf(Size.Unspecified) }
+            val density = LocalDensity.current
+            with(density) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            bottom = (screen.calculateBottomPadding().value - 5).dp
+                        )
+                        .onSizeChanged {
+                            size = it.toSize()
+                            screenHeight = it.height
+                        }
+                ) {
+                    ScreenContent(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height((screenHeight - cutCardHeight + 30.dp.toPx()).toDp()),
+                        startDestination = startDestination
+                    )
+                    val content by appModel.cutCardContent.observeAsState(null)
+                    BottomCardContent(content, {
+                        cutCardHeight = it
+                    })
+                }
 
+            }
         }
+
     }
 
 }

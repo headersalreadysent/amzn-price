@@ -99,7 +99,6 @@ private val darkScheme = darkColorScheme(
 )
 
 
-
 private val mediumContrastLightColorScheme = lightColorScheme(
     primary = primaryLightMediumContrast,
     onPrimary = onPrimaryLightMediumContrast,
@@ -264,21 +263,41 @@ data class ColorFamily(
 val unspecified_scheme = ColorFamily(
     Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
 )
+
 @Composable
 fun AmazonFiyatTakipTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    var isSystemIsDark = isSystemInDarkTheme()
     val settings = LocalSettings.current
+    var darkTheme by remember {
+        mutableStateOf(
+            when (settings.getInt("darkTheme")) {
+                -1 -> true
+                0 -> isSystemIsDark
+                1 -> false
+                else -> isSystemIsDark
+            }
+        )
+    }
     var dynamicSettings by remember { mutableStateOf(settings.getBoolean("dynamicTheme")) }
-    var colorContrast by remember { mutableIntStateOf(settings.getInt("colorContrast",1)) }
+    var colorContrast by remember { mutableIntStateOf(settings.getInt("colorContrast", 1)) }
     LaunchedEffect(Unit) {
         EventBus.subscribe<SettingsHelper.SettingsChange> {
-            if(it.name=="dynamicTheme"){
-                dynamicSettings=it.value as Boolean
+            if (it.name == "dynamicTheme") {
+                dynamicSettings = it.value as Boolean
             }
-            if(it.name=="colorContrast"){
-                colorContrast=it.value as Int
+            if (it.name == "colorContrast") {
+                colorContrast = it.value as Int
+            }
+
+            if (it.name == "darkTheme") {
+                darkTheme = when (it.value) {
+                    -1 -> true
+                    0 -> isSystemIsDark
+                    1 -> false
+                    else -> isSystemIsDark
+                }
             }
         }
     }
@@ -287,16 +306,17 @@ fun AmazonFiyatTakipTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme && colorContrast==3 -> highContrastDarkColorScheme
-        !darkTheme && colorContrast==3 -> highContrastLightColorScheme
-        darkTheme && colorContrast==2 -> mediumContrastDarkColorScheme
-        !darkTheme && colorContrast==2 -> mediumContrastLightColorScheme
-        darkTheme && colorContrast==1 -> darkScheme
+
+        darkTheme && colorContrast == 3 -> highContrastDarkColorScheme
+        !darkTheme && colorContrast == 3 -> highContrastLightColorScheme
+        darkTheme && colorContrast == 2 -> mediumContrastDarkColorScheme
+        !darkTheme && colorContrast == 2 -> mediumContrastLightColorScheme
+        darkTheme && colorContrast == 1 -> darkScheme
         else -> lightScheme
     }
 
     MaterialTheme(
-        colorScheme =colorScheme,
+        colorScheme = colorScheme,
         typography = Typography,
         content = content
     )

@@ -61,7 +61,7 @@ fun PreviewProviders(
         LocalSnackbar provides snackbarHostState,
         ExpertMode provides settings.getBoolean("expertMode",true),
     ) {
-        AmazonFiyatTakipTheme(darkTheme = false) {
+        AmazonFiyatTakipTheme() {
             content()
         }
     }

@@ -110,6 +110,7 @@ class App : CnsynApp() {
             }
             putInt("appLastStart", unix().toInt())
             putInt("queryTime", getInt("queryTime", 15))
+            putInt("darkTheme", getInt("darkTheme", 0))
             putBoolean("dynamicTheme", getBoolean("dynamicTheme", false))
             putInt("colorContrast", getInt("colorContrast", 1))
             putBoolean("showBasketTotal", getBoolean("showBasketTotal", false))

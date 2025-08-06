@@ -17,10 +17,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -106,6 +109,7 @@ fun DateRow(
         horizontalArrangement = Arrangement.End
     ) {
         items(dateList.size) {
+            val density = LocalDensity.current
             val item = dateList[it]
             val calendar = Calendar.getInstance().apply {
                 timeInMillis = item.first * 1000 // Saniyeyi milisaniyeye çevir
@@ -113,12 +117,14 @@ fun DateRow(
             val dateName = calendar.get(Calendar.DAY_OF_MONTH).toString()
             val textColor =
                 if (ColorUtils.calculateLuminance(item.second.toArgb()) > 0.5) Color.Black else Color.White
+            var textHeight by remember { mutableStateOf(20.sp) }
             Column(
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
                     .fillParentMaxWidth(itemWeight),
                 verticalArrangement = Arrangement.Top
             ) {
+
                 Box(
                     modifier = Modifier
                         .padding(4.dp)
@@ -127,6 +133,11 @@ fun DateRow(
                         .background(item.second, shape = cutShape)
                         .clickable {
                             click(Pair(item.first.toInt(), item.third))
+                        }
+                        .onGloballyPositioned {
+                            textHeight=density.run {
+                                (it.size.height*.5F).toSp()
+                            }
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -134,6 +145,7 @@ fun DateRow(
                         text = dateName,
                         style = MaterialTheme.typography.bodyLarge.copy(
                             color = textColor,
+                            fontSize = textHeight,
                             fontWeight = FontWeight.SemiBold
                         )
                     )

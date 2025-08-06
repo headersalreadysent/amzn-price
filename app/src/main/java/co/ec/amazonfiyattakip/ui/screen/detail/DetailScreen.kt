@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -83,6 +84,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
@@ -95,6 +97,7 @@ import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
 import co.ec.amazonfiyattakip.composables.ProductBox
+import co.ec.amazonfiyattakip.composables.Responsive
 import co.ec.amazonfiyattakip.composables.TimeSpan
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
@@ -199,7 +202,7 @@ fun DetailScreen(
                 }
         ) {
             val scrollState = rememberScrollState()
-            val maxHeight = (size.value / 2F).dp
+            val maxHeight = (size.value / 2.5F).dp
             val minHeight = 90.dp
 
             val collapseRange = density.run { (maxHeight - minHeight).toPx() }
@@ -214,6 +217,7 @@ fun DetailScreen(
             ) {
                 ProductBox(product, height = animatedHeight)
             }
+
 
             Column(
                 modifier = Modifier
@@ -357,12 +361,15 @@ fun DetailScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
             }
+
             AppModel.cutCard(
                 modifier = Modifier
                     .then(
-                        if (priceListData.size > 2) Modifier.aspectRatio(5F) else Modifier.height(
-                            40.dp
-                        )
+                        if (priceListData.size > 2)
+                            Modifier.aspectRatio(5F) else
+                            Modifier.height(
+                                40.dp
+                            )
                     )
             ) {
                 PricesGraphWithDrag(

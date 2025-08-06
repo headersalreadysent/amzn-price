@@ -169,10 +169,12 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
                                     Text(it.first)
                                 },
                                 leadingContent = {
-                                    Icon(it.second, it.first,
+                                    Icon(
+                                        it.second, it.first,
                                         tint = if (settingsType == it.first)
                                             MaterialTheme.colorScheme.primary
-                                        else Color.Black)
+                                        else Color.Black
+                                    )
                                 },
                                 colors = ListItemDefaults.colors(
                                     containerColor = if (settingsType == it.first)
@@ -281,6 +283,12 @@ fun SettingActionList(model: SettingsViewModel, isPhone: Boolean = true, type: S
                 var dynamicTheme by remember {
                     mutableStateOf(settings().getBoolean("dynamicTheme"))
                 }
+                SettingsDropdown(
+                    name = "darkTheme",
+                    default = 1,
+                    title = "Karanlık Tema",
+                    values = mapOf(-1 to "Karanlık", 0 to "Sistem", 1 to "Aydınlık")
+                )
                 SettingsToggle(
                     name = "dynamicTheme",
                     default = false,
@@ -509,7 +517,7 @@ fun SettingActionList(model: SettingsViewModel, isPhone: Boolean = true, type: S
                     fontWeight = FontWeight.SemiBold
                 )
             )
-            if(isPhone){
+            if (isPhone) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -822,6 +830,7 @@ fun SettingsDropdown(
                                 DropdownMenuItem(
                                     text = { Text(item.value) },
                                     onClick = {
+                                        selectedItem = item.key
                                         settingsValue = item.key
                                         expanded = false
                                     }

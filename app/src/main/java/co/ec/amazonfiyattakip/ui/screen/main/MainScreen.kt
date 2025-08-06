@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -82,10 +84,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
+import co.ec.amazonfiyattakip.composables.Responsive
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.LowPriced
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.helper.PermissionHelper
+import co.ec.amazonfiyattakip.helper.condition
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.ui.ExpertMode
 import co.ec.amazonfiyattakip.ui.LocalNavigation
@@ -138,11 +142,15 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             }
             onDispose { }
         }
-        TopArea(lowPricedProducts)
+        TopArea(lowPricedProducts, dealCount)
         stats?.let { stat ->
             SlowQueryArea(stat)
         }
-        DealCountArea(dealCount)
+        Responsive(
+            phone = {
+                DealCountArea(dealCount)
+            }
+        )
         serverProducts?.let {
             ServerProductsArea(serverProducts)
         }
@@ -203,8 +211,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                             } else {
                                                 sortDirection = 1
                                                 val index = sort.indexOf(activeSort)
-                                                activeSort =
-                                                    sort.getOrNull(index + 1) ?: sort[0]
+                                                activeSort = sort.getOrNull(index + 1) ?: sort[0]
                                                 settings.putString("mainActiveSort", activeSort)
                                             }
                                             settings.putInt(
@@ -268,7 +275,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                 ) {
                                     MainProductCard(item, onClick = {
                                         navigation.navigate("detail/${item.product.id}")
-                                    })
+                                    },
+                                        )
                                 }
 
 
@@ -292,8 +300,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                                 .fillMaxWidth()
                                 .padding(bottom = 8.dp),
                             style = MaterialTheme.typography.bodySmall.copy(
-                                textAlign = TextAlign.Center,
-                                fontStyle = FontStyle.Italic
+                                textAlign = TextAlign.Center, fontStyle = FontStyle.Italic
                             )
                         )
                         Button(onClick = {
@@ -408,8 +415,7 @@ fun PermissionArea() {
         var notificationStatus by remember {
             mutableIntStateOf(
                 settings.getInt(
-                    "notificationStatus",
-                    0
+                    "notificationStatus", 0
                 )
             )
         }
@@ -429,20 +435,19 @@ fun PermissionArea() {
                         .fillMaxWidth()
                         .padding(bottom = 4.dp),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.SemiBold
+                        textAlign = TextAlign.Center, fontWeight = FontWeight.SemiBold
                     )
                 )
                 OutlinedButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
+                    modifier = Modifier.fillMaxWidth(), onClick = {
                         notificationStatus = 1
                         settings.putInt("notificationStatus", 1)
                         notificationPermission.launchPermissionRequest()
                     }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Default.Notifications, "notification",
+                            Icons.Default.Notifications,
+                            "notification",
                             modifier = Modifier.scale(.5F)
                         )
                         Text("Bildirimlere İzin Ver")
@@ -456,7 +461,7 @@ fun PermissionArea() {
 }
 
 @Composable
-fun TopArea(lowPricedProducts: List<LowPriced>) {
+fun TopArea(lowPricedProducts: List<LowPriced>, dealCount: Int?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -464,18 +469,36 @@ fun TopArea(lowPricedProducts: List<LowPriced>) {
             .padding(8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column {
-            Text(
-                "Amazon", style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 30.sp
+        @Composable
+        fun TitleArea() {
+            Column {
+                Text(
+                    "Amazon", style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 30.sp
+                    )
                 )
-            )
-            Text(
-                "Fiyat Takibi", style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 14.sp, lineHeight = 12.sp
-                ), modifier = Modifier.offset(y = (-3).dp)
-            )
+                Text(
+                    "Fiyat Takibi", style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 14.sp, lineHeight = 12.sp
+                    ), modifier = Modifier.offset(y = (-3).dp)
+                )
+            }
         }
+        Responsive(
+            modifier = Modifier.weight(1F),
+            phone = {
+
+
+                TitleArea()
+            },
+            tablet = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TitleArea()
+                    Spacer(modifier = Modifier.weight(1F))
+                    DealCountArea(dealCount, true)
+                }
+            })
+
         if (lowPricedProducts.isNotEmpty()) {
             val navigation = LocalNavigation.current
             Column(
@@ -550,6 +573,7 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                         .padding(horizontal = 8.dp),
                 )
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val isCompact= maxWidth < 600.dp
                     LazyRow(
                         modifier = Modifier.padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -558,7 +582,7 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                             val pair = serverProducts[it]
                             Box(
                                 modifier = Modifier
-                                    .fillParentMaxWidth(if (maxWidth < 600.dp) .55F else .40F)
+                                    .fillParentMaxWidth(if (isCompact) .55F else .40F)
                                     .height(IntrinsicSize.Max)
                                     .padding(
                                         start = if (it == 0) 8.dp else 0.dp,
@@ -622,30 +646,54 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
 }
 
 @Composable
-fun DealCountArea(dealCount: Int? = null) {
+fun DealCountArea(dealCount: Int? = null, shortStyle: Boolean = false) {
     val navigation = LocalNavigation.current
     AnimatedVisibility(
         visible = (dealCount ?: 0) > 0, enter = fadeIn() + expandVertically()
     ) {
         Row(
             modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .condition(shortStyle) {
+                    padding(end = 20.dp)
+                        .padding(8.dp)
+                        .wrapContentWidth()
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = .5F),
+                            RoundedCornerShape(5.dp)
+                        )
+                }
+                .condition(!shortStyle) {
+                    padding(8.dp)
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            RoundedCornerShape(5.dp)
+                        )
+                }
                 .clickable {
                     navigation.navigate("find")
                 }
                 .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.LightbulbCircle, "")
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.LightbulbCircle, "",
+                modifier = Modifier.condition(shortStyle) {
+                    padding(end = 8.dp)
+                },
+                tint = if (shortStyle) MaterialTheme.colorScheme.primary else LocalContentColor.current
+            )
             Text(
-                "Fırsatları takip et.",
-                style = MaterialTheme.typography.bodyLarge.copy(
+                "Fırsatları takip et.", style = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-            Spacer(modifier = Modifier.weight(1F))
+            if (!shortStyle) {
+
+                Spacer(modifier = Modifier.weight(1F))
+            }
             Text(
                 "$dealCount",
                 modifier = Modifier.padding(horizontal = 8.dp),
@@ -692,7 +740,7 @@ fun SlowQueryArea(stat: Map<String, Int>) {
                         text,
                         inlineContent = mapOf(
                             "battery" to InlineTextContent(
-                                Placeholder(11.sp, 11.sp, PlaceholderVerticalAlign.Center)
+                                Placeholder(20.sp, 16.sp, PlaceholderVerticalAlign.Center)
                             ) {
                                 Icon(
                                     Icons.Default.BatteryAlert,
@@ -702,8 +750,8 @@ fun SlowQueryArea(stat: Map<String, Int>) {
                             },
                         ),
                         modifier = Modifier.padding(8.dp),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            textAlign = TextAlign.Justify, fontSize = 11.sp
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.Justify,
                         )
                     )
 

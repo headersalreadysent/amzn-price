@@ -1,5 +1,7 @@
 package co.ec.amazonfiyattakip.ui.part
 
+import android.R.attr.maxLines
+import androidx.activity.SystemBarStyle.Companion.auto
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,7 +93,7 @@ fun MainProductCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(.8F)
+                    .fillMaxHeight(if(ExpertMode.current) .8F else .95F)
             ) {
 
                 val text = buildAnnotatedString {
@@ -117,8 +119,8 @@ fun MainProductCard(
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp)
                         .padding(top = 8.dp),
-                    style = TextStyle(
-                        lineHeight = 18.sp,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        lineHeight = 22.sp,
                         shadow = Shadow(MaterialTheme.colorScheme.primary, Offset(1F, 1F), 1F),
                     ),
                     maxLines = 2,
