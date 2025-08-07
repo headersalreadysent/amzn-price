@@ -81,8 +81,7 @@ fun PriceListArea(
     val min by remember(visibleList, showAllList) {
         mutableFloatStateOf(visibleList.minBy { it.price }.price.toFloat())
     }
-    Column(modifier = Modifier.padding(8.dp)) {
-
+    Column(modifier = Modifier.padding(horizontal = 8.dp)) {
         visibleList.forEachIndexed { index, it ->
             val prevPrice = if (visibleList.size > index + 1) {
                 visibleList[index + 1].price
@@ -92,7 +91,8 @@ fun PriceListArea(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 5.dp)
+                    .padding(bottom = 6.dp)
+                    .shadow(4.dp)
                     .background(color.copy(alpha = .90F), RoundedCornerShape(2.dp))
                     .background(
                         Brush.horizontalGradient(
@@ -102,8 +102,7 @@ fun PriceListArea(
                                 0.5F + collapseFraction + 0.05F to Color.Transparent,
                             )
                         ), RoundedCornerShape(2.dp)
-                    )
-                    .shadow(.5.dp),
+                    ),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -178,7 +177,7 @@ fun PriceListArea(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
 private fun PriceListPreview() {
     PreviewProviders {
         val product = Product.fake()

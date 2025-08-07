@@ -173,14 +173,15 @@ fun ProductScreen(
                 .padding(8.dp),
             onClick = {
                 saveProduct()
-            }, colors = ButtonDefaults.outlinedButtonColors(
+            },
+            colors = ButtonDefaults.outlinedButtonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
-            ), shape = RoundedCornerShape(25)
+            ),
+            shape = RoundedCornerShape(3.dp)
         ) {
             Icon(
-                Icons.Filled.Save,
-                "",
+                Icons.Filled.Save, "",
                 modifier = Modifier.padding(end = 8.dp)
             )
             Text(

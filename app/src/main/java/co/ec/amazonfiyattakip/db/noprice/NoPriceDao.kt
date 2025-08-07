@@ -34,6 +34,10 @@ interface NoPriceDao {
     @Query("DELETE FROM noprice WHERE productId=:productId")
     fun deleteByProductId(productId: Int)
 
+    data class NoPriceControl(val count:Int,val date:Long)
+    @Query("SELECT count(id) AS count,min(date) AS date FROM noprice WHERE productId=:productId")
+    fun controlProduct(productId: Int): NoPriceControl?
+
 
 }
 

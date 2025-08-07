@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,7 +42,7 @@ import kotlin.random.Random
 @Composable
 fun DateRow(
     priceList: Map<Int, Int>,
-    baseColor: Color = MaterialTheme.colorScheme.primary,
+    baseColor: Color = MaterialTheme.colorScheme.secondaryContainer,
     passiveColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     itemCount: Int = 10,
     click: (pair: Pair<Int, Int>) -> Unit = {}
@@ -115,8 +116,7 @@ fun DateRow(
                 timeInMillis = item.first * 1000 // Saniyeyi milisaniyeye çevir
             }
             val dateName = calendar.get(Calendar.DAY_OF_MONTH).toString()
-            val textColor =
-                if (ColorUtils.calculateLuminance(item.second.toArgb()) > 0.5) Color.Black else Color.White
+            val textColor = if (ColorUtils.calculateLuminance(item.second.toArgb()) > 0.5) Color.Black else Color.White
             var textHeight by remember { mutableStateOf(20.sp) }
             Column(
                 modifier = Modifier

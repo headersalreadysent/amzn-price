@@ -2,6 +2,8 @@ package co.ec.amazonfiyattakip.ui.screen.detail
 
 import android.R.attr.maxHeight
 import android.R.attr.minHeight
+import android.R.attr.visible
+import android.system.Os.stat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -24,12 +26,15 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingFlat
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
@@ -42,6 +47,7 @@ import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAltOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -49,6 +55,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
@@ -80,6 +87,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -104,15 +113,18 @@ import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.Responsive
 import co.ec.amazonfiyattakip.composables.TimeSpan
 import co.ec.amazonfiyattakip.composables.cutShape
+import co.ec.amazonfiyattakip.db.noprice.NoPriceDao
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
+import co.ec.amazonfiyattakip.helper.PermissionHelper
 import co.ec.amazonfiyattakip.helper.predictFunction
 import co.ec.amazonfiyattakip.helper.predictNextPrices
 import co.ec.amazonfiyattakip.helper.price
 import co.ec.amazonfiyattakip.helper.rememberBlink
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.LocalNavigation
+import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.SetIconColorEvent
 import co.ec.amazonfiyattakip.ui.part.FakeDetailScreen
@@ -256,18 +268,17 @@ fun DetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp)
-                                .padding(bottom = 4.dp)
                         )
+
                         OutlinedButton(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(8.dp),
-                            onClick = {
+                                .padding(8.dp), onClick = {
                                 urlHandler.openUri(AmznScrape.urlFromAsin(product.asin))
                             }, colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
-                            ), shape = RoundedCornerShape(25)
+                            ), shape = RoundedCornerShape(3.dp)
                         ) {
                             Row(
                                 horizontalArrangement = Arrangement.Center,
@@ -295,6 +306,7 @@ fun DetailScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp)
+                                    .padding(bottom = 8.dp)
                                     .clickable(
                                         indication = null, interactionSource = null
                                     ) {
@@ -321,6 +333,11 @@ fun DetailScreen(
                                         tint = MaterialTheme.colorScheme.secondary
                                     )
                                 })
+
+                            val noPriceControl by model.noPriceControl.observeAsState(null)
+                            noPriceControl?.let {
+                                NoPriceAlert(it)
+                            }
                             PriceListArea(priceListData)
                         }
                     }
@@ -352,8 +369,7 @@ fun DetailScreen(
                             append(product.description)
                         }, style = MaterialTheme.typography.bodyMedium.copy(
                             textAlign = TextAlign.Justify
-                        ),
-                        modifier = Modifier.padding(8.dp)
+                        ), modifier = Modifier.padding(8.dp)
                     )
                 }
 
@@ -395,6 +411,37 @@ fun DetailScreen(
             }
         }
     }
+
+}
+
+@Composable
+fun NoPriceAlert(info: NoPriceDao.NoPriceControl) {
+
+    Text(
+        buildAnnotatedString {
+            append("Amazon fiyat politikalarından dolayı, bu ürün için ")
+            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) {
+                append(info.date.dateString() + " " + info.date.timeString())
+            }
+            append(" tarihinden itibaren ")
+            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) {
+                append(info.count.toString())
+            }
+            append(" sorgulamada fiyat bulunamadı.")
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .padding(bottom = 6.dp)
+            .shadow(4.dp)
+            .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(2.dp))
+            .padding(8.dp),
+        style = MaterialTheme.typography.bodyMedium.copy(
+            textAlign = TextAlign.Justify,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            fontWeight = FontWeight.Medium
+        )
+    )
 
 }
 
@@ -443,13 +490,13 @@ fun TreePriceRow(
     val min = (prices.minOfOrNull { it.price } ?: 0)
     val max = (prices.maxOfOrNull { it.price } ?: 0)
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         val columnModifier =
             Modifier
                 .weight(1F)
-                .background(containerColor)
+                .background(containerColor, RoundedCornerShape(1.dp))
                 .padding(4.dp)
                 .padding(top = 4.dp)
         val titleStyle = MaterialTheme.typography.bodyMedium.copy(
@@ -553,11 +600,7 @@ fun PricesGraphWithDrag(prices: List<PriceInfo> = listOf()) {
 @Composable
 fun CalendarPriceDataArea(prices: List<PriceInfo>) {
     if (prices.isNotEmpty()) {
-        TitleBar(
-            title = "Günlük Fiyatlar", modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        )
+
         DateRow(
             priceList = prices.associate { Pair(it.date.toInt(), it.price) },
         ) {
@@ -576,53 +619,7 @@ fun CalendarPriceDataArea(prices: List<PriceInfo>) {
 @Composable
 fun PricePredictionArea(prices: List<PriceInfo>) {
     if (prices.size > 20) {
-        val predict by remember {
-            mutableStateOf(predictNextPrices(prices))
-        }
-        val predictFunction by remember {
-            mutableStateOf(predictFunction(prices))
-        }
-        var showDialog by remember { mutableStateOf(false) }
-        if (showDialog) {
-            AlertDialog(text = {
-                Column {
-                    Text(
-                        text = "Fiyat tahmini bilgisi sınırlı bir tahmin olup, regresyon hesaplaması ile bulunmaktadır.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            textAlign = TextAlign.Justify
-                        )
-                    )
-                    Text(
-                        "Tahmin Fonksiyonu",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            textAlign = TextAlign.Start
-                        )
-                    )
-                    Text(
-                        predict.second,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            textAlign = TextAlign.Start
-                        )
-                    )
-                }
-            }, onDismissRequest = {
-                showDialog = false
-            }, confirmButton = {}, dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDialog = false
-                    }) {
-                    Text("Kapat")
-                }
-            })
-        }
-
+        val predict by remember { mutableStateOf(predictNextPrices(prices)) }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -636,11 +633,15 @@ fun PricePredictionArea(prices: List<PriceInfo>) {
                     Icon(
                         Icons.Filled.Info,
                         "",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.secondaryContainer,
                         modifier = Modifier
                             .scale(.8F)
                             .clickable {
-                                showDialog = true
+                                App.snack(
+                                    "Fiyat tahmini bilgisi sınırlı bir tahmin olup, regresyon hesaplaması ile bulunmaktadır.\n" +
+
+                                            predict.second, SnackbarDuration.Long
+                                )
                             })
                 })
 
@@ -788,8 +789,7 @@ fun ModalContent(model: DetailViewModel, product: Product, latestQuery: Long) {
 
 @Composable
 fun PriceStat(
-    price: PriceInfo,
-    color: Color = MaterialTheme.colorScheme.onTertiaryContainer
+    price: PriceInfo, color: Color = MaterialTheme.colorScheme.onTertiaryContainer
 ) {
     Row(
         modifier = Modifier.height(IntrinsicSize.Max),
@@ -806,9 +806,7 @@ fun PriceStat(
             tint = color.copy(alpha = .8F)
         )
         Text(
-            price.star.toString(),
-            color = color,
-            style = MaterialTheme.typography.bodySmall
+            price.star.toString(), color = color, style = MaterialTheme.typography.bodySmall
         )
         VerticalDivider(
             modifier = Modifier
@@ -824,9 +822,7 @@ fun PriceStat(
             tint = color.copy(alpha = .8F)
         )
         Text(
-            price.comment.toString(),
-            color = color,
-            style = MaterialTheme.typography.bodySmall
+            price.comment.toString(), color = color, style = MaterialTheme.typography.bodySmall
         )
     }
 }

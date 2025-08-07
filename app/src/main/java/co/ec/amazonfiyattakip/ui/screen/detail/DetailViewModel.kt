@@ -8,6 +8,7 @@ import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.FireDB.ProductSync
+import co.ec.amazonfiyattakip.db.noprice.NoPriceDao
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.db.product.ProductStatus
@@ -24,6 +25,7 @@ open class DetailViewModel : ViewModel() {
 
     val product = MutableLiveData<Product>()
     val prices = MutableLiveData<List<PriceInfo>>()
+    val noPriceControl = MutableLiveData<NoPriceDao.NoPriceControl>()
 
     init {
         viewModelScope.launch {
@@ -41,13 +43,16 @@ open class DetailViewModel : ViewModel() {
     fun loadProduct(productId: Int, refresh: Boolean = true) {
         viewModelScope.launch {
             val productData = withContext(Dispatchers.IO) {
-                Pair(
+                Triple(
                     AppDatabase.getDatabase().product().getProduct(productId),
-                    AppDatabase.getDatabase().priceInfo().getPricesByProduct(productId)
+                    AppDatabase.getDatabase().priceInfo().getPricesByProduct(productId),
+                    AppDatabase.getDatabase().noPrice().controlProduct(productId)
                 )
             }
             product.value = productData.first
             prices.value = productData.second
+            noPriceControl.value=productData.third
+
 
             if (refresh) {
                 withContext(Dispatchers.IO) {
@@ -146,6 +151,7 @@ open class DetailViewModel : ViewModel() {
                 price = price.toInt()
             )
         }
+        noPriceControl.value = NoPriceDao.NoPriceControl(20,unix())
     }
 
 
