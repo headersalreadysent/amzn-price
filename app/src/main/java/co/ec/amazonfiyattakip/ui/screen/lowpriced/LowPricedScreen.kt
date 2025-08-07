@@ -349,7 +349,7 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                         selectedStat = it
                     })
                 }
-                if (showAll == false) {
+                if (!showAll) {
                     TextButton(
                         modifier = Modifier
                             .fillMaxWidth(.6F)
@@ -363,13 +363,7 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                     }
                 }
 
-                if (noPriceProducts.isNotEmpty()) {
-                    ProductGrid(
-                        productList = noPriceProducts,
-                        title = "Fiyatsız Ürünler",
-                        description = "Amazon standartlarına göre fiyatı uygun olmadığı için satışta görünmeyen ürünlerdir."
-                    )
-                }
+
 
                 val cheapProducts by remember {
                     mutableStateOf(
@@ -386,8 +380,13 @@ fun LowPricedScreen(model: LowPricedViewModel = viewModel()) {
                         title = "Ucuz Ürünler"
                     )
                 }
-
-
+                if (noPriceProducts.isNotEmpty()) {
+                    ProductGrid(
+                        productList = noPriceProducts,
+                        title = "Fiyatsız Ürünler",
+                        description = "Amazon standartlarına göre fiyatı uygun olmadığı için satışta görünmeyen ürünlerdir."
+                    )
+                }
                 val expensiveProducts by remember {
                     mutableStateOf(
                         filteredList(
@@ -833,6 +832,18 @@ fun ModalContent() {
                     )
                 )
             }
+            fun nameValue(name: String, value: Int): AnnotatedString {
+                return buildAnnotatedString {
+                    append("$name: ")
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.SemiBold, fontSize = 16.sp
+                        )
+                    ) {
+                        append(value.price())
+                    }
+                }
+            }
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     nameValue(
@@ -907,18 +918,7 @@ fun ModalContent() {
     }
 }
 
-fun nameValue(name: String, value: Int): AnnotatedString {
-    return buildAnnotatedString {
-        append("$name: ")
-        withStyle(
-            style = SpanStyle(
-                fontWeight = FontWeight.SemiBold, fontSize = 16.sp
-            )
-        ) {
-            append(value.price())
-        }
-    }
-}
+
 
 
 @Preview(showBackground = true)

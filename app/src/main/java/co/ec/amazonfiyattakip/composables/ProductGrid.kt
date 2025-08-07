@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
@@ -97,36 +100,34 @@ fun ProductGridPrices(
         ) {
             val isCompact = this.maxWidth < 600.dp
             val boxCount = if (isCompact) 2 else 3
-            var itemSize by remember { mutableStateOf(0.dp) }
 
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .onSizeChanged {
-                        val width = density.run { it.width.toDp() }
-                        if (width > 0.dp) {
-                            itemSize = (width - 8.dp * (boxCount - 1)) / boxCount
-                        }
-                    },
-                maxItemsInEachRow = boxCount,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                productList.forEachIndexed { index, item ->
-
-                    Box(
-                        modifier = Modifier
-                            .width(itemSize)
-                            .aspectRatio(2.5F)
+            Column {
+                productList.chunked(boxCount).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        MainProductCard(item, onClick = {
-                            navigation.navigate("detail/${item.product.id}")
-                        })
-                    }
-                }
+                        rowItems.forEach { item ->
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(2.5F)
+                            ) {
+                                MainProductCard(item, onClick = {
+                                    navigation.navigate("detail/${item.product.id}")
+                                })
+                            }
+                        }
 
+                        // boş kutu ekle (satır tamamlanmazsa)
+                        repeat(boxCount - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
+
         }
 
 

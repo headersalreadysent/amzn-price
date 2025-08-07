@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,7 +24,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
@@ -68,7 +66,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -81,11 +78,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import co.ec.amazonfiyattakip.App.Companion.settings
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
-import co.ec.amazonfiyattakip.composables.ProductGrid
 import co.ec.amazonfiyattakip.composables.ProductGridPrices
 import co.ec.amazonfiyattakip.composables.Responsive
 import co.ec.amazonfiyattakip.composables.cutShape
@@ -99,15 +94,11 @@ import co.ec.amazonfiyattakip.ui.ExpertMode
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
-import co.ec.amazonfiyattakip.ui.part.MainProductCard
 import co.ec.amazonfiyattakip.ui.part.ProductImage
 import co.ec.amazonfiyattakip.ui.part.TitleBar
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraph
 import co.ec.amazonfiyattakip.ui.part.graph.PriceGraphPair
-import co.ec.helper.composable.AutoText
-import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.dateString
-import coil.util.Logger
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -147,16 +138,12 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
             onDispose { }
         }
         TopArea(lowPricedProducts, dealCount)
-        stats?.let { stat ->
-            SlowQueryArea(stat)
-        }
-        Responsive(
-            phone = {
-                DealCountArea(dealCount)
-            })
-        serverProducts?.let {
-            ServerProductsArea(serverProducts)
-        }
+        SlowQueryArea(stats)
+        Responsive(phone = {
+            DealCountArea(dealCount)
+        })
+        ServerProductsArea(serverProducts)
+
         HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
@@ -170,11 +157,7 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 .verticalScroll(rememberScrollState())
         ) {
             PermissionArea()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            )
+            Spacer(modifier = Modifier.fillMaxWidth().padding(top=8.dp))
             productList?.let { products ->
 
                 if (products.isNotEmpty()) {
@@ -255,6 +238,8 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                             .padding(horizontal = 8.dp),
                         productList = products
                     )
+
+                    Spacer(modifier = Modifier.fillMaxWidth().height(30.dp))
                 } else {
                     Column(
                         modifier = Modifier
@@ -658,11 +643,11 @@ fun DealCountArea(dealCount: Int? = null, shortStyle: Boolean = false) {
 }
 
 @Composable
-fun SlowQueryArea(stat: Map<String, Int>) {
+fun SlowQueryArea(stat: Map<String, Int>?) {
     if (PermissionHelper.isIgnoringBattery()) {
         return
     }
-    stat["querySpan"]?.let { span ->
+    stat?.get("querySpan")?.let { span ->
         val targetTime = LocalSettings.current.getInt("queryTime", 15) * 60
         var visible by remember { mutableStateOf(true) }
         if (span > targetTime * 1.1F && visible) {
