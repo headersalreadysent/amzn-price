@@ -1,5 +1,3 @@
-import com.android.tools.build.bundletool.model.utils.files.BufferedIo.inputStream
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -114,4 +112,9 @@ dependencies {
 
 
 
+}
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
