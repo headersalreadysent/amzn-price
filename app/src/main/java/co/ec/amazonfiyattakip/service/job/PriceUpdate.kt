@@ -236,7 +236,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 LogHelper.d("${product.title} price dropped", JOBTAG)
                 NotificationHelper.showNotification(
                     product,
-                    "${priceInfo.price.price()} ${product.title} fiyatı ortalamanın altına düştü.",
+                    "Fiyat düştü. ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın altına düştü.",
                     "Son ortalama fiyat ${latestAverage.avgPrice.price()}",
                     R.drawable.trending_down
                 )
@@ -245,7 +245,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 LogHelper.d("${product.title} price increased", JOBTAG)
                 NotificationHelper.showNotification(
                     product,
-                    "${priceInfo.price.price()} ${product.title} fiyatı ortalamanın üstüne yükseldi.",
+                    "Fiyat yükseldi. ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın üstüne yükseldi.",
                     "Son ortalama fiyat ${latestAverage.avgPrice.price()}",
                     R.drawable.trending_up
                 )
