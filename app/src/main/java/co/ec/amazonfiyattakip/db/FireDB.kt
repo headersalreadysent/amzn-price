@@ -17,6 +17,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.concurrent.thread
+import kotlin.jvm.java
 
 
 object FireDB {
@@ -169,6 +170,57 @@ object FireDB {
             }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    suspend fun getByAsin(asin: String): ProductWithPrices? {
+
+        //first get product
+        return try {
+            val snapshot = Firebase.firestore.collection("products")
+                .whereEqualTo("asin", asin)
+                .limit(1)
+                .get()
+                .await()
+            snapshot.documents.firstOrNull()?.toObject(ProductRecord::class.java)?.let {
+                val price = (it.prices?.lastOrNull() ?: "0|0|0|0|").split("|")
+                var lastPrice = 0
+                ProductWithPrices(
+                    product = Product(
+                        id = 0,
+                        asin = it.asin,
+                        date = it.latestUpdate,
+                        title = it.title,
+                        description = it.description,
+                        price = price[1].toInt(),
+                        star = price[2].toDouble(),
+                        comment = price[3].toInt(),
+                        image = it.image,
+                        extras = it.extras,
+                        nextRunTime = unix(),
+                        timeSpan = 60,
+                        errorCount = 0,
+                        status = ProductStatus.ACTIVE
+                    ),
+                    priceInfoList = it.prices?.map {
+                        // "${it.date}|${it.price}|${it.star}|${it.comment}"
+                        val pricePart = it.split("|")
+                        val changed = pricePart[1].toInt() - lastPrice
+                        lastPrice = pricePart[1].toInt()
+                        PriceInfo(
+                            id = 0,
+                            date = pricePart[0].toLong(),
+                            productId = 0,
+                            asin = asin,
+                            price = pricePart[1].toInt(),
+                            star = pricePart[2].toDouble(),
+                            comment = pricePart[3].toInt(),
+                            priceChanged = changed,
+                        )
+                    } ?: emptyList())
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 

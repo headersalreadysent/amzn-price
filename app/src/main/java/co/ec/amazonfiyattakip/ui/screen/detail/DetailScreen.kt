@@ -99,6 +99,7 @@ import co.ec.amazonfiyattakip.composables.CutCorner
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.DateRow
 import co.ec.amazonfiyattakip.composables.ExtrasArea
+import co.ec.amazonfiyattakip.composables.PriceListArea
 import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.Responsive
 import co.ec.amazonfiyattakip.composables.TimeSpan
@@ -298,7 +299,7 @@ fun DetailScreen(
                                         indication = null, interactionSource = null
                                     ) {
                                         showOnlyChanges = !showOnlyChanges
-                                        if(showOnlyChanges){
+                                        if (showOnlyChanges) {
                                             App.snack("Sadece fiyat değişimleri gösteriliyor.")
                                         } else {
                                             App.snack("Tüm sorgulamalar gösteriliyor.")
@@ -784,118 +785,6 @@ fun ModalContent(model: DetailViewModel, product: Product, latestQuery: Long) {
 
 }
 
-/**
- * prices list area
- */
-@Composable
-fun PriceListArea(priceListData: List<PriceInfo>) {
-    var showAllList by remember { mutableStateOf(false) }
-    val visibleList by remember {
-        mutableStateOf(priceListData.reversed().let {
-            if (it.size > 10 && !showAllList) it.slice(0..10)
-            else it
-        })
-    }
-
-    val max by remember(visibleList,showAllList) {
-        mutableFloatStateOf(visibleList.maxBy { it.price }.price.toFloat())
-    }
-
-    val min by remember(visibleList,showAllList) {
-        mutableFloatStateOf(visibleList.minBy { it.price }.price.toFloat())
-    }
-    Column(modifier = Modifier.padding(8.dp)) {
-
-        visibleList.forEachIndexed { index, it ->
-            val prevPrice = if (visibleList.size > index + 1) {
-                visibleList[index + 1].price
-            } else 0
-            val collapseFraction = ((it.price - min) / (max - min))
-            val color = MaterialTheme.colorScheme.tertiaryContainer
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 5.dp)
-                    .background(color.copy(alpha = .90F), RoundedCornerShape(2.dp))
-                    .background(
-                        Brush.horizontalGradient(
-                            colorStops = arrayOf(
-                                0.5F to color,
-                                0.5F + collapseFraction to color.copy(alpha = .95F),
-                                0.5F + collapseFraction + 0.05F to Color.Transparent,
-                            )
-                        ), RoundedCornerShape(2.dp)
-                    )
-                    .shadow(.5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1F)
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        it.date.dateString() + " " + it.date.timeString(),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 18.sp
-                        )
-                    )
-                    PriceStat(it)
-                }
-                Row(
-                    modifier = Modifier
-                        .weight(1F)
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    BasicText(
-                        it.price(),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        ),
-                        autoSize = TextAutoSize.StepBased(12.sp, 26.sp)
-
-                    )
-                    Icon(
-                        if (prevPrice == it.price) {
-                            Icons.AutoMirrored.Outlined.TrendingFlat
-                        } else if (prevPrice < it.price) {
-                            Icons.AutoMirrored.Outlined.TrendingUp
-                        } else {
-                            Icons.AutoMirrored.Outlined.TrendingDown
-                        },
-                        contentDescription = "trend",
-                        modifier = Modifier
-                            .padding(start = 4.dp)
-                            .scale(.8F),
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(
-                            alpha = .8F
-                        )
-                    )
-
-                }
-
-            }
-
-        }
-    }
-
-    if (showAllList == false && priceListData.size > 10) {
-        OutlinedButton(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp), onClick = {
-                showAllList = true
-            }) {
-            Text("Tüm Listeyi Göster")
-        }
-    }
-}
 
 @Composable
 fun PriceStat(

@@ -2,17 +2,25 @@ package co.ec.amazonfiyattakip.ui.screen.add
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -22,9 +30,11 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,12 +44,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutCornerCard
 import co.ec.amazonfiyattakip.composables.ExtrasArea
+import co.ec.amazonfiyattakip.composables.PriceListArea
 import co.ec.amazonfiyattakip.composables.ProductBox
 import co.ec.amazonfiyattakip.composables.TimeSpan
+import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.FakeAddScreen
+import co.ec.amazonfiyattakip.ui.part.TitleBar
 
 @Composable
 fun AddScreen(
@@ -47,13 +60,14 @@ fun AddScreen(
     asin: String? = null
 ) {
     DisposableEffect(Unit) {
-        model.recordFromShareUrl(asin)
+        model.scrapeFromSharedUrl(asin)
         AppModel.noFab()
         onDispose {
 
         }
     }
     val product by model.product.observeAsState(null)
+    val prices by model.recordedPrices.observeAsState(null)
     val navigator = LocalNavigation.current
     LaunchedEffect(product) {
         if (product != null) {
@@ -69,14 +83,22 @@ fun AddScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 35.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             product?.let {
                 ProductBox(it)
-                ProductScreen(it) {
+                ProductScreen(it, prices, saveProduct = {
+                    model.saveProduct {
+                        navigator.navigate("detail/$it")
+                    }
+                }) {
                     model.updateTimeSpan(it)
                 }
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(35.dp)
+                )
             }
         }
     } else {
@@ -94,6 +116,8 @@ fun AddScreen(
 @Composable
 fun ProductScreen(
     product: Product,
+    prices: List<PriceInfo>?,
+    saveProduct: () -> Unit = {},
     updateTimeSpan: (minute: Int) -> Unit = {}
 ) {
     Column(
@@ -139,10 +163,43 @@ fun ProductScreen(
             }
             ExtrasArea(product = product)
         }
-        HorizontalDivider(modifier = Modifier.padding(vertical = 5.dp))
-        TimeSpan(product.timeSpan/60,{ time,text ->
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        TimeSpan(product.timeSpan / 60, { time, text ->
             updateTimeSpan(time)
         })
+        OutlinedButton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            onClick = {
+                saveProduct()
+            }, colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ), shape = RoundedCornerShape(25)
+        ) {
+            Icon(
+                Icons.Filled.Save,
+                "",
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text(
+                "Takibe Başla",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+
+        }
+
+        prices?.let {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            TitleBar(
+                title = "Önceki Fiyatlar",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+            PriceListArea(it, showAll = true, filterDuplicates = true)
+        }
 
     }
 }

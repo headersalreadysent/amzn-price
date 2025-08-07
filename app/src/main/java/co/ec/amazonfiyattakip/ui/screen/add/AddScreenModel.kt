@@ -4,18 +4,25 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
+import co.ec.amazonfiyattakip.db.FireDB
+import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.asyncRun
+import co.ec.helper.utils.unix
+import kotlin.math.asin
+import kotlin.random.Random
 
 class AddScreenModel : ViewModel() {
 
     val product = MutableLiveData<Product?>(null)
 
+    val recordedPrices = MutableLiveData<List<PriceInfo>?>(null)
 
-    fun recordFromShareUrl(asinCode: String? = null) {
+
+    fun scrapeFromSharedUrl(asinCode: String? = null) {
         val url = asinCode ?: SettingsHelper.get().getString("sharedUrl")
         if (url != null) {
             //if url not null
@@ -29,6 +36,15 @@ class AddScreenModel : ViewModel() {
             }, {
                 it.printStackTrace()
             })
+            asinCode?.let { asin ->
+                asyncRun({
+                    return@asyncRun FireDB.getByAsin(asin)
+                }, {
+                    it?.let {
+                        recordedPrices.value = it.priceInfoList
+                    }
+                })
+            }
         } else {
             App.snack("Ürün bağlantısı bulunamadı.")
         }
@@ -70,13 +86,32 @@ class AddScreenModel : ViewModel() {
             })
         }
 
+        recordedPrices.value = (0..30).map {
+            val price = Random.nextFloat() * 20000 + product.value?.price!!
+            PriceInfo(
+                id = it,
+                productId = 1,
+                asin = product.value?.asin ?: "",
+                date = unix() - (10 - it) * 86400,
+                price = price.toInt()
+            )
+        }
+
     }
 
     fun emulate() {
         product.value = Product.fake()
+        recordedPrices.value = (0..30).map {
+            val price = Random.nextFloat() * 20000 + product.value?.price!!
+            PriceInfo(
+                id = it,
+                productId = 1,
+                asin = product.value?.asin ?: "",
+                date = unix() - (10 - it) * 86400,
+                price = price.toInt()
+            )
+        }
     }
-
-
 
 
 }

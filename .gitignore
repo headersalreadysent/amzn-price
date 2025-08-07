@@ -18,3 +18,4 @@ local.properties
 /app/google-services.json
 /app/release
 /.kotlin/sessions/
+/.idea/deviceManager.xml
