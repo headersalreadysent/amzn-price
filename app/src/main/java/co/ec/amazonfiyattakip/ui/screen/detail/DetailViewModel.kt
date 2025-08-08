@@ -51,7 +51,11 @@ open class DetailViewModel : ViewModel() {
             }
             product.value = productData.first
             prices.value = productData.second
-            noPriceControl.value=productData.third
+            productData.third?.let {
+                if(it.count>0){
+                    noPriceControl.value=it
+                }
+            }
 
 
             if (refresh) {
