@@ -118,6 +118,11 @@ class App : CnsynApp() {
             putBoolean("showDealsInfo", getBoolean("showDealsInfo", true))
             putBoolean("expertMode", getBoolean("expertMode", false))
             putBoolean("developerActive", getBoolean("developerActive", false))
+            putBoolean("notificationActive", getBoolean("notificationActive", true))
+            putBoolean("notificationPriceChanged", getBoolean("notificationPriceChanged", true))
+            putBoolean("notificationNoPrice", getBoolean("notificationNoPrice", true))
+            putBoolean("notificationOnlyDay", getBoolean("notificationOnlyDay", false))
+
             val developerActive = PermissionHelper.checkDeveloperFile()
             if (developerActive) {
 

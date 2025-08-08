@@ -12,7 +12,7 @@ import co.ec.amazonfiyattakip.service.job.PriceUpdate.Companion.JOBTAG
 
 class SettingsViewModel : ViewModel() {
 
-    private val workManager = WorkManager.getInstance(App.context())
+    private var workManager: WorkManager? = null
 
     private val _nextWorkTime = MutableLiveData<Long?>()
     val nextWorkTime: LiveData<Long?> get() = _nextWorkTime
@@ -25,17 +25,22 @@ class SettingsViewModel : ViewModel() {
 
 
     fun collectJobRuns() {
-        workManager.getWorkInfosByTagLiveData(JOBTAG).observeForever(workObserver)
+        workManager = WorkManager.getInstance(App.context())
+        workManager?.getWorkInfosByTagLiveData(JOBTAG)?.observeForever(workObserver)
     }
 
     override fun onCleared() {
         super.onCleared()
-        workManager.getWorkInfosByTagLiveData(JOBTAG).removeObserver(workObserver)
+        workManager?.getWorkInfosByTagLiveData(JOBTAG)?.removeObserver(workObserver)
     }
 
-    init {
+    fun loadBackupLocation() {
         App.settings().getString("backupLocation")?.let {
-            backupFileCount.value=AppDatabase.listBackupFiles(it)?.size ?: 0
+            backupFileCount.value = AppDatabase.listBackupFiles(it)?.size ?: 0
         }
+    }
+
+    fun emulate() {
+
     }
 }

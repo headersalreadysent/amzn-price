@@ -169,6 +169,16 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                     LogHelper.d("Product ${product.asin}:${product.title} price error", JOBTAG)
                     NoPrice.add(product.asin, productId = product.id)
                     deferred.complete(Pair(product.asin, -1))
+                    NotificationHelper.noPrice(product)
+                    App.event(
+                        "no_price", mapOf(
+                            "productAsin" to product.asin,
+                            "productTitle" to product.title,
+                            "productPrice" to product.price,
+                            "productStar" to product.star.toString(),
+                            "productComment" to product.comment.toString()
+                        )
+                    )
                     return@scrapeFromAsin
                 }
                 CoroutineScope(Dispatchers.IO).launch {
@@ -234,26 +244,25 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         ) {
             if (priceInfo.price < latestAverage.avgPrice) {
                 LogHelper.d("${product.title} price dropped", JOBTAG)
-                NotificationHelper.showNotification(
+                NotificationHelper.priceChanged(
                     product,
-                    "Fiyat düştü. ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın altına düştü.",
-                    "Son ortalama fiyat ${latestAverage.avgPrice.price()}",
+                    "Fiyat düştü: ${priceInfo.price.price()} ${product.title}",
+                    "Fiyat:${priceInfo.price.price()} \nSon ortalama fiyat ${latestAverage.avgPrice.price()}",
                     R.drawable.trending_down
                 )
             }
             if (priceInfo.price > latestAverage.avgPrice) {
                 LogHelper.d("${product.title} price increased", JOBTAG)
-                NotificationHelper.showNotification(
+                NotificationHelper.priceChanged(
                     product,
-                    "Fiyat yükseldi. ${priceInfo.price.price()} ${product.title} fiyatı ortalamanın üstüne yükseldi.",
-                    "Son ortalama fiyat ${latestAverage.avgPrice.price()}",
+                    "Fiyat yükseldi: ${product.title}",
+                    "Fiyat:${priceInfo.price.price()}  \nSon ortalama fiyat ${latestAverage.avgPrice.price()}",
                     R.drawable.trending_up
                 )
             }
         }
 
     }
-
 
 
     override suspend fun doWork(): Result {

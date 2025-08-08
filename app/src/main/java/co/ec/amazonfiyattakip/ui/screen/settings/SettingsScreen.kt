@@ -1,9 +1,6 @@
 package co.ec.amazonfiyattakip.ui.screen.settings
 
-import android.R.attr.fontWeight
-import android.R.attr.headerBackground
 import android.content.Intent
-import android.graphics.drawable.BitmapDrawable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -13,9 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AppSettingsAlt
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.DashboardCustomize
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Screenshot
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -67,17 +63,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.App.Companion.settings
@@ -100,6 +92,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(model: SettingsViewModel = viewModel()) {
     DisposableEffect(Unit) {
+        model.loadBackupLocation()
         model.collectJobRuns()
         AppModel.noFab()
         onDispose {
@@ -146,48 +139,9 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
             } else {
                 Row(modifier = Modifier) {
                     var settingsType by remember { mutableStateOf("Uygulama") }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(.35F)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .fillMaxHeight()
-                    ) {
-                        listOf<Pair<String, ImageVector>>(
-                            Pair("Uygulama", Icons.Filled.AppSettingsAlt),
-                            Pair("Görünüm", Icons.Filled.Screenshot),
-                            Pair("Gösterim", Icons.Filled.DashboardCustomize),
-                            Pair("Yedekleme", Icons.Filled.Backup),
-                        ).forEach {
-                            ListItem(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 1.dp)
-                                    .clickable {
-                                        settingsType = it.first
-                                    },
-                                headlineContent = {
-                                    Text(it.first)
-                                },
-                                leadingContent = {
-                                    Icon(
-                                        it.second, it.first,
-                                        tint = if (settingsType == it.first)
-                                            MaterialTheme.colorScheme.primary
-                                        else Color.Black
-                                    )
-                                },
-                                colors = ListItemDefaults.colors(
-                                    containerColor = if (settingsType == it.first)
-                                        MaterialTheme.colorScheme.surfaceContainer.copy(
-                                            alpha = .9F
-                                        )
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(
-                                        alpha = .9F
-                                    ),
-                                )
-                            )
-                        }
-                    }
+                    SettingsTabletArea(settingsType, {
+                        settingsType = it
+                    })
                     SettingActionList(model, isPhone = false, settingsType)
                 }
             }
@@ -224,9 +178,56 @@ fun SettingsScreen(model: SettingsViewModel = viewModel()) {
 }
 
 @Composable
+fun SettingsTabletArea(settingsType: String, change: (type: String) -> Unit = {}) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(.35F)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .fillMaxHeight()
+    ) {
+        listOf(
+            Pair("Uygulama", Icons.Filled.AppSettingsAlt),
+            Pair("Bildirim", Icons.Filled.Notifications),
+            Pair("Görünüm", Icons.Filled.Screenshot),
+            Pair("Gösterim", Icons.Filled.DashboardCustomize),
+            Pair("Yedekleme", Icons.Filled.Backup),
+        ).forEach {
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 1.dp)
+                    .clickable {
+                        change(it.first)
+                    },
+                headlineContent = {
+                    Text(it.first)
+                },
+                leadingContent = {
+                    Icon(
+                        it.second, it.first,
+                        tint = if (settingsType == it.first)
+                            MaterialTheme.colorScheme.primary
+                        else Color.Black
+                    )
+                },
+                colors = ListItemDefaults.colors(
+                    containerColor = if (settingsType == it.first)
+                        MaterialTheme.colorScheme.surfaceContainer.copy(
+                            alpha = .9F
+                        )
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(
+                        alpha = .9F
+                    ),
+                )
+            )
+        }
+    }
+}
+
+@Composable
 fun SettingActionList(model: SettingsViewModel, isPhone: Boolean = true, type: String = "") {
-    var headerBackground = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5F)
-    var headerColor = contentColorFor(headerBackground)
+    val headerBackground = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5F)
+    val headerColor = contentColorFor(headerBackground)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -265,6 +266,55 @@ fun SettingActionList(model: SettingsViewModel, isPhone: Boolean = true, type: S
                     title = "Toplanan fiyatları paylaş",
                     desc = "Ürünlerimi ve fiyatları diğer kullanıcılar ile anonim paylaş.",
                 )
+            }
+            if (type == "" || type == "Bildirim") {
+
+                SettingsTitle(
+                    title = "Bildirim",
+                    color = headerColor,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    isPhone = isPhone,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(headerBackground)
+                        .padding(12.dp)
+                )
+
+                var notificationEnabled by remember {
+                    mutableStateOf(settings().getBoolean("notificationActive"))
+                }
+                SettingsToggle(
+                    name = "notificationActive",
+                    default = true,
+                    title = "Bildirimleri Göster",
+                    onConfirm = {
+                        notificationEnabled = it
+                    }
+                )
+                if (notificationEnabled) {
+                    SettingsToggle(
+                        name = "notificationPriceChanged",
+                        default = true,
+                        title = "Fiyat Değişimi Bildirimleri",
+                        desc = "Fiyat değişimi bildirimlerini göster.",
+                    )
+
+                    SettingsToggle(
+                        name = "notificationNoPrice",
+                        default = true,
+                        title = "Fiyatsız Ürün Bildirimleri",
+                        desc = "Ürün fiyatı bildirilmediği durumları göster.",
+                    )
+
+                    SettingsToggle(
+                        name = "notificationOnlyDay",
+                        default = true,
+                        title = "Bildirim saatini sınırla",
+                        desc = "Bildirimlerin gece gönderilmesini önle.",
+                    )
+                }
             }
             if (type == "" || type == "Görünüm") {
                 SettingsTitle(
@@ -862,8 +912,9 @@ fun SettingsDropdown(
 
 @Preview(showBackground = true)
 @Composable
-fun SettingsScreenPreview() {
+fun SettingsScreenPreview(model: SettingsViewModel = viewModel()) {
     PreviewProviders {
-        SettingsScreen()
+        model.emulate()
+        SettingsScreen(model)
     }
 }
