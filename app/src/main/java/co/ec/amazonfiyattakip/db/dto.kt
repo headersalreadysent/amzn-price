@@ -55,3 +55,28 @@ data class ProductWithStat(
     val avg: Int,
     val max: Int
 )
+
+@Serializable
+data class AjaxResponse(
+    val ASIN: String,
+    val Type: String,
+    val sortOfferInfo: String,
+    val isPrimeEligible: String,
+    val Value: AjaxPriceValue
+)
+
+@Serializable
+data class AjaxPriceValue(
+    val content: AjaxPriceContent
+)
+
+@Serializable
+data class AjaxPriceContent(
+    val twisterSlotJson: TwisterSlotJson,
+    val twisterSlotDiv: String
+)
+
+@Serializable
+data class TwisterSlotJson(
+    val price: String
+)

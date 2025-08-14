@@ -60,7 +60,7 @@ object AmznRequest {
         var cookieList =
             Json.decodeFromString<List<Triple<String, String, Int>>>(oldJar).toMutableList()
 
-        val cookieMap = cookies.forEach {
+        cookies.forEach {
             val parts = it.split(";")
             val expires = parts.find { it.startsWith("Expires=") }
             var expireUnix = yearLater
@@ -116,40 +116,41 @@ object AmznRequest {
                         throw IOException("Unexpected code $response")
                     }
                     recordCookies(response.headers("set-cookie"))
-                    val body=response.body?.string()
-                    response.body?.close()
+                    val body = response.body.string()
+                    response.body.close()
                     return@asyncRun body
                 }
         }, {
             then(it)
         }, err)
-
-
     }
 
-    suspend fun suspendRequest(url: String): String = withContext(Dispatchers.IO) {
+    suspend fun suspendRequest(url: String, isAjax: Boolean = false): String =
+        withContext(Dispatchers.IO) {
 
-        var request = Request.Builder()
-            .url(url)
-        request = generateHeaders(request)
-        try {
-            val response = client.newCall(request.build()).execute()
-            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+            var request = Request.Builder()
+                .url(url)
+            request = generateHeaders(request, isAjax)
+            try {
+                val response = client.newCall(request.build()).execute()
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
 
-            val html = response.body?.string() ?: throw IllegalStateException("Empty response body")
-            html
-        } catch (t: Throwable) {
-            throw t
+                val html =
+                    response.body?.string() ?: throw IllegalStateException("Empty response body")
+                html
+            } catch (t: Throwable) {
+                throw t
+            }
         }
-    }
-
+    
 
     private fun generateHeaders(
         req: Request.Builder,
+        ajax: Boolean = false,
     ): Request.Builder {
-        val memory=(Random.nextInt(2,4)*4).toString()
-        var dpr=(0.9F+Random.nextFloat()/10)
-        val request = req.header(
+        val memory = (Random.nextInt(2, 4) * 4).toString()
+        val dpr = (0.9F + Random.nextFloat() / 10)
+        var request = req.header(
             "accept",
             "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
         )
@@ -184,7 +185,9 @@ object AmznRequest {
             )
             .header("viewport-width", "2120")
 
-
+        if (ajax) {
+            request = req.header("x-requested-with", "XMLHttpRequest")
+        }
 
         return request
 

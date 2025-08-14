@@ -15,7 +15,6 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingFlat
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,6 +52,9 @@ fun PriceListArea(
     showAll: Boolean = false,
     filterDuplicates: Boolean = false
 ) {
+    if (priceListData.isEmpty()) {
+        return
+    }
     var showAllList by remember { mutableStateOf(showAll) }
     val visibleList by remember {
         mutableStateOf(priceListData.let { list ->
@@ -83,9 +85,8 @@ fun PriceListArea(
     }
     Column(modifier = Modifier.padding(horizontal = 8.dp)) {
         visibleList.forEachIndexed { index, it ->
-            val prevPrice = if (visibleList.size > index + 1) {
-                visibleList[index + 1].price
-            } else 0
+
+            val prevPrice = visibleList.getOrNull(index + 1)?.price ?: 0
             val collapseFraction = ((it.price - min) / (max - min))
             val color = MaterialTheme.colorScheme.tertiaryContainer
             Row(

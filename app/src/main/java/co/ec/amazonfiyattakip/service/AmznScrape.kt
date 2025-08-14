@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.service
 
 import android.os.SystemClock
 import co.ec.amazonfiyattakip.App
+import co.ec.amazonfiyattakip.db.AjaxResponse
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
@@ -10,6 +11,7 @@ import co.ec.helper.utils.unix
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
@@ -44,7 +46,7 @@ class AmznScrape {
      */
     suspend fun suspendScrape(url: String, cacheActive: Boolean = true): Product {
 
-        val cache =CacheHelper.get()
+        val cache = CacheHelper.get()
         return withContext(Dispatchers.IO) {
             val pageUrl = if (url.startsWith("http")) url else urlFromAsin(url)
             // Check cache first
@@ -63,10 +65,12 @@ class AmznScrape {
                 cache.put("http-$pageUrl", product.encode(), 60 * 60)
             }
             val duration = SystemClock.elapsedRealtime() - startTime
-            App.event("product_scrape", mapOf(
-                "duration" to duration,
-                "asin" to product.asin
-            ))
+            App.event(
+                "product_scrape", mapOf(
+                    "duration" to duration,
+                    "asin" to product.asin
+                )
+            )
 
             return@withContext product
         }
@@ -165,6 +169,22 @@ class AmznScrape {
         })
     }
 
+    suspend fun collectAjaxPrice(
+        asin: String,
+    ): AjaxResponse? {
+        return try {
+            val responseStr = AmznRequest.suspendRequest(
+                "https://www.amazon.com.tr/gp/product/ajax?isDimensionSlotsAjax=1&asinList=$asin&experienceId=twisterDimensionSlotsDefault&asin=$asin"
+            )
+            LogHelper.d("ajaxResponse ${responseStr.trim()}")
+            Json.decodeFromString<AjaxResponse>(responseStr.trim())
+        } catch (e: Throwable) {
+            LogHelper.d("ajaxResponseErr $e")
+            throw e
+        }
+
+    }
+
 
     /**
      * extract product details from amazon page content
@@ -181,7 +201,7 @@ class AmznScrape {
         val description = doc.getElementById("featurebullets_feature_div")?.text()
             ?.replace("Bu ürün hakkında", "")?.trim() ?: ""
         //price
-        val price = extractPrice(doc)
+        val price = extractPrice(doc, asin)
 
         //star count
         val star = doc.select("#averageCustomerReviews .a-icon.a-icon-star").map {
@@ -209,6 +229,7 @@ class AmznScrape {
             }
         //extract img
         val img = doc.select("#imgTagWrapperId img").first()?.attr("src") ?: ""
+
         //generate new product
         return Product(
             id = 0,
@@ -224,19 +245,45 @@ class AmznScrape {
         )
     }
 
-    private fun extractPrice(doc: Document): Int {
+    private fun extractPrice(doc: Document, asin: String): Int {
         try {
             doc.getElementById("twister-plus-price-data-price")?.let {
-                return (it.value().toFloat() * 100).toInt()
+                val value = it.value()
+                if (value != "") {
+                    return (value.toFloat() * 100).toInt()
+                }
             }
             doc.getElementsByAttributeValue("name", "priceValue").first()?.let {
-                return (it.value().toFloat() * 100).toInt()
+                val value = it.value()
+                if (value != "") {
+                    return (value.toFloat() * 100).toInt()
+                }
             }
             doc.getElementsByAttributeValue("name", "items[0.base][customerVisiblePrice][amount]")
                 .first()?.let {
-                    return (it.value().toFloat() * 100).toInt()
+                    val value = it.value()
+                    if (value != "") {
+                        return (value.toFloat() * 100).toInt()
+                    }
                 }
-        } catch (_: Throwable) {
+            doc.getElementsByClass("apexPriceToPay").forEach {
+                if (it.tagName() == "span") {
+                    it.getElementsByClass("a-offscreen").first()?.text()
+                        ?.replace(Regex("[^0-9]"), "")?.let {
+                            if (it != "") {
+                                return it.toInt()
+                            }
+                        }
+                }
+            }
+
+            runBlocking {
+                collectAjaxPrice(asin)
+            }?.let {
+                return (it.Value.content.twisterSlotJson.price.toFloat() * 100).toInt()
+            }
+        } catch (e: Throwable) {
+            LogHelper.d("price extract error $e")
             return 0
         }
         return 0

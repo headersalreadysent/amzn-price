@@ -99,6 +99,24 @@ fun FindScreen(
             if (searchResults.isEmpty()) {
                 Progress("$searchKeyword araması yapılıyor")
             } else {
+                TitleBar(
+                    title = "Arama Sonuçları",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp)
+                        .statusBarsPadding(),
+                    extra = {
+                        if (deals.isNotEmpty()) {
+                            Text(
+                                deals.size.toString(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                )
                 FlowRow(
                     modifier = Modifier
                         .weight(1F)
@@ -106,35 +124,18 @@ fun FindScreen(
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    TitleBar(
-                        title = "Arama Sonuçları",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp)
-                            .statusBarsPadding(),
-                        extra = {
-                            if(deals.isNotEmpty()){
-                                Text(
-                                    deals.size.toString(),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    )
+
                     searchResults.forEach {
                         LittleProductBox(it, onClick = {
                             navigation.navigate("add/${it.asin}")
                         })
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                    )
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                )
             }
         } else {
             if (showDealsInfo) {
@@ -156,7 +157,7 @@ fun FindScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                         )
-                        val shape= cutShape()
+                        val shape = cutShape()
                         FlowRow(
                             modifier = Modifier
                                 .fillMaxWidth(.8F),
@@ -199,31 +200,37 @@ fun FindScreen(
         val keyboard by rememberKeyboardVisibleState()
         var keyword by remember { mutableStateOf("") }
         LaunchedEffect(searchKeyword) {
-            keyword=searchKeyword
+            keyword = searchKeyword
         }
 
 
-            CutInput(
-                value = keyword,
-                valueChange = { keyword = it },
-                action = "Ara",
-                height = 50.dp,
-                textStyle = MaterialTheme.typography.bodyLarge,
-                click = {
-                    if (keyword.length > 3) {
-                        model.search(keyword)
-                        searchResults = listOf()
-                        searchStarted = true
-                        keyboardController?.hide()
-                    } else {
-                        App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
-                    }
-                },
-                placeholder = "Ürün adı veya ASIN",
+        CutInput(
+            value = keyword,
+            valueChange = { keyword = it },
+            action = "Ara",
+            height = 50.dp,
+            textStyle = MaterialTheme.typography.bodyLarge,
+            click = {
+                if (keyword.length > 3) {
+                    model.search(keyword, asinCallback = {
+                        navigation.navigate("add/${keyword}")
+                    })
+                    searchResults = listOf()
+                    searchStarted = true
+                    keyboardController?.hide()
+                } else {
+                    App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
+                }
+            },
+            placeholder = "Ürün adı veya ASIN",
+        )
+        if (keyboard) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
             )
-            if(keyboard){
-                Box(modifier = Modifier.fillMaxWidth().height(10.dp))
-            }
+        }
 
 
     }

@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.ui.screen.add
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AppDatabase
 import co.ec.amazonfiyattakip.db.FireDB
@@ -12,7 +13,7 @@ import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
-import kotlin.math.asin
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class AddScreenModel : ViewModel() {
@@ -23,31 +24,48 @@ class AddScreenModel : ViewModel() {
 
 
     fun scrapeFromSharedUrl(asinCode: String? = null) {
-        val url = asinCode ?: SettingsHelper.get().getString("sharedUrl")
-        if (url != null) {
-            //if url not null
-            var page = url
-            if (!url.startsWith("http")) {
-                page = AmznScrape.urlFromAsin(url)
+        val settings = SettingsHelper.get()
+
+        if (asinCode != null) {
+            //if asin code exists
+            App.cache().get("storeProduct")?.let {
+                val cache = Product.decode(it)
+                if (cache.asin == asinCode) {
+                    LogHelper.d("storedProduct ${cache.encode()}", "AddModel")
+                    return this.setupProduct(cache)
+                }
             }
-            AmznScrape().scrapeFromUrl(page, { scraped ->
-                LogHelper.d(scraped.toString())
-                product.value = scraped
+            AmznScrape().scrapeFromAsin(asinCode, { scraped ->
+                LogHelper.d("scraped from asin ${scraped.encode()}", "AddModel")
+                this.setupProduct(scraped)
             }, {
-                it.printStackTrace()
+                App.snack("Ürün bilgisi bulunamadı.")
             })
-            asinCode?.let { asin ->
-                asyncRun({
-                    return@asyncRun FireDB.getByAsin(asin)
+        } else {
+
+            //look for url on shared
+            settings.getString("sharedUrl")?.let {
+                settings.remove("sharedUrl")
+                AmznScrape().scrapeFromUrl(it, { scraped ->
+                    LogHelper.d("scraped from url ${scraped.encode()}", "AddModel")
+                    this.setupProduct(scraped)
                 }, {
-                    it?.let {
-                        recordedPrices.value = it.priceInfoList
-                    }
+                    App.snack("Ürün bilgisi bulunamadı.")
                 })
             }
-        } else {
-            App.snack("Ürün bağlantısı bulunamadı.")
         }
+    }
+
+
+    private fun setupProduct(loaded: Product) {
+
+        product.value = loaded
+        viewModelScope.launch {
+            FireDB.getByAsin(loaded.asin)?.let {
+                recordedPrices.value = it.priceInfoList
+            }
+        }
+
     }
 
     /**

@@ -8,6 +8,7 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,12 +32,13 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
     val searchResults: SharedFlow<Product> = searchFlow
     private val recordedResults = MutableLiveData<List<Product>>()
 
-
+    private var dealLoadJob: Job? = null
     private val dealFlow = MutableSharedFlow<Product>()
     val deals: SharedFlow<Product> = dealFlow
 
     init {
-        oldSearches.value = (cache?.get("oldSearches") ?: "").split("|").filter { it != "" }.distinct()
+        oldSearches.value =
+            (cache?.get("oldSearches") ?: "").split("|").filter { it != "" }.distinct()
     }
 
 
@@ -85,16 +87,37 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
     /**
      * load deals from amazon
      */
-    fun search(keyword: String) {
-        searchKeyword.value=keyword
+    fun search(keyword: String, asinCallback: (product: Product) -> Unit = {}) {
+        dealLoadJob?.let {
+            //cancel deals on search start
+            it.cancel()
+            dealLoadJob = null
+        }
+        val regex = Regex("^[A-Z0-9]{10}$")
+        if (regex.matches(keyword)) {
+            AmznScrape().scrapeFromAsin(keyword, { product ->
+                //call asin callback. it will redirect to add
+                cache?.put("storeProduct", product.encode(), 30)
+                asinCallback(product)
+                LogHelper.d("$product", "search")
+            }, {
+                startSearch(keyword)
+            })
+        } else {
+            startSearch(keyword)
+        }
+    }
+
+    private fun startSearch(keyword: String) {
+        searchKeyword.value = keyword
         cache?.put("searchKeyword", keyword, 60 * 5)
         cache?.get("search-$keyword")?.let {
             return searchScraper(it.split("|"))
         }
         AmznScrape().search(keyword, { asins ->
             cache?.put("search-$keyword", asins.joinToString("|"), 60)
-            var olds = (cache?.get("oldSearches") ?: "").split("|")
-            var newList = listOf(keyword) + olds
+            val olds = (cache?.get("oldSearches") ?: "").split("|")
+            val newList = listOf(keyword) + olds
             cache?.put("oldSearches", newList.distinct().joinToString("|"), 86400 * 100)
             searchScraper(asins)
         }) {
@@ -109,7 +132,7 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
     private fun loadDeals() {
         val scraper: (List<String>) -> Unit = { asins ->
             val semaphore = Semaphore(10)
-            viewModelScope.launch {
+            dealLoadJob = viewModelScope.launch {
                 channelFlow {
                     asins.map { asin ->
                         async {
@@ -142,7 +165,7 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
      */
     fun emulate() {
         viewModelScope.launch {
-            (1..12).forEach {
+            (1..12).forEach { _ ->
                 searchFlow.emit(Product.fake())
                 delay((Random.nextFloat() * 1000F).toLong())
             }
