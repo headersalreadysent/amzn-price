@@ -24,6 +24,8 @@ import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.unix
+import com.google.firebase.Firebase
+import com.google.firebase.perf.performance
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,6 +105,9 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
         suspend fun run(override: Boolean = false): Result {
             LogHelper.d("price update running", JOBTAG)
+
+            val priceUpdateJobTrace = Firebase.performance.newTrace("Price-Update-Job")
+            priceUpdateJobTrace.start()
             val productDao = AppDatabase.getDatabase().product()
             val jobLogDao = AppDatabase.getDatabase().jobLog()
             return try {
@@ -137,7 +142,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                         CacheHelper.get()
                             .put("allProducts", Json.encodeToString(allProductsData), 43200)
                     }
-
+                    priceUpdateJobTrace.stop()
                     Result.success(outputData.build())
                 }
             } catch (e: Exception) {
@@ -151,6 +156,10 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
          * collect price and save to database
          */
         suspend fun collectProduct(product: Product): Pair<String, Int> {
+
+            val priceUpdateJobProductTrace =
+                Firebase.performance.newTrace("Price-Update-Job-One-Product")
+            priceUpdateJobProductTrace.start()
 
             val productDao = AppDatabase.getDatabase().product()
             val priceDao = AppDatabase.getDatabase().priceInfo()
@@ -167,9 +176,13 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 if (update.price == 0) {
                     //price is zero is very bad
                     LogHelper.d("Product ${product.asin}:${product.title} price error", JOBTAG)
-                    NoPrice.add(product.asin, productId = product.id)
                     deferred.complete(Pair(product.asin, -1))
-                    NotificationHelper.noPrice(product)
+                    NoPrice.has(product.id) { has ->
+                        if (!has) {
+                            NotificationHelper.noPrice(product)
+                        }
+                    }
+                    NoPrice.add(product.asin, productId = product.id)
                     App.event(
                         "no_price", mapOf(
                             "productAsin" to product.asin,
@@ -221,6 +234,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 }
                 //complete defer with correct price
                 deferred.complete(Pair(product.asin, update.price))
+                priceUpdateJobProductTrace.stop()
             }, {
                 LogHelper.e(it.localizedMessage ?: it.message ?: "", it)
                 CoroutineScope(Dispatchers.IO).launch {
@@ -230,6 +244,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 deferred.complete(Pair(product.asin, -1))
             })
             //return response
+
             return deferred.await()
         }
 

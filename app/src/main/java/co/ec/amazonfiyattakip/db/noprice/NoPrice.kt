@@ -24,6 +24,13 @@ data class NoPrice(
             })
         }
 
+        fun has(productId: Int, then: (has: Boolean) -> Unit = {}) {
+            asyncRun({
+                val dao = AppDatabase.getDatabase().noPrice()
+                return@asyncRun dao.getForProduct(productId).isNotEmpty()
+            }, then)
+        }
+
         fun remove(productId: Int) {
             asyncRun({
                 val dao = AppDatabase.getDatabase().noPrice()
