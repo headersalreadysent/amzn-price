@@ -107,7 +107,7 @@ open class MainScreenModel : ViewModel() {
         cache?.get("popularCount")?.let {
             then(it.toInt())
         }
-        AmznScrape().getPopular({ asins ->
+        AmznScrape(withCache = true).bestsellers({ asins ->
             then(asins.size)
             cache?.put("popularCount", asins.size.toString())
         })
@@ -125,14 +125,12 @@ open class MainScreenModel : ViewModel() {
             asyncRun({
                 return@asyncRun AppDatabase.getDatabase().product().getAllAsin()
             }, { asins ->
-                serverProducts.value = firebase
-                    .filter { !asins.contains(it.first.asin) }
+                serverProducts.value = firebase.filter { !asins.contains(it.first.asin) }
                     .sortedByDescending { it.first.date }
                 cache?.put("serverProducts", Json.encodeToString(serverProducts.value), 60 * 60)
             })
         }
     }
-
 
 
     /**
@@ -163,9 +161,10 @@ open class MainScreenModel : ViewModel() {
             val price = Random.nextInt(50, 100)
             val priceCount = Random.nextInt(50, 100)
             val prices = List(priceCount) {
-                (unix() - (priceCount - it) * 86400).toString() + "|" +
-                        (price + Random.nextInt(-5, 5)).toString() +
-                        "|0|0"
+                (unix() - (priceCount - it) * 86400).toString() + "|" + (price + Random.nextInt(
+                    -5,
+                    5
+                )).toString() + "|0|0"
             }
             Pair(Product.fake(), prices)
         }

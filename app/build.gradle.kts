@@ -9,7 +9,8 @@ plugins {
 
 }
 fun String.runCommand(): String =
-    ProcessBuilder(*split(" ").toTypedArray()).redirectErrorStream(true).start().inputStream.bufferedReader().readText().trim()
+    ProcessBuilder(*split(" ").toTypedArray()).redirectErrorStream(true)
+        .start().inputStream.bufferedReader().readText().trim()
 
 android {
     namespace = "co.ec.amazonfiyattakip"
@@ -20,7 +21,10 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = "git rev-list --count HEAD".runCommand().toInt()
-        versionName = "1.0.${"git rev-list --count HEAD".runCommand()}-${"git rev-parse --abbrev-ref HEAD".runCommand()}+${"git rev-parse --short HEAD".runCommand()}${if ("git status --porcelain".runCommand().isNotEmpty()) "-dirty" else ""}"
+        versionName =
+            "1.0.${"git rev-list --count HEAD".runCommand()}-${"git rev-parse --abbrev-ref HEAD".runCommand()}+${"git rev-parse --short HEAD".runCommand()}${
+                if ("git status --porcelain".runCommand().isNotEmpty()) "-dirty" else ""
+            }"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -110,6 +114,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.accompanist.permissions)
 
+    implementation(libs.firebase.perf)
 
 
 }

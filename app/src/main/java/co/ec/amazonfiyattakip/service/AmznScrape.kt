@@ -4,20 +4,41 @@ import android.os.SystemClock
 import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.db.AjaxResponse
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.db.product.ProductStatus
 import co.ec.helper.helpers.CacheHelper
 import co.ec.helper.helpers.LogHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import com.google.firebase.Firebase
+import com.google.firebase.perf.performance
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class AmznScrape {
+class AmznScrape(withCache: Boolean = false) {
+
+    private var cacheTime: Int = 60 * 60
+    private var cacheHelper: CacheHelper? = null
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+
+    }
 
     companion object {
         private const val DETAIL_PAGE_URL = "https://www.amazon.com.tr/_title_/dp/_asin_"
@@ -26,56 +47,56 @@ class AmznScrape {
         }
     }
 
-    /**
-     * screpe product from asin
-     * @param asin asin of amazon
-     * @param then result callback
-     * @param err error callback
-     */
-    fun scrapeFromAsin(
-        asin: String,
-        then: (res: Product) -> Unit = { _ -> },
-        err: (res: Throwable) -> Unit = { _ -> }
-    ) {
-        scrapeFromUrl(urlFromAsin(asin), then, err)
-
+    init {
+        if (withCache) {
+            this.cache()
+        }
     }
 
     /**
-     * scrape data in back thread
+     * activate cache
      */
-    suspend fun suspendScrape(url: String, cacheActive: Boolean = true): Product {
+    fun cache(ttl: Int? = null): AmznScrape {
+        cacheHelper = CacheHelper.get()
+        ttl?.let {
+            cacheTime = ttl
+        }
+        return this
+    }
 
-        val cache = CacheHelper.get()
+
+    /**
+     * scrape data in back thread
+     * @param url url of amazon
+     * @return Product
+     */
+    suspend fun suspendScrape(url: String): Product {
+        val trace = Firebase.performance.newTrace("AMZNScrapeTrace")
+        trace.start()
         return withContext(Dispatchers.IO) {
             val pageUrl = if (url.startsWith("http")) url else urlFromAsin(url)
             // Check cache first
-            if (cacheActive) {
-                cache.get("http-$pageUrl")?.let { cachedData ->
-                    return@withContext Product.decode(cachedData)
-                }
+            cacheHelper?.get("http-$pageUrl")?.let { cachedData ->
+                return@withContext Product.decode(cachedData)
             }
 
             val startTime = SystemClock.elapsedRealtime()
             // Make request and cache the result
             val response = AmznRequest.suspendRequest(pageUrl)
             val product = extractProductDetails(response)
-            if (cacheActive) {
-                // Cache the new product data
-                cache.put("http-$pageUrl", product.encode(), 60 * 60)
-            }
+            // Cache the new product data
+            cacheHelper?.put("product-$pageUrl", product.encode(), cacheTime)
             val duration = SystemClock.elapsedRealtime() - startTime
             App.event(
                 "product_scrape", mapOf(
-                    "duration" to duration,
-                    "asin" to product.asin
+                    "duration" to duration, "asin" to product.asin
                 )
             )
 
-            return@withContext product
+            trace.stop()
+            product
         }
     }
-
 
     /**
      * scrape product from url
@@ -83,30 +104,22 @@ class AmznScrape {
      * @param then result callback
      * @param err error callback
      */
-    fun scrapeFromUrl(
-        url: String,
+    fun scrape(
+        urlOrAsin: String,
         then: (res: Product) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
-        asyncRun({
-            //generate url
-            AmznRequest.request(url, { html ->
-                //get html
-                html?.let {
-                    try {
-                        //parse product from html
-                        val product = extractProductDetails(it)
-                        LogHelper.d(product.toString())
-                        then(product)
-                    } catch (t: Throwable) {
-                        err(t)
-                    }
-                }
-            }, {
-                LogHelper.e("amzn", it)
-                err(it)
-            })
-        })
+        return runBlocking {
+            try {
+                val product = suspendScrape(urlOrAsin)
+                LogHelper.d("AMZN-Scrape Success ${product.encode()}")
+                then(product)
+            } catch (e: Exception) {
+                LogHelper.e("AMZN-Scrape error ${e.message}", e)
+                err(e)
+                null
+            }
+        }
     }
 
     /**
@@ -114,28 +127,42 @@ class AmznScrape {
      * @param then result callback
      * @param err error callback
      */
-    fun getPopular(
-        then: (res: List<String>) -> Unit = { _ -> },
-        err: (res: Throwable) -> Unit = { _ -> }
+    fun bestsellers(
+        then: (res: List<Product>) -> Unit = { _ -> }, err: (res: Throwable) -> Unit = { _ -> }
     ) {
+        cacheHelper?.get("popular-asin")?.let { cachedData ->
+            return then(cachedData.split("#-#").map { Product.decode(it) })
+        }
+
+        val trace = Firebase.performance.newTrace("AMZNPopularTrace")
+        trace.start()
         asyncRun({
             //generate url
-            AmznRequest.request("https://www.amazon.com.tr/gp/bestsellers", { html ->
-                //get html
-                html?.let {
-                    try {
-                        //parse product from html
-                        val deals = extractPopularProducts(it)
-                        then(deals)
-                    } catch (t: Throwable) {
-                        err(t)
-                    }
+            AmznRequest.suspendRequest("https://www.amazon.com.tr/gp/bestsellers")
+        }, { html ->
+            //get html
+            try {
+                //parse product from html
+                val asins = extractPopularProducts(html)
+                LogHelper.d("AMZN-Popular Success $asins")
+                then(asins)
+                trace.stop()
+                cacheHelper?.put(
+                    "popular-asin", asins.joinToString("#-#") { it.encode() }, cacheTime
+                )
+
+                cacheHelper?.let {
+                    //only cache 5 second
+                    AmznScrape().cache(5 * 60 * 60).cacheList(asins)
                 }
-            }, {
-                LogHelper.e("amzn", it)
-                err(it)
-            })
+            } catch (t: Throwable) {
+                err(t)
+            }
+        }, {
+            LogHelper.e("AMZN-Popular Error ${it.message}", it)
+            err(it)
         })
+
     }
 
     /**
@@ -145,44 +172,96 @@ class AmznScrape {
      */
     fun search(
         searchText: String,
-        then: (res: List<String>) -> Unit = { _ -> },
+        then: (res: List<Product>) -> Unit = { _ -> },
         err: (res: Throwable) -> Unit = { _ -> }
     ) {
+        val encodedKeyword = URLEncoder.encode(searchText, StandardCharsets.UTF_8.toString())
+        cacheHelper?.get("search-prod-$encodedKeyword")?.let { cachedData ->
+            return then(cachedData.split("#-#").map { Product.decode(it) })
+        }
+        val trace = Firebase.performance.newTrace("AMZNSearchTrace")
+        trace.start()
         asyncRun({
             //generate url
-            val encoded = URLEncoder.encode(searchText, StandardCharsets.UTF_8.toString())
-            AmznRequest.request("https://www.amazon.com.tr/s?k=\"$encoded\"", { html ->
-                //get html
-                html?.let {
-                    try {
-                        //parse product from html
-                        val searchAsins = extractSearchResults(it)
-                        then(searchAsins)
-                    } catch (t: Throwable) {
-                        err(t)
-                    }
+            AmznRequest.suspendRequest("https://www.amazon.com.tr/s?k=\"$encodedKeyword\"")
+        }, { html ->
+            try {
+                //parse product from html
+                val searchAsins = extractSearchResults(html)
+                then(searchAsins)
+                LogHelper.d("AMZN-Search Success $searchAsins")
+                trace.stop()
+                cacheHelper?.put(
+                    "search-prod-$encodedKeyword",
+                    searchAsins.joinToString("#-#") { it.encode() },
+                    cacheTime
+                )
+                cacheHelper?.let {
+                    cacheList(searchAsins)
                 }
-            }, {
-                LogHelper.e("amzn", it)
-                err(it)
-            })
+
+            } catch (t: Throwable) {
+                err(t)
+            }
+        }, {
+            LogHelper.e("AMZN-Search Error ${it.message}", it)
+            err(it)
         })
+
     }
 
-    suspend fun collectAjaxPrice(
-        asin: String,
-    ): AjaxResponse? {
+    /**
+     * scrape list from flow
+     * @param asins asin list to scrape
+     * @param sharedFlow flow reference value
+     * @param size semaphore size
+     * @return Job
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun flowScrape(
+        asins: List<String>, sharedFlow: MutableSharedFlow<Product>, size: Int = 15
+    ): Job {
+        return CoroutineScope(Dispatchers.IO).launch {
+            asins.asFlow().flatMapMerge(size) { asin ->
+                LogHelper.d("AMZN-Flow-Scrape $asin")
+                flow {
+                    try {
+                        //scrape suspended
+                        val result = suspendScrape(asin)
+                        if (result.title.isNotEmpty() && result.price > 0) {
+                            //if it is sutiable for showing
+                            emit(result)
+                            LogHelper.d("AMZN-Flow-Scrape ${result.encode()}")
+                        }
+                    } catch (_: Throwable) {
+
+                    }
+                }
+            }.collect { product ->
+                sharedFlow.emit(product)
+            }
+        }
+    }
+
+    /**
+     * extract price from ajax
+     */
+    suspend fun collectAjaxPrice(asin: String): AjaxResponse? {
+        val trace = Firebase.performance.newTrace("AMZNPriceAjaxTrace")
+        trace.start()
         return try {
+            //get ajax response
             val responseStr = AmznRequest.suspendRequest(
                 "https://www.amazon.com.tr/gp/product/ajax?isDimensionSlotsAjax=1&asinList=$asin&experienceId=twisterDimensionSlotsDefault&asin=$asin"
             )
-            LogHelper.d("ajaxResponse ${responseStr.trim()}")
-            Json.decodeFromString<AjaxResponse>(responseStr.trim())
+            LogHelper.d("AMZN-Scrape Ajax Price Success ${responseStr.trim()}")
+            //parse it
+            trace.stop()
+            json.decodeFromString<AjaxResponse>(responseStr.trim())
         } catch (e: Throwable) {
-            LogHelper.d("ajaxResponseErr $e")
+            LogHelper.e("AMZN-Scrape Ajax Price Error ${e.message}", e)
             throw e
         }
-
     }
 
 
@@ -245,6 +324,9 @@ class AmznScrape {
         )
     }
 
+    /**
+     * extract price from html dom
+     */
     private fun extractPrice(doc: Document, asin: String): Int {
         try {
             doc.getElementById("twister-plus-price-data-price")?.let {
@@ -278,7 +360,11 @@ class AmznScrape {
             }
 
             runBlocking {
-                collectAjaxPrice(asin)
+                try {
+                    collectAjaxPrice(asin)
+                } catch (_: Throwable) {
+                    null
+                }
             }?.let {
                 return (it.Value.content.twisterSlotJson.price.toFloat() * 100).toInt()
             }
@@ -293,15 +379,25 @@ class AmznScrape {
     /**
      * extract product details from amazon page content
      * @param html:String page content
-     * @return Product
+     * @return List<Product>
      */
-    private fun extractPopularProducts(html: String): List<String> {
-
+    private fun extractPopularProducts(html: String): List<Product> {
         val doc = Ksoup.parse(html)
         return doc.select("li.a-carousel-card").map {
             val asin = it.getElementsByAttribute("data-asin").attr("data-asin")
-            return@map asin
-        }
+            val title = it.select("a.a-link-normal.aok-block[role=\"link\"]").first()?.text() ?: ""
+            val img = it.select("img").first()?.attr("src") ?: ""
+            val price = it.select("span.a-size-base.a-color-price").first()?.text()
+                ?.replace(Regex("[^0-9]"), "")?.let {
+                    return@let if (it == "") null else it.toInt()
+                } ?: 0
+            return@map Product(
+                asin = asin, id = 0, date = unix(), title = title,
+                description = "", price = price, star = -1.0, comment = -1,
+                image = img, extras = "[]", nextRunTime = 0, timeSpan = 0,
+                errorCount = 0, status = ProductStatus.ACTIVE,
+            )
+        }.filter { it.price != 0 }
     }
 
     /**
@@ -309,14 +405,53 @@ class AmznScrape {
      * @param html:String page content
      * @return Product
      */
-    private fun extractSearchResults(html: String): List<String> {
-
+    private fun extractSearchResults(html: String): List<Product> {
         val doc = Ksoup.parse(html)
         return doc.select("div[role='listitem'][data-asin]").map {
             val asin = it.getElementsByAttribute("data-asin").attr("data-asin")
-            return@map asin
+            val title = it.select("h2").first()?.text() ?: ""
+            val img = it.select("img").first()?.attr("src") ?: ""
+            val price =
+                it.select("[aria-describedby=\"price-link\"] span.a-offscreen").first()?.text()
+                    ?.replace(Regex("[^0-9]"), "")?.let {
+                        return@let if (it == "") null else it.toInt()
+                    } ?: 0
+            return@map Product(
+                asin = asin, id = 0, date = unix(), title = title,
+                description = "", price = price, star = -1.0, comment = -1,
+                image = img, extras = "[]", nextRunTime = 0, timeSpan = 0,
+                errorCount = 0, status = ProductStatus.ACTIVE,
+            )
         }
     }
 
 
+    /**
+     * cache list of asins to system
+     * @param asins List<String>
+     */
+    @JvmName("cacheStringList")
+    fun cacheList(asins: List<String>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val semaphore = Semaphore(10)
+            asins.forEach {
+                semaphore.withPermit {
+                    try {
+                        suspendScrape(it)
+                    } catch (_: Throwable) {
+
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * cache list of products to system
+     * @param asins List<String>
+     */
+    @JvmName("cacheProductList")
+    fun cacheList(asins: List<Product>) {
+        cacheList(asins.map { it.asin })
+    }
 }

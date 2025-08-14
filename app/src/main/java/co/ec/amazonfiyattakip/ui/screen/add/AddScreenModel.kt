@@ -28,14 +28,7 @@ class AddScreenModel : ViewModel() {
 
         if (asinCode != null) {
             //if asin code exists
-            App.cache().get("storeProduct")?.let {
-                val cache = Product.decode(it)
-                if (cache.asin == asinCode) {
-                    LogHelper.d("storedProduct ${cache.encode()}", "AddModel")
-                    return this.setupProduct(cache)
-                }
-            }
-            AmznScrape().scrapeFromAsin(asinCode, { scraped ->
+            AmznScrape().scrape(asinCode, { scraped ->
                 LogHelper.d("scraped from asin ${scraped.encode()}", "AddModel")
                 this.setupProduct(scraped)
             }, {
@@ -46,7 +39,7 @@ class AddScreenModel : ViewModel() {
             //look for url on shared
             settings.getString("sharedUrl")?.let {
                 settings.remove("sharedUrl")
-                AmznScrape().scrapeFromUrl(it, { scraped ->
+                AmznScrape().scrape(it, { scraped ->
                     LogHelper.d("scraped from url ${scraped.encode()}", "AddModel")
                     this.setupProduct(scraped)
                 }, {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -67,7 +68,7 @@ fun FindScreen(
 
     LaunchedEffect(Unit) {
         if (showDealsInfo) {
-            model.deals.collect { deal ->
+            model.bestsellers.collect { deal ->
                 deals = deals + deal
             }
         }
@@ -275,6 +276,11 @@ fun DealsListScreen(deals: List<Product>) {
                     navigation.navigate("add/${it.asin}")
                 })
             }
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+            )
         }
     }
 

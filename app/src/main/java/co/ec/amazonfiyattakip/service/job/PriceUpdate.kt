@@ -158,7 +158,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
 
             val scraper = AmznScrape()
             //scrape from amazn
-            scraper.scrapeFromAsin(product.asin, { update ->
+            scraper.scrape(product.asin, { update ->
                 //log update info
                 LogHelper.d(
                     "${update.asin} (${update.shortTitle()}) : ${update.price()}",
@@ -179,7 +179,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                             "productComment" to product.comment.toString()
                         )
                     )
-                    return@scrapeFromAsin
+                    return@scrape
                 }
                 CoroutineScope(Dispatchers.IO).launch {
                     //set id to new
