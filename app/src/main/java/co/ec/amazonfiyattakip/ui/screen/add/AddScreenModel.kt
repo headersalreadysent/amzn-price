@@ -9,10 +9,11 @@ import co.ec.amazonfiyattakip.db.FireDB
 import co.ec.amazonfiyattakip.db.price_info.PriceInfo
 import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
-import co.ec.helper.helpers.LogHelper
 import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -23,30 +24,27 @@ class AddScreenModel : ViewModel() {
     val recordedPrices = MutableLiveData<List<PriceInfo>?>(null)
 
 
+    /**
+     * scrape from shared or url
+     */
     fun scrapeFromSharedUrl(asinCode: String? = null) {
-        val settings = SettingsHelper.get()
-
-        if (asinCode != null) {
-            //if asin code exists
-            AmznScrape().scrape(asinCode, { scraped ->
-                LogHelper.d("scraped from asin ${scraped.encode()}", "AddModel")
-                this.setupProduct(scraped)
-            }, {
-                App.snack("Ürün bilgisi bulunamadı.")
-            })
-        } else {
-
-            //look for url on shared
-            settings.getString("sharedUrl")?.let {
-                settings.remove("sharedUrl")
-                AmznScrape().scrape(it, { scraped ->
-                    LogHelper.d("scraped from url ${scraped.encode()}", "AddModel")
-                    this.setupProduct(scraped)
+        CoroutineScope(Dispatchers.IO).launch {
+            val settings = SettingsHelper.get()
+            val scraper = AmznScrape().cache()
+            val asinScrapeUrl = asinCode ?: settings.getString("sharedUrl")
+            asinScrapeUrl?.let {
+                scraper.scrape(asinScrapeUrl, { scraped ->
+                    viewModelScope.launch {
+                        setupProduct(scraped)
+                    }
                 }, {
                     App.snack("Ürün bilgisi bulunamadı.")
                 })
             }
+            //remove in every time
+            settings.remove("sharedUrl")
         }
+
     }
 
 
