@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -21,27 +22,31 @@ data class MinuteSpanData(val minuteSpan: Int, val count: Int)
 
 @Composable
 fun BarChart(
-    data: List<MinuteSpanData>,
+    source: List<MinuteSpanData>,
     modifier: Modifier = Modifier,
     graphColor: Color = MaterialTheme.colorScheme.primary
 ) {
-    val maxCount = (data.maxOfOrNull { it.count } ?: 1) + 10
+    val maxCount = (source.maxOfOrNull { it.count } ?: 1) + 10
+    val ave = source.map { it.minuteSpan }.average()
+    val data = source.filter { it.minuteSpan < ave * 1.8F }
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
             .then(modifier)
     ) {
-        val barWidth = size.width / ((data.size * 2) + 1) // Adjust bar width and spacing
-
+        val barWidth = size.width / ((data.size * 3) + 1) // Adjust bar width and spacing
+        val maxHeight = size.height - 25
         data.forEachIndexed { index, minuteSpanData ->
-            val left = index * barWidth * 2 + barWidth
-            val top = size.height - (size.height * minuteSpanData.count / maxCount)
+            val left = index * barWidth * 3 + barWidth
+            val top = maxHeight - (maxHeight * minuteSpanData.count / maxCount)
             val bottom = size.height
 
-            drawRect(
+            drawRoundRect(
                 color = graphColor,
                 topLeft = Offset(left, top),
-                size = Size(barWidth, bottom - top)
+                size = Size(barWidth * 2, bottom - top),
+                cornerRadius = CornerRadius(4f, 4f)
+
             )
             val textPaint = Paint().apply {
                 color = graphColor.toArgb() // Use your desired text color
@@ -55,8 +60,8 @@ fun BarChart(
             drawContext.canvas.nativeCanvas.apply {
                 drawText(
                     minuteSpanData.minuteSpan.toString(),
-                    left + barWidth / 2 - textWidth / 2,
-                    top - 20,
+                    left + barWidth - textWidth / 2,
+                    top - 5,
                     textPaint
                 )
             }
@@ -69,7 +74,7 @@ fun BarChart(
 private fun BarChartPreview() {
     PreviewProviders {
         BarChart(
-            List(3) {
+            List(25) {
                 MinuteSpanData(it, Random.nextInt(10, 20))
             },
             modifier = Modifier

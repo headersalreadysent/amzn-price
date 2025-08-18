@@ -2,6 +2,7 @@ package co.ec.amazonfiyattakip.ui.screen.devtool
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,9 +41,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import co.ec.amazonfiyattakip.App
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.db.AppDatabase
@@ -52,11 +55,11 @@ import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.graph.BarChart
 import co.ec.amazonfiyattakip.ui.part.graph.MinuteSpanData
 import co.ec.helper.helpers.ExceptionHelper
+import co.ec.helper.helpers.SettingsHelper
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.dateString
 import co.ec.helper.utils.formatTime
 import co.ec.helper.utils.timeString
-import co.ec.helper.utils.unix
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -146,6 +149,16 @@ fun DevtoolsScreen() {
                         .statusBarsPadding()
                 )
             }
+            Tab(
+                selected = selected == 3, onClick = {
+                    selected = 3
+                }) {
+                Text(
+                    "Cache", modifier = Modifier
+                        .padding(8.dp)
+                        .statusBarsPadding()
+                )
+            }
         }
         Crossfade(
             targetState = selected,
@@ -175,7 +188,6 @@ fun DevtoolsScreen() {
                             }
                         }
 
-                        val now = unix()
                         logs?.let { logs ->
                             if (logs.size > 1) {
 
@@ -184,7 +196,7 @@ fun DevtoolsScreen() {
                                     val log = logs[it]
                                     ListItem(
                                         colors = ListItemDefaults.colors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         ),
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -193,7 +205,9 @@ fun DevtoolsScreen() {
                                         headlineContent = {
                                             Text(
                                                 log.detail,
-                                                style = MaterialTheme.typography.bodyMedium
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = FontFamily.Monospace
+                                                )
                                             )
                                         },
                                         overlineContent = {
@@ -207,10 +221,8 @@ fun DevtoolsScreen() {
                                                     "${log.date.dateString()} ${log.date.timeString()}",
                                                     style = MaterialTheme.typography.bodyMedium
                                                 )
-                                                val dates =
-                                                    "${(log.date - next).formatTime()} - ${(now - log.date).formatTime()}"
                                                 Text(
-                                                    dates,
+                                                    (log.date - next).formatTime(),
                                                     style = MaterialTheme.typography.bodyMedium
                                                 )
                                             }
@@ -221,9 +233,11 @@ fun DevtoolsScreen() {
                             }
                         }
                         item {
-                            Spacer(modifier = Modifier
-                                .fillMaxWidth()
-                                .height(30.dp))
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(30.dp)
+                            )
                         }
                     }
                 }
@@ -297,13 +311,15 @@ fun DevtoolsScreen() {
                     }
 
                     item {
-                        Spacer(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(30.dp))
+                        Spacer(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(30.dp)
+                        )
                     }
                 }
 
-            } else {
+            } else if (it == 2) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -348,10 +364,63 @@ fun DevtoolsScreen() {
                         )
                     }
 
-                    Spacer(modifier = Modifier
-                        .fillMaxWidth()
-                        .height(30.dp))
-                    
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp)
+                    )
+
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    val cache = SettingsHelper(App.context(), App.cache().shareName)
+                    cache.all().toSortedMap().forEach {
+
+                        ListItem(
+
+                            headlineContent = {
+                                Text(
+                                    it.value.toString()
+                                        .substring(0,it.value.toString().length.coerceAtMost(300)),
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 5.dp)
+                                .padding(horizontal = 8.dp)
+                                .clickable {
+                                    cache.remove(it.key)
+                                },
+                            overlineContent = {
+                                Text(
+                                    it.key,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 4.dp)
+                                )
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        )
+                    }
+
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp)
+                    )
+
                 }
             }
         }
