@@ -16,9 +16,10 @@ import co.ec.amazonfiyattakip.service.job.PriceUpdate
 import co.ec.helper.helpers.EventBus
 import co.ec.helper.utils.asyncRun
 import co.ec.helper.utils.unix
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 open class DetailViewModel : ViewModel() {
@@ -41,27 +42,24 @@ open class DetailViewModel : ViewModel() {
 
     //load product
     fun loadProduct(productId: Int, refresh: Boolean = true) {
-        viewModelScope.launch {
-            val productData = withContext(Dispatchers.IO) {
-                Triple(
-                    AppDatabase.getDatabase().product().getProduct(productId),
-                    AppDatabase.getDatabase().priceInfo().getPricesByProduct(productId),
-                    AppDatabase.getDatabase().noPrice().controlProduct(productId)
-                )
-            }
-            product.value = productData.first
-            prices.value = productData.second
-            productData.third?.let {
-                if(it.count>0){
-                    noPriceControl.value=it
+        CoroutineScope(Dispatchers.IO).launch {
+            val productData = Triple(
+                AppDatabase.getDatabase().product().getProduct(productId),
+                AppDatabase.getDatabase().priceInfo().getPricesByProduct(productId),
+                AppDatabase.getDatabase().noPrice().controlProduct(productId)
+            )
+
+            viewModelScope.launch {
+                product.value = productData.first
+                prices.value = productData.second
+                productData.third?.let {
+                    if (it.count > 0) {
+                        noPriceControl.value = it
+                    }
                 }
             }
-
-
             if (refresh) {
-                withContext(Dispatchers.IO) {
-                    FireDB.syncProduct(productData.first)
-                }
+                FireDB.syncProduct(productData.first)
             }
         }
     }
@@ -129,10 +127,11 @@ open class DetailViewModel : ViewModel() {
      */
     fun refreshProduct(then: () -> Unit = {}, err: (e: Throwable) -> Unit = {}) {
         product.value?.let { product ->
-            viewModelScope.launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val update = PriceUpdate.collectProduct(product)
+                    PriceUpdate.collectProduct(product)
                     loadProduct(product.id)
+                    delay(3000)
                     then()
                 } catch (e: Throwable) {
                     err(e)
@@ -155,7 +154,7 @@ open class DetailViewModel : ViewModel() {
                 price = price.toInt()
             )
         }
-        noPriceControl.value = NoPriceDao.NoPriceControl(20,unix())
+        noPriceControl.value = NoPriceDao.NoPriceControl(20, unix())
     }
 
 
