@@ -81,7 +81,7 @@ class App : CnsynApp() {
         AppDatabase.getDatabase()
         setupSharedSettings()
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
-        cacheHelper = CacheHelper(this, "globalCache")
+        cacheHelper = CacheHelper(this, "cache")
 
         //setup jobs
         PriceUpdate.setupJob()
@@ -96,6 +96,7 @@ class App : CnsynApp() {
                 }
             }
         }
+        clearCacheData()
     }
 
 
@@ -132,5 +133,26 @@ class App : CnsynApp() {
             }
         }
 
+    }
+
+    /**
+     * clear on back
+     */
+    private fun clearCacheData() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val cache = SettingsHelper(context(), cache().shareName)
+            val now = unix()
+            cache.all().forEach {
+                try {
+                    val date = it.value.toString().split("||")
+                    if (date[0].toLong() < now) {
+                        //if expired delete
+                        cache.remove(it.key)
+                    }
+                } catch (_: Throwable) {
+
+                }
+            }
+        }
     }
 }
