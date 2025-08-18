@@ -1,11 +1,6 @@
 package co.ec.amazonfiyattakip.composables
 
-import android.R.attr.maxLines
-import android.R.attr.text
-import android.R.attr.top
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,9 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,13 +23,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -53,7 +44,6 @@ import co.ec.amazonfiyattakip.db.product.Product
 import co.ec.amazonfiyattakip.service.AmznScrape
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.ProductImage
-import co.ec.helper.composable.AutoText
 
 @Composable
 fun ProductBox(
@@ -63,7 +53,7 @@ fun ProductBox(
 
     val urlHandler = LocalUriHandler.current
     val density = LocalDensity.current
-    val container=MaterialTheme.colorScheme.secondaryContainer
+    val container = MaterialTheme.colorScheme.secondaryContainer
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,29 +100,55 @@ fun ProductBox(
                 .statusBarsPadding()
 
         ) {
-            BasicText(
-                modifier = Modifier.fillMaxWidth(.8F).weight(5F),
-                text = product.title,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    fontWeight = FontWeight.Bold,
-                    shadow = Shadow(
-                        MaterialTheme.colorScheme.onSecondaryContainer.copy(
-                            alpha = .5F
-                        ), Offset(1F, 1F), 1F
-                    )
-                ),
-                autoSize = TextAutoSize.StepBased(20.sp, 40.sp, 1.sp),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+            var titleSize by remember { mutableStateOf(0.sp) }
+            var titleLineHeightSize by remember { mutableStateOf(0.sp) }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(.9F)
+                    .weight(4F)
+                    .onGloballyPositioned {
+                        with(density) {
+                            val size = it.size.height.toDp().toSp()
+                            if (size * .4 < 20.sp) {
+                                return@onGloballyPositioned
+                            }
+                            titleSize = size * .40
+                            titleLineHeightSize = size * .45
+                        }
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BasicText(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = product.title,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        fontWeight = FontWeight.SemiBold,
+                        shadow = Shadow(
+                            MaterialTheme.colorScheme.onSecondaryContainer.copy(
+                                alpha = .5F
+                            ), Offset(1F, 1F), 1F
+                        ),
+
+                        fontSize = titleSize,
+                        lineHeight = titleLineHeightSize
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
 
             var textSize by remember { mutableStateOf(0.sp) }
-            Row (
+            Row(
                 modifier = Modifier
-                    .weight(5F)
+                    .weight(3F)
                     .onGloballyPositioned {
-                        textSize = density.run { it.size.height.toDp().toSp() * .8 }
+                        textSize = density.run {
+                            val height = it.size.height.toDp().toSp()
+                            if (height < 20.sp) 16.sp else height * .8
+                        }
                     },
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -140,31 +156,30 @@ fun ProductBox(
                     text = product.price(),
                     style = MaterialTheme.typography.titleLarge.copy(
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Medium,
                         fontSize = textSize
                     ),
                     maxLines = 1,
                 )
                 Text(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 5.dp),
+                        .wrapContentSize()
+
+                        .padding(start = 4.dp),
                     text = product.asin,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        fontSize = 11.sp
                     )
                 )
             }
 
 
-            /*ProductStat(
-                product, color = MaterialTheme.colorScheme.onSecondaryContainer
-            )*/
-
         }
 
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
