@@ -437,7 +437,8 @@ class AmznScrape(withCache: Boolean = false) {
             asins.forEach {
                 semaphore.withPermit {
                     try {
-                        suspendScrape(it)
+                        val prod = suspendScrape(it)
+                        LogHelper.d("AMZN-Cache-List ${prod.encode()}")
                     } catch (_: Throwable) {
 
                     }
