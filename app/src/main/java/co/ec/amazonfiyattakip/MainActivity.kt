@@ -242,15 +242,25 @@ fun AppContent(
     ) { screen ->
         val orientation = LocalConfiguration.current.orientation
         val isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT
-        if(!isPortrait){
-            Column(modifier = Modifier.fillMaxSize(),
+        if (!isPortrait) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center){
-                Icon(Icons.Filled.ScreenRotation,"", modifier = Modifier.size(80.dp).padding(bottom = 20.dp))
-                Text("Bu uygulama ekranın dikey modu için optimize edilmiştir.",
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    Icons.Filled.ScreenRotation,
+                    "",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .padding(bottom = 20.dp)
+                )
+                Text(
+                    "Bu uygulama ekranın dikey modu için optimize edilmiştir.",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold
-                    ))
+                    )
+                )
             }
         } else {
             var cutCardHeight by remember { mutableIntStateOf(0) }
@@ -258,12 +268,14 @@ fun AppContent(
             var size by remember { mutableStateOf(Size.Unspecified) }
             val density = LocalDensity.current
             with(density) {
+                var padding = (screen.calculateBottomPadding().value - 5).dp
+                if (padding < 0.dp) {
+                    padding = 0.dp
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(
-                            bottom = (screen.calculateBottomPadding().value - 5).dp
-                        )
+                        .padding(bottom = padding)
                         .onSizeChanged {
                             size = it.toSize()
                             screenHeight = it.height

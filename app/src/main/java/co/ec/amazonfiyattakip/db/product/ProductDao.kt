@@ -65,7 +65,7 @@ interface ProductDao {
     @Query("SELECT * FROM product WHERE status NOT IN (:filteredStatus) ORDER BY date ASC LIMIT :limit  OFFSET (:page -1) * :limit")
     fun getAllProducts(
         page: Int = 1,
-        limit: Int = 20,
+        limit: Int = 100,
         filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
     ): List<ProductWithPrices>
 
@@ -77,7 +77,7 @@ interface ProductDao {
     @Transaction
     @Query("SELECT * FROM product WHERE status NOT IN (:filteredStatus) ORDER BY date ASC LIMIT :limit  ")
     fun getLatestProducts(
-        limit: Int = 20,
+        limit: Int = 100,
         filteredStatus: List<ProductStatus> = listOf(ProductStatus.DELETED)
     ): List<ProductWithPrices>
 

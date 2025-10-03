@@ -211,7 +211,9 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                         if (priceInfo.price != it.price) {
                             //price changed in this query let test with average
                             val latestAverage = priceDao.getLatestAverage(product.id)
-                            checkNotification(product, priceInfo, it, latestAverage)
+                            latestAverage?.let { latest ->
+                                checkNotification(product, priceInfo, it, latest)
+                            }
                         }
                     }
                     //insert new price

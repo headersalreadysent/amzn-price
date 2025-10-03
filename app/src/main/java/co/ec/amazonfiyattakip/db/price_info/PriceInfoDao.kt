@@ -45,7 +45,10 @@ WHERE product.status=:status AND dailyprice.date > strftime('%s', 'now') -:day*8
 GROUP BY dailyprice.day ORDER BY dailyprice.date ASC
 """
     )
-    fun getDailyAverages(day: Int = 30, status: ProductStatus= ProductStatus.ACTIVE): List<DailyTotal>
+    fun getDailyAverages(
+        day: Int = 30,
+        status: ProductStatus = ProductStatus.ACTIVE
+    ): List<DailyTotal>
 
     @Query(
         "SELECT priceinfo.productId, priceinfo.price,product.title,product.image,priceinfo.date from priceinfo " +
@@ -76,7 +79,8 @@ GROUP BY dailyprice.day ORDER BY dailyprice.date ASC
     )
     fun lowPricedProducts(status: ProductStatus = ProductStatus.ACTIVE): List<LowPriced>
 
-    @Query("""
+    @Query(
+        """
     SELECT product.*, stat.min, stat.max, stat.avg
     FROM product LEFT JOIN 
         (
@@ -88,14 +92,17 @@ GROUP BY dailyprice.day ORDER BY dailyprice.date ASC
             GROUP BY productId
         ) stat ON product.id=stat.productId
     WHERE product.status=:status
-    """)
+    """
+    )
     fun priceStat(status: ProductStatus = ProductStatus.ACTIVE): List<ProductWithStat>
 
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM dailyprice WHERE productId=:productId ORDER BY DATE DESC LIMIT 1
-    """)
-    fun getLatestAverage(productId: Int): DailyPrice
+    """
+    )
+    fun getLatestAverage(productId: Int): DailyPrice?
 
 
 }
