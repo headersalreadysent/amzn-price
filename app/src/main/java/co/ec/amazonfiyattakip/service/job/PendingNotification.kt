@@ -32,7 +32,8 @@ class PendingNotification(ctx: Context, params: WorkerParameters) : Worker(ctx, 
         val intent = Intent(context, MainActivity::class.java)
         intent.putExtra("destination", "detail/${productId}")
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context, productId, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
 

@@ -151,7 +151,7 @@ object NotificationHelper {
         }
         val context = App.context()
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, Intent(context, MainActivity::class.java).apply {
+            context, product.id, Intent(context, MainActivity::class.java).apply {
                 putExtra("destination", "detail/${product.id}")
             }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
