@@ -15,6 +15,7 @@ import co.ec.amazonfiyattakip.ui.screen.find.FindScreen
 import co.ec.amazonfiyattakip.ui.screen.lowpriced.LowPricedScreen
 import co.ec.amazonfiyattakip.ui.screen.main.MainScreen
 import co.ec.amazonfiyattakip.ui.screen.settings.SettingsScreen
+import co.ec.amazonfiyattakip.ui.screen.tracked.TrackedScreen
 
 @Composable
 fun ScreenContent(
@@ -43,6 +44,7 @@ fun ScreenContent(
         composable("lowpriced") { LowPricedScreen() }
         composable("settings") { SettingsScreen() }
         composable("joblog") { DevtoolsScreen() }
+        composable("tracked") { TrackedScreen() }
         composable(
             "add/{asin}",
             arguments = listOf(navArgument("asin") { type = NavType.StringType })

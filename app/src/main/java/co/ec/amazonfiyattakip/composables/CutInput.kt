@@ -54,7 +54,8 @@ fun CutInput(
     color: Color = MaterialTheme.colorScheme.surfaceContainer,
     corner: CutCorner = CutCorner.TOPRIGHT,
     cutSize: Dp = 10.dp,
-    maxLines: Int = 1
+    maxLines: Int = 1,
+    showButton: Boolean = true
 ) {
     val contentColor = contentColorFor(color)
 
@@ -125,21 +126,24 @@ fun CutInput(
                 }
             }
         )
-        Button(
-            onClick = {
-                click(inputText)
-            },
-            modifier = Modifier
-                .wrapContentWidth()
-                .border(1.dp, color, shape)
-                .height(height),
-            colors = ButtonDefaults.buttonColors().copy(
-                containerColor = actionColor,
-                contentColor = contentColorFor(actionColor)
-            ),
-            shape = RectangleShape
-        ) {
-            Text(text = action)
+        if(showButton){
+
+            Button(
+                onClick = {
+                    click(inputText)
+                },
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .border(1.dp, color, shape)
+                    .height(height),
+                colors = ButtonDefaults.buttonColors().copy(
+                    containerColor = actionColor,
+                    contentColor = contentColorFor(actionColor)
+                ),
+                shape = RectangleShape
+            ) {
+                Text(text = action)
+            }
         }
     }
 

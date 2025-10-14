@@ -521,6 +521,21 @@ fun ServerProductsArea(serverProducts: List<Pair<Product, List<String>>>?) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp),
+                    extra = {
+                        Text(
+                            "Tümünü Gör",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Light
+                            ),
+                            modifier = Modifier
+                                .clickable {
+                                    navigator.navigate("tracked")
+                                }
+                                .padding(8.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                        )
+                    }
                 )
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val isCompact = this.maxWidth < 600.dp

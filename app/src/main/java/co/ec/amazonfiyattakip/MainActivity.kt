@@ -1,6 +1,5 @@
 package co.ec.amazonfiyattakip
 
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
@@ -45,7 +45,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onSizeChanged
@@ -55,7 +54,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -74,7 +72,6 @@ import co.ec.helper.helpers.EventBus
 import co.ec.helper.helpers.SettingsHelper
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -150,6 +147,14 @@ fun AppContent(
 
     val navBackStackEntry by navigator.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination?.route ?: ""
+
+    var showServerProducts by remember {
+        mutableStateOf(
+            settings.getBoolean(
+                "showServerProducts", true
+            )
+        )
+    }
     DisposableEffect(Unit) {
         settings.putInt("primaryColor", primaryColor)
         navigator.addOnDestinationChangedListener { _, destination, _ ->
@@ -167,79 +172,86 @@ fun AppContent(
                 if (it.name == "developerActive") {
                     developerActive = it.value as Boolean
                 }
+                if (it.name == "showServerProducts") {
+                    showServerProducts = settings.getBoolean(
+                        "showServerProducts", true
+                    )
+                }
             }
         }
         onDispose { }
     }
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.zIndex(1000F)
-            )
-        },
-        bottomBar = {
-            BottomAppBar(
-                actions = {
+    Scaffold(modifier = Modifier.fillMaxSize(), snackbarHost = {
+        SnackbarHost(
+            hostState = snackbarHostState, modifier = Modifier.zIndex(1000F)
+        )
+    }, bottomBar = {
+        BottomAppBar(
+            actions = {
+                IconButton(onClick = {
+                    if (currentDestination !== "main") {
+                        navigator.navigate("main")
+                    }
+                }) {
+                    Icon(Icons.Default.Home, contentDescription = "Main")
+                }
+                IconButton(onClick = {
+                    if (currentDestination !== "lowpriced") {
+                        navigator.navigate("lowpriced")
+                    }
+                }) {
+                    Icon(Icons.Default.Insights, contentDescription = "Stat")
+                }
+                if (showServerProducts) {
                     IconButton(onClick = {
-                        if (currentDestination !== "main") {
-                            navigator.navigate("main")
+                        if (currentDestination !== "tracked") {
+                            navigator.navigate("tracked")
                         }
                     }) {
-                        Icon(Icons.Default.Home, contentDescription = "Main")
+                        Icon(Icons.Default.Archive, contentDescription = "tracked")
+                    }
+                }
+                IconButton(onClick = {
+                    if (currentDestination !== "settings") {
+                        navigator.navigate("settings")
+                    }
+                }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                }
+                if (developerActive) {
+                    IconButton(onClick = {
+                        navigator.navigate("joblog")
+                    }) {
+                        Icon(Icons.Default.DeviceThermostat, contentDescription = "Menu")
                     }
                     IconButton(onClick = {
-                        if (currentDestination !== "lowpriced") {
-                            navigator.navigate("lowpriced")
-                        }
-                    }) {
-                        Icon(Icons.Default.Insights, contentDescription = "Stat")
-
-                    }
-                    IconButton(onClick = {
-                        if (currentDestination !== "settings") {
-                            navigator.navigate("settings")
-                        }
-                    }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                    if (developerActive) {
-                        IconButton(onClick = {
-                            navigator.navigate("joblog")
-                        }) {
-                            Icon(Icons.Default.DeviceThermostat, contentDescription = "Menu")
-                        }
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                withContext(Dispatchers.IO) {
-                                    App.snack("Fiyatlar Güncelleniyor")
-                                    PriceUpdate.run(true)
-                                }
+                        coroutineScope.launch {
+                            withContext(Dispatchers.IO) {
+                                App.snack("Fiyatlar Güncelleniyor")
+                                PriceUpdate.run(true)
                             }
-                        }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Settings")
                         }
+                    }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Settings")
                     }
-                    Spacer(Modifier.weight(1f, true))
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(surface),
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                floatingActionButton = {
-                    fabAction?.let {
-                        FloatingActionButton(
-                            onClick = it.second,
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ) {
-                            Icon(it.first, contentDescription = "")
-                        }
+                }
+                Spacer(Modifier.weight(1f, true))
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(surface),
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            floatingActionButton = {
+                fabAction?.let {
+                    FloatingActionButton(
+                        onClick = it.second, containerColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(it.first, contentDescription = "")
                     }
-                },
-            )
-        }
-    ) { screen ->
+                }
+            },
+        )
+    }) { screen ->
         val orientation = LocalConfiguration.current.orientation
         val isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT
         if (!isPortrait) {
@@ -265,7 +277,6 @@ fun AppContent(
         } else {
             var cutCardHeight by remember { mutableIntStateOf(0) }
             var screenHeight by remember { mutableIntStateOf(0) }
-            var size by remember { mutableStateOf(Size.Unspecified) }
             val density = LocalDensity.current
             with(density) {
                 var padding = (screen.calculateBottomPadding().value - 5).dp
@@ -277,10 +288,8 @@ fun AppContent(
                         .fillMaxSize()
                         .padding(bottom = padding)
                         .onSizeChanged {
-                            size = it.toSize()
                             screenHeight = it.height
-                        }
-                ) {
+                        }) {
                     ScreenContent(
                         modifier = Modifier
                             .fillMaxWidth()
