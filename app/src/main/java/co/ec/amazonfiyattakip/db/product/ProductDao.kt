@@ -96,4 +96,7 @@ interface ProductDao {
 
     @Query("DELETE FROM product WHERE id=:productId")
     fun delete(productId: Int)
+
+    @Query("SELECT * FROM product WHERE id = :id LIMIT 1")
+    fun getProductById(id: Int): Product?
 }

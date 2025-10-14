@@ -253,7 +253,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
         /**
          * check if notification required
          */
-        private fun checkNotification(
+        fun checkNotification(
             product: Product,
             priceInfo: PriceInfo,
             latestPrice: PriceInfo,
@@ -263,7 +263,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 LogHelper.d("${product.title} price dropped", JOBTAG)
                 NotificationHelper.priceChanged(
                     product,
-                    "Fiyat düştü: ${priceInfo.price.price()} ${product.title}",
+                    "⬇\uFE0F Fiyat düştü: ${priceInfo.price.price()} ${product.title}",
                     "Fiyat:${priceInfo.price.price()} \nSon ortalama fiyat ${latestAverage.avgPrice.price()}",
                     R.drawable.trending_down
                 )
@@ -272,7 +272,7 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
                 LogHelper.d("${product.title} price increased", JOBTAG)
                 NotificationHelper.priceChanged(
                     product,
-                    "Fiyat yükseldi: ${product.title}",
+                    "⬆\uFE0F Fiyat yükseldi: ${product.title}",
                     "Fiyat:${priceInfo.price.price()}  \nSon ortalama fiyat ${latestAverage.avgPrice.price()}",
                     R.drawable.trending_up
                 )
@@ -287,4 +287,3 @@ class PriceUpdate(appContext: Context, workerParams: WorkerParameters) :
     }
 
 }
-
