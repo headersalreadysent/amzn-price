@@ -31,9 +31,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -42,6 +40,7 @@ import androidx.compose.material.icons.filled.LightbulbCircle
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -67,13 +66,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -157,7 +156,11 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                 .verticalScroll(rememberScrollState())
         ) {
             PermissionArea()
-            Spacer(modifier = Modifier.fillMaxWidth().padding(top=8.dp))
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
             productList?.let { products ->
 
                 if (products.isNotEmpty()) {
@@ -239,7 +242,11 @@ fun MainScreen(model: MainScreenModel = viewModel()) {
                         productList = products
                     )
 
-                    Spacer(modifier = Modifier.fillMaxWidth().height(30.dp))
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp)
+                    )
                 } else {
                     Column(
                         modifier = Modifier
@@ -654,39 +661,55 @@ fun SlowQueryArea(stat: Map<String, Int>?) {
             CutCornerCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .clickable {
-                        visible = false
-                        PermissionHelper.batteryPermission()
-                    }, colors = CardDefaults.cardColors(
+                    .padding(horizontal = 8.dp),
+                colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
             ) {
-                val text = buildAnnotatedString {
-                    appendInlineContent("battery", " ")
-                    append(
-                        "Fiyat sorgulaması hedeflenen zamandan yavaş çalışıyor." + " Bu durum batarya optimizasyonundan kaynaklanıyor olabilir." + " Uygulamayı kısıtlanmamış ayarlayarak daha iyi sorgulama elde edebilirsiniz."
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    TitleBar(
+                        title = "Batarya Optimizasyonu",
+                        icon = Icons.Default.BatteryAlert,
+                        color = MaterialTheme.colorScheme.onErrorContainer
                     )
+                    Text(
+                        buildAnnotatedString {
+                            append("Fiyat sorgulama aralığı ayarlanan süre ")
+                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                                append("${targetTime / 60} dakika ")
+                            }
+                            append("fakat ortalama sorgulama aralığı ")
+                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                                val sec = span % 60
+                                append("${span / 60}:${sec} ")
+                            }
+                            append("olarak gerçekleşiyor.")
+                        }, style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.Justify,
+                        )
+                    )
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        shape = RoundedCornerShape(2.dp),
+
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.onErrorContainer,
+                            contentColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        onClick = {
+                            visible = false
+                            PermissionHelper.batteryPermission()
+                        }) {
+                        Text("Batarya Optimizasyonunu Kapat")
+                    }
                 }
-                Text(
-                    text,
-                    inlineContent = mapOf(
-                        "battery" to InlineTextContent(
-                            Placeholder(20.sp, 16.sp, PlaceholderVerticalAlign.Center)
-                        ) {
-                            Icon(
-                                Icons.Default.BatteryAlert,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                            )
-                        },
-                    ),
-                    modifier = Modifier.padding(8.dp),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        textAlign = TextAlign.Justify,
-                    )
-                )
 
 
             }
