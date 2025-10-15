@@ -1,7 +1,6 @@
 package co.ec.amazonfiyattakip.ui.screen.find
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -9,12 +8,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +44,7 @@ import co.ec.amazonfiyattakip.composables.CutInput
 import co.ec.amazonfiyattakip.composables.Progress
 import co.ec.amazonfiyattakip.composables.cutShape
 import co.ec.amazonfiyattakip.db.product.Product
+import co.ec.amazonfiyattakip.helper.condition
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.LocalSettings
 import co.ec.amazonfiyattakip.ui.PreviewProviders
@@ -58,7 +64,6 @@ fun FindScreen(
 
     val navigation = LocalNavigation.current
     val settings = LocalSettings.current
-    var searchStarted by remember { mutableStateOf(false) }
 
     val searchKeyword by model.searchKeyword.observeAsState(keyword)
     var searchResults by remember { mutableStateOf<List<Product>>(listOf()) }
@@ -76,19 +81,16 @@ fun FindScreen(
 
     LaunchedEffect(Unit) {
         model.searchResults.collect { result ->
-            searchStarted = true
             searchResults = searchResults + result
         }
     }
 
     DisposableEffect(Unit) {
-        model.isSearchExists { keyword, results ->
-            searchStarted = true
+        model.loadOldSearch { results ->
             searchResults = results
         }
         if (searchKeyword != "") {
             model.search(searchKeyword)
-            searchStarted = true
         }
         onDispose {
 
@@ -96,9 +98,9 @@ fun FindScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        if (searchStarted) {
+        if (searchKeyword != "") {
             if (searchResults.isEmpty()) {
-                Progress("$searchKeyword araması yapılıyor")
+                Progress("$searchKeyword aranıyor")
             } else {
                 TitleBar(
                     title = "Arama Sonuçları",
@@ -107,7 +109,7 @@ fun FindScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(4.dp)
+                        .padding(8.dp)
                         .statusBarsPadding(),
                     extra = {
                         if (deals.isNotEmpty()) {
@@ -131,12 +133,12 @@ fun FindScreen(
                             navigation.navigate("add/${it.asin}")
                         })
                     }
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp)
+                    )
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(40.dp)
-                )
             }
         } else {
             if (showDealsInfo) {
@@ -171,7 +173,6 @@ fun FindScreen(
                                         Text(it)
                                     }, onClick = {
                                         model.search(it)
-                                        searchStarted = true
                                         keyboardController?.hide()
                                     },
                                     shape = shape,
@@ -194,7 +195,7 @@ fun FindScreen(
     AppModel.cutCard(
         Modifier
             .fillMaxWidth()
-            .height(76.dp)
+            .height(100.dp)
             .padding(horizontal = 16.dp)
             .padding(top = 16.dp)
     ) {
@@ -205,33 +206,34 @@ fun FindScreen(
         }
 
 
+
         CutInput(
+            modifier = Modifier
+                .fillMaxWidth()
+                .condition(keyboard) {
+                    Modifier.offset(y = -5.dp)
+                },
             value = keyword,
-            valueChange = { keyword = it },
+            valueChange = {
+                keyword = it
+            },
             action = "Ara",
             height = 50.dp,
+            icon = Icons.Outlined.Search,
             textStyle = MaterialTheme.typography.bodyLarge,
             click = {
                 if (keyword.length > 3) {
-                    model.search(keyword, asinCallback = {
-                        navigation.navigate("add/${keyword}")
-                    })
                     searchResults = listOf()
-                    searchStarted = true
                     keyboardController?.hide()
+                    model.search(keyword, asinCallback = {
+                        navigation.navigate("add/${it.asin}")
+                    })
                 } else {
                     App.snack("Arama ifadesi 3 karakterden kısa olamaz.")
                 }
             },
             placeholder = "Ürün adı veya ASIN",
         )
-        if (keyboard) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-            )
-        }
 
 
     }
@@ -248,29 +250,37 @@ fun DealsListScreen(deals: List<Product>) {
     if (deals.isEmpty()) {
         FakeFindScreen()
     } else {
+        TitleBar(
+            title = "Amazon Fırsatlar",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .statusBarsPadding(),
+            extra = {
+                Text(
+                    deals.size.toString(),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        )
+        val scrollState = rememberScrollState()
+        val dividerAlpha = if (scrollState.value > 0) 1f else 0f
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(dividerAlpha)
+                .shadow(5.dp)
+        )
         FlowRow(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 4.dp)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
         ) {
 
-            TitleBar(
-                title = "Amazon Fırsatlar",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-                    .statusBarsPadding(),
-                extra = {
-                    Text(
-                        deals.size.toString(),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            )
             deals.forEach {
                 LittleProductBox(it, onClick = {
                     navigation.navigate("add/${it.asin}")

@@ -38,13 +38,12 @@ open class FindViewModel(isPreview: Boolean = false) : ViewModel() {
     }
 
 
-    fun isSearchExists(searchExists: (keyword: String, list: List<Product>) -> Unit = { _, _ -> }) {
+    fun loadOldSearch(searchExists: (list: List<Product>) -> Unit = { _ -> }) {
         //look older searches
         recordedResults.value?.let {
             if (it.isNotEmpty()) {
-                val cachedKeyword = cache?.get("searchKeyword") ?: ""
-                searchKeyword.value = cachedKeyword
-                searchExists(cachedKeyword, it)
+                searchKeyword.value = cache?.get("searchKeyword") ?: ""
+                searchExists(it)
             }
             return
         }

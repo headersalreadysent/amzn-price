@@ -2,10 +2,11 @@ package co.ec.amazonfiyattakip.composables
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -58,7 +62,6 @@ fun CutInput(
     showButton: Boolean = true
 ) {
     val contentColor = contentColorFor(color)
-
     val shape = cutShape(corner, cutSize)
     var inputText by remember { mutableStateOf(value) }
     Row(
@@ -66,6 +69,8 @@ fun CutInput(
             .then(modifier)
             .height(height)
             .clip(shape)
+            .background(color),
+        verticalAlignment = Alignment.CenterVertically
 
     ) {
         val visibility by animateFloatAsState(
@@ -83,7 +88,7 @@ fun CutInput(
                 valueChange(it)
             },
             textStyle = textStyle.copy(
-                color = contentColor
+                color = contentColor,
             ),
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = {
@@ -94,7 +99,7 @@ fun CutInput(
                 Row(
                     modifier = Modifier
                         .height(height)
-                        .padding(horizontal = 10.dp)
+                        .padding(start = cutSize*1.5F)
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -103,6 +108,7 @@ fun CutInput(
                             it,
                             "$placeholder icon",
                             modifier = Modifier.padding(end = 4.dp),
+                            tint = contentColor.copy(1F-visibility)
                         )
                     }
                     Box(
@@ -114,10 +120,10 @@ fun CutInput(
 
                         innerTextField()
                         Text(
-                            modifier = Modifier.alpha(visibility),
+                            modifier = Modifier,
                             text = placeholder,
                             style = textStyle.copy(
-                                color = contentColor,
+                                color = contentColor.copy(visibility),
                                 fontStyle = FontStyle.Italic
                             )
                         )
@@ -126,7 +132,9 @@ fun CutInput(
                 }
             }
         )
-        if(showButton){
+        if (showButton) {
+            val size=(cutSize.value/1.4F).dp
+            val buttonHeight = height-(size*2)
 
             Button(
                 onClick = {
@@ -134,13 +142,14 @@ fun CutInput(
                 },
                 modifier = Modifier
                     .wrapContentWidth()
-                    .border(1.dp, color, shape)
-                    .height(height),
+                    .padding(end = cutSize*1.5F)
+                    .height(buttonHeight),
                 colors = ButtonDefaults.buttonColors().copy(
                     containerColor = actionColor,
                     contentColor = contentColorFor(actionColor)
                 ),
-                shape = RectangleShape
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical =  1.dp),
+                shape = RectangleShape,
             ) {
                 Text(text = action)
             }
@@ -149,21 +158,31 @@ fun CutInput(
 
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun CutInputPreview() {
     PreviewProviders {
-        Column {
+        Column(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp)
+        ) {
 
             CutInput(
                 value = "hello cut input",
                 placeholder = "enter a value",
                 action = "Ekle"
             )
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(20.dp)
+            )
 
             CutInput(
                 value = "",
                 placeholder = "enter a value",
+                icon = Icons.Filled.Search,
                 action = "Ekle"
             )
         }

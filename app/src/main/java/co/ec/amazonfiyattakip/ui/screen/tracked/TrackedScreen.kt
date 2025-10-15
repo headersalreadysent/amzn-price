@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -30,10 +31,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.ec.amazonfiyattakip.AppModel
 import co.ec.amazonfiyattakip.composables.CutInput
 import co.ec.amazonfiyattakip.composables.Progress
+import co.ec.amazonfiyattakip.helper.condition
 import co.ec.amazonfiyattakip.ui.LocalNavigation
 import co.ec.amazonfiyattakip.ui.PreviewProviders
 import co.ec.amazonfiyattakip.ui.part.LittleProductBox
 import co.ec.amazonfiyattakip.ui.part.TitleBar
+import co.ec.helper.utils.rememberKeyboardVisibleState
 
 @Composable
 fun TrackedScreen(viewModel: TrackedViewModel = viewModel()) {
@@ -44,9 +47,11 @@ fun TrackedScreen(viewModel: TrackedViewModel = viewModel()) {
     LaunchedEffect(Unit) {
         viewModel.loadProducts()
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+
     ) {
         TitleBar(
             title = "Hazır Takipli Ürünler",
@@ -68,6 +73,7 @@ fun TrackedScreen(viewModel: TrackedViewModel = viewModel()) {
             if (it) {
                 Progress("Ürünler Yükleniyor")
             } else {
+
                 FlowRow(
                     modifier = Modifier
                         .weight(1F)
@@ -100,8 +106,14 @@ fun TrackedScreen(viewModel: TrackedViewModel = viewModel()) {
             .padding(horizontal = 16.dp)
             .padding(top = 16.dp)
     ) {
+        val keyboard by rememberKeyboardVisibleState()
         var keyword by remember { mutableStateOf("") }
         CutInput(
+            modifier = Modifier
+                .fillMaxWidth()
+                .condition(keyboard) {
+                    Modifier.offset(y = -5.dp)
+                },
             value = keyword,
             valueChange = {
                 keyword = it
